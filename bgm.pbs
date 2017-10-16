@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -P BGM
+#PBS -l select=1:ncpus=8:mem=4GB
+#PBS -l walltime=01:00:00
+#PBS -q defaultQ
+
+cd $PBS_O_WORKDIR
+export LD_LIBRARY_PATH=/home/mvar0005/gcc-6.2.0/lib64
+export OMP_NUM_THREADS=32
+./main
