@@ -107,8 +107,8 @@ void MyModel::from_prior(RNG& rng)
   // Velocity
   gamma_vsys = 30.0;
 
-  vmax_min = dr*C/HA;
-  vmax_width = 1E3/vmax_min;
+  vmax_min = 40.0;
+  vmax_width = 400.0/vmax_min;
 
   vslope_min = sqrt(dx*dy);
   vslope_width = 5.0*sqrt((x_max - x_min)*(y_max - y_min))/vslope_min;
@@ -441,13 +441,7 @@ void MyModel::calculate_image()
 
   // LSF
   double wlsq, invwlsq;
-  
-  /*
-  const double slam_over_lam = 4263.0;
-  const double lam_central = 6850.0; // slam_over_lam defined at
-  const double z = 0.03103;
-  const double sigma_lsf = lam_central/(slam_over_lam*sqrt(8.0*log(2.0))*(1+z));
-  */
+  double invtwo_wlsq;
   const double sigma_lsfsq = lsf_sigma*lsf_sigma;
   
 
@@ -622,6 +616,11 @@ void MyModel::calculate_image()
   double dxs, dys, dbs;
   double amps, n2amps;
 
+  // calculation for cdf
+  double ha_cdf_min, ha_cdf_max;
+
+  // Integration testing
+  // double sum_blob, sum_blobw;
 
   // Blob contribution
   if(model != 1)
@@ -639,35 +638,25 @@ void MyModel::calculate_image()
 	  if(model_n2lines == 1)
 	    Mn2 = components[k][7];
 
+
+	  // test
+	  rc = 0.0;
+	  thetac = 0.0;
+	  q = 1.0;
+	  wx = 1.0;
+	  vdisp = 20.0;
+	  
+
 	  // component manipulations
 	  sigma_lambda = vdisp*HA/C;
-
-	  /*
-	    Determine centre of blob
-	  */
-	  // // calculate xc, yc in los cartesian axes
-	  // xc_inc = rc*cos(thetac);
-	  // yc_inc = rc*sin(thetac);
-      
-	  // // undo inclination
-	  // yc_inc *= cos_inc;
-
-	  // // undo rotation
-	  // xc_rot = xc_inc*cos(pa) - yc_inc*sin(pa);
-	  // yc_rot = xc_inc*sin(pa) + yc_inc*cos(pa);
-
-	  // // shift by centre
-	  // xc = xc_rot + xcd;
-	  // yc = yc_rot + ycd;
 	  
-	  // Only need xc, yc in rot/inc plane
+	  // xc, yc in disk plane
 	  xc = rc*cos(thetac);
 	  yc = rc*sin(thetac);
 
-
 	  // Variance of instrumentally broadened line
 	  wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
-	  invwlsq = 1.0/wlsq;
+	  invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
 
 	  /*
 	    Component manipulations
@@ -679,201 +668,40 @@ void MyModel::calculate_image()
 	  invq = 1.0/q;
 	  sin_phi = sin(phi);
 	  cos_phi = cos(phi);
-	  det = wxsq*wxsq;
-	  invdet = 1.0/det;
-
 
 
 	  // Oversampling rate
-	  if(q*wx < 0.5*dx)
+	  if(q*wx*cos_inc < 0.5*dx)
 	    { si = 4; }
-	  if(q*wx < 1.0*dx)
+	  else if(q*wx*cos_inc < 1.0*dx)
 	    { si = 2; }
-	  if(q*wx < 1.5*dx) 
+	  else if(q*wx*cos_inc < 1.5*dx)
 	    { si = 1; }
-	  else 
+	  else
 	    { si = 0; }
+	  // std::cout<<"si test "<<si<<" "<<q*wx<<" "<<dx<<std::endl;
+	  // si = 0;
 
 	  dxs = dx/(2.0*si + 1.0);
 	  dys = dy/(2.0*si + 1.0);
-	  dbs = dxs*dys*dr;
 
 	  // Flux normalised sum
-	  amp = dbs*M*two_pi*sqrt(invdet*invwlsq);
+	  amp = dxs*dys*M/(2.0*M_PI*wxsq*cos_inc);
 	  if(model_n2lines == 1)
-	    n2amp = dbs*Mn2*two_pi*sqrt(invdet*invwlsq);
+	    n2amp = dxs*dys*Mn2/(2.0*M_PI*wxsq*cos_inc);
 
-
-	  /* Remove this for the time being
-	  // Valid wavelength indices
-	  if(lambda - sigma_cutoff*wl < r_min + 0.5*dr){
-	  r_ind_min = 0;}
-	  else{
-      	  r_ind_min = (int)((lambda - sigma_cutoff*wl - r_min)/dr); // floor division
-	  }
-
-	  if(lambda + sigma_cutoff*wl > r_max - 0.5*dr){
-	  r_ind_max = nr;}
-	  else{
-      	  r_ind_max = 1 + (int)((lambda + sigma_cutoff*wl - r_min)/dr); // ceiling division
-	  }
-
-	  // Lookup table for lsq
-	  for(int r=r_ind_min; r<r_ind_max; r++)
-	  lsq[r] = pow(wave[r] - lambda, 2)/wlsq;
-
-
-	  // Valid indices for n2low
-	  if(lambda_n2low + sigma_cutoff*wl < r_min - 0.5*dr){
-	  n2low_ind_max = 0; }
-	  else
-	  {
-	  // n2low min index
-	  if(lambda_n2low - sigma_cutoff*wl < r_min + 0.5*dr){
-	  n2low_ind_min = 0;}
-	  else{
-	  n2low_ind_min = (int)((lambda_n2low - sigma_cutoff*wl - r_min)/dr);}
-	  
-	  // n2low max index
-	  if(lambda_n2low + sigma_cutoff*wl > r_max - 0.5*dr){
-	  n2low_ind_max = nr;}
-	  else{
-	  n2low_ind_max = 1 + (int)((lambda_n2low + sigma_cutoff*wl - r_min)/dr);}
-
-	  // lookup table for lsq n2low
-	  for(int r=n2low_ind_min; r<n2low_ind_max; r++)
-	  n2low_lsq[r] = pow(wave[r] - lambda_n2low, 2)/wlsq;
-	  }
-
-
-	  // Valid indices for n2upp
-	  if(lambda_n2upp - sigma_cutoff*wl > r_min + 0.5*dr){
-	  n2upp_ind_min = nr;}
-	  else
-	  {
-	  // n2upp min index
-	  if(lambda_n2upp - sigma_cutoff*wl < r_min + 0.5*dr){
-	  n2upp_ind_min = 0;}
-	  else{
-	    n2upp_ind_min = (int)((lambda_n2upp - sigma_cutoff*wl - r_min)/dr);}
-	  
-	  // n2low max index
-	  if(lambda_n2upp + sigma_cutoff*wl > r_max - 0.5*dr){
-	    n2upp_ind_max = nr;}
-	  else{
-	    n2upp_ind_max = 1 + (int)((lambda_n2upp + sigma_cutoff*wl - r_min)/dr);}
-
-	  // lookup table for lsq n2upp
-	  for(int r=n2upp_ind_min; r<n2upp_ind_max; r++)
-	    n2upp_lsq[r] = pow(wave[r] - lambda_n2upp, 2)/wlsq;
-	}
-
-      // Calc n2amp if n2low or n2upp is required
-      if(n2low_ind_max > 0 && n2upp_ind_min < nr)
-	  n2amp = db*Mn2*two_pi*sqrt(invdet)/wl;
-      */ 
-
-      // Add flux contribution
-      //     for(int h=0; h<nv; h++)
-
-
-	  /*
-	    Boundaries for gaussian calculatation
-	  */
-	  /*
-	  cutoff_width = sigma_cutoff*wx/sqrtq;
-	  if((yc - cutoff_width < y_min) &&
-	     (yc + cutoff_width > y_max))
-	    {
-	      i_min = 0;
-	      i_max = ni - 1;
-	    }	  
-	  else if(yc + cutoff_width < y_min)
-	    {
-	      i_min = ni - 1;
-	      i_max = ni - 1;
-	    }
-	  else if(yc - cutoff_width > y_max)
-	    {
-	      i_min = 0;
-	      i_max = 0;
-	    }
-	  else if(yc - cutoff_width < y_min)
-	    {
-	      i_min = (int)floor((y_max - yc + cutoff_width)/dy);
-	      i_max = ni - 1;
-	    }
-	  else if(yc + cutoff_width > y_max)
-	    {
-	      i_min = 0;
-	      i_max = (int)floor((y_max - yc - cutoff_width)/dy);
-	    }
-	  else
-	    {
-	      i_min = (int)floor((y_max - yc + cutoff_width)/dy);
-	      i_max = (int)floor((y_max - yc - cutoff_width)/dy);
-	    }
-
-
-	  if((xc - cutoff_width < x_min) &&
-	     (xc + cutoff_width > x_max))
-	    {
-	      j_min = 0;
-	      j_max = nj - 1;
-	    }
-	  else if(xc + cutoff_width < x_min)
-	    {
-	      j_min = 0;
-	      j_max = 0;
-	    }
-	  else if(xc - cutoff_width > x_max)
-	    {
-	      j_min = nj - 1;
-	      j_max = nj - 1;
-	    }
-	  else if(xc - cutoff_width < x_min)
-	    {
-	      j_min = 0;
-	      j_max = (int)floor((xc + cutoff_width - x_min)/dx);
-	    }
-	  else if(xc + cutoff_width > x_max)
-	    {
-	      j_min = (int)floor((xc - cutoff_width - x_min)/dx);
-	      j_max = nj - 1;
-	    }
-	  else
-	    {
-	      j_min = (int)floor((xc - cutoff_width - x_min)/dx);
-	      j_max = (int)floor((xc + cutoff_width - x_min)/dx);
-	    }  
-	  */
-
-	  // Calculate gaussian contributions
-	  /*
-	  if((i_min != ni - 1) && (j_min != nj - 1) &&
-	     (i_max != 0) && (j_max != 0))
-	    {
-	  
-	      for(i=i_min; i<=i_max; i++)
-		{
-		  for(j=j_min; j<=j_max; j++)
-		    {
-	  */
+	  // sum_blob = 0.0;
 	  for(int i=0; i<ni; i++)
 	    {
 	    for(int j=0; j<nj; j++)
 	      {
 		amps = 0.0;
 		n2amps = 0.0;
-		for(int is=-si; is<si+1; is++)
+		for(int is=-si; is<=si; is++)
 		  {
-		    for(int js=-si; js<si+1; js++)
+		    // std::cout<<"si: "<<si<<" is "<<is<<std::endl;
+		    for(int js=-si; js<=si; js++)
 		      {
-			// Get valid indices
-			//i = valid[h][0];
-			//j = valid[h][1];
-			
-
 			/*
 			  Get rotated/inc disk coordinates
 			 */
@@ -892,8 +720,6 @@ void MyModel::calculate_image()
 			/*
 			  Get distance wrt centre of blob 
 			  in rotated/inc disk coord
-
-			  Not sure what to do with over-sampling
 			 */
 			// Shift
 			x_shft = xxd_rot - xc;
@@ -919,6 +745,8 @@ void MyModel::calculate_image()
 
 		if(amps > 0.0)
 		  {
+		    // sum_blobw = 0.0;
+		    
 		    // Calculate mean lambda for lines
 		    lambda = HA*rel_lambda[i][j];
 		    lambda_n2upp = N2UPP*rel_lambda[i][j];
@@ -927,8 +755,22 @@ void MyModel::calculate_image()
 		    for (int r=0; r<nr; r++)
 		      {
 			// Ha contribution
-			lsq = pow(wave[r] - lambda, 2)*invwlsq;
-			image[i][j][r] += amps*Lookup::evaluate(0.5*lsq);
+			if(r == 0)
+			  {
+			    ha_cdf_min = erf((wave[r] - 0.5*dr - lambda)*invtwo_wlsq);
+			  }
+			else
+			  {
+			    ha_cdf_min = ha_cdf_max;
+			  }
+			
+			ha_cdf_max = erf((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
+			
+			image[i][j][r] += 0.5*amps*(ha_cdf_max - ha_cdf_min);
+
+			// sum_blob += 0.5*amps*(ha_cdf_max - ha_cdf_min);
+
+			// sum_blobw +=  0.5*amps*(ha_cdf_max - ha_cdf_min);
 
 			if(model_n2lines == 1)
 			  {
@@ -941,9 +783,38 @@ void MyModel::calculate_image()
 			    image[i][j][r] += n2amps*Lookup::evaluate(0.5*n2upp_lsq);
 			  }
 		      }
+
+		    /*
+		      // Integration testing
+		    if(abs(log10(sum_blobw/amps)) > 0.01)
+		      {
+			std::cout<<"Sum Blob Wavelength: "<<sum_blobw;
+			std::cout<<" amps: "<<amps;
+			std::cout<<" lambda "<<lambda<<std::endl;
+		      }
+		    */
 		  }
-	      }      
+	      } 
+  
 	    }
+
+	  // Integration testing
+	  /*
+	  if(abs(sum_blob/M - 1.0) > 0.001)
+	    {
+	      std::cout<<"diff: "<<sum_blob/M - 1.0;
+	      std::cout<<" M: "<<M;
+	      std::cout<<" si: "<<si<<" dxs: "<<dxs<<" dys: "<<dys;
+	      std::cout<<" wx: "<<wx;
+	      std::cout<<" vdisp: "<<vdisp;
+	      std::cout<<" wl: "<<sqrt(wlsq);
+	      std::cout<<" inc: "<<inc;
+	      std::cout<<" vmax: "<<vmax;
+	      std::cout<<" AMP: "<<amp;
+	      std::cout<<" Test blob sum... "<<" "<<sum_blob<<" si "<<si<<" xc "<<xc<<" yc "<<yc<<std::endl;
+	    }
+	  */
+
 	}
     }
 

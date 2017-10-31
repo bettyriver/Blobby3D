@@ -34,7 +34,7 @@ MyConditionalPrior::MyConditionalPrior(double x_min, double x_max,
 ,n2fluxlim_max(n2fluxlim_max)
 ,radiuslim_min(sqrt(dx*dy))
 ,radiuslim_max(3.0*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy)))
-,dispersion_min(0.1*dr*C/HA)
+,dispersion_min(1.0)
 ,dispersion_max(200.0)
 {
 
