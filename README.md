@@ -11,7 +11,7 @@ These instructions will get you a copy of the project up and running on your mac
 Blobby3D is dependent on the following:
 
 [DNest4](https://github.com/eggplantbren/DNest4)  
-[FFTW3](www.fftw.org)  
+[FFTW3](https://www.fftw.org)  
 [Boost C++ Library](www.boost.org)  
 Python with Cython package  
 
