@@ -11,11 +11,11 @@ These instructions will get you a copy of the project up and running on your mac
 Blobby3D is dependent on the following:
 
 [DNest4](https://github.com/eggplantbren/DNest4)  
-[FFTW3](https://www.fftw.org)  
-[Boost C++ Library](www.boost.org)  
-Python with Cython package  
+[FFTW3](http://www.fftw.org)  
+[Boost C++ Library](http://www.boost.org)  
+[Python 2.7](https://www.python.org) with [Cython](http://cython.org) package (for postprocessing)
 
-[FFTW3](www.fftw.org) and [Boost](www.boost.org) will typically be available on scientific machines/clusters, so you will often either have them or can get them relatively easily by contacting your system administrator. 
+[FFTW3](http://www.fftw.org) and [Boost](http://www.boost.org) will typically be available on scientific machines/clusters, so you will often either have them or can get them relatively easily by contacting your system administrator. 
 
 [DNest4](https://github.com/eggplantbreen/DNest4) is a bespoke nested sampling algorithm written by Brendon Brewer, and will need to be cloned from github in the usual manner. It is only available for Unix like machines.
 
