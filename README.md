@@ -39,7 +39,7 @@ python setup.py install
 
 #### Installing Blobby3D
 
-Then download/install Blobby3D in the root directory:
+Then download/install Blobby3D:
 
 cd ../.. 
 git clone https://github.com/SpaceOdyssey/Blobby3D  
