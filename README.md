@@ -10,6 +10,7 @@ These instructions will get you a copy of the project up and running on your mac
 
 Blobby3D is dependent on the following:
 
+C++11  
 [DNest4](https://github.com/eggplantbren/DNest4)  
 [FFTW3](http://www.fftw.org)  
 [Boost C++ Library](http://www.boost.org)  
@@ -23,7 +24,7 @@ Blobby3D is dependent on the following:
 
 Once you have downloaded/installed [FFTW3](www.fftw.org) and [Boost](www.boost.org), I would suggest setting up DNest4 and Blobby3D within the same directory. So, go to the root directory where you would like to install the packages, and create a directory:
 
-mkdir Blobby3D
+mkdir Blobby3D  
 cd Blobby3D
 
 #### Installing DNest4
@@ -38,9 +39,9 @@ python setup.py install
 
 #### Installing Blobby3D
 
-Then install Blobby3D:
+Then download/install Blobby3D in the root directory:
 
-cd ../.. # return to root directory  
+cd ../.. 
 git clone https://github.com/SpaceOdyssey/Blobby3D  
-cd Blobby3D  
+cd Blobby3D   
 make  
