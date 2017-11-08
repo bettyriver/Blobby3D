@@ -3,16 +3,11 @@
 #include "Data.h"
 #include "Lookup.h"
 #include "Conv.h"
+#include "Constants.h"
 #include <cmath>
-
-#define C 2.99792458E5
-#define HA 6562.81
-#define N2UPP 6548.1
-#define N2LOW 6583.1
 
 using namespace std;
 using namespace DNest4;
-
 
 MyModel::MyModel()
   :objects(7 + Data::get_instance().get_model_n2lines(), 
@@ -29,10 +24,10 @@ MyModel::MyModel()
 			    Data::get_instance().get_dr(),
 			    Data::get_instance().get_x_pad_dx(),
 			    Data::get_instance().get_y_pad_dy(),
-			    Data::get_instance().get_sum_flux()/Data::get_instance().get_nv(),
-			    3.0*Data::get_instance().get_sum_flux(),
-			    Data::get_instance().get_sum_flux()/Data::get_instance().get_nv(), 
-			    3.0*Data::get_instance().get_sum_flux()),
+			    Data::get_instance().get_fluxmu_min()*Data::get_instance().get_sum_flux(),
+			    Data::get_instance().get_fluxmu_max()*Data::get_instance().get_sum_flux(),
+			    Data::get_instance().get_fluxmu_min()*Data::get_instance().get_sum_flux(), 
+			    Data::get_instance().get_fluxmu_max()*Data::get_instance().get_sum_flux()),
 	 PriorType::log_uniform)
 {
   
@@ -76,6 +71,7 @@ MyModel::MyModel()
 
 void MyModel::from_prior(RNG& rng)
 {
+  // Get local variables from data
   const int model = Data::get_instance().get_model();
   const double prior_inc = Data::get_instance().get_prior_inc();
   const double x_min = Data::get_instance().get_x_min();
@@ -93,22 +89,25 @@ void MyModel::from_prior(RNG& rng)
   const double x_pad_dx = Data::get_instance().get_x_pad_dx();
   const double y_pad_dy = Data::get_instance().get_y_pad_dy();
   const double sum_flux = Data::get_instance().get_sum_flux();
+  const double vsys_max = Data::get_instance().get_vsys_max();
+
 
   /*
     Limits: global parameters
   */
 
   // Error
-  sigma_min = 1E-6; sigma_width = 1E6;
+  sigma_min = Data::get_instance().get_sigma_min();
+  sigma_width = Data::get_instance().get_sigma_max()/sigma_min;
 
   // Position
   gamma_pos = 0.1*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy));
 
   // Velocity
-  gamma_vsys = 30.0;
+  gamma_vsys = Data::get_instance().get_vsys_gamma();
 
-  vmax_min = 40.0;
-  vmax_width = 400.0/vmax_min;
+  vmax_min = Data::get_instance().get_vmax_min();
+  vmax_width = Data::get_instance().get_vmax_max()/vmax_min;
 
   vslope_min = sqrt(dx*dy);
   vslope_width = 5.0*sqrt((x_max - x_min)*(y_max - y_min))/vslope_min;
@@ -159,7 +158,6 @@ void MyModel::from_prior(RNG& rng)
 	   (ycd > y_max - y_pad_dy));
 
   pa = 2.0*M_PI*rng.rand();
-  // inc = 45.0*M_PI/180.0;
   inc = 0.5*M_PI*rng.rand();
 
   // Initialise: Velocity
@@ -167,8 +165,8 @@ void MyModel::from_prior(RNG& rng)
   do
     {
       vsys = cauchy_vsys.generate(rng);
-    }while((vsys < -5.0*gamma_vsys) ||
-	   (vsys >  5.0*gamma_vsys)); 
+    }while((vsys < -vsys_max) ||
+	   (vsys >  vsys_max)); 
 
   vmax = exp(log(vmax_min) + log(vmax_width)*rng.rand());
   vslope = exp(log(vslope_min) + log(vslope_width)*rng.rand());
@@ -287,7 +285,6 @@ double MyModel::perturb(RNG& rng)
 	    case 6:
 	      inc += 0.5*M_PI*rng.randh();
 	      inc = mod(inc, 0.5*M_PI);
-	      // inc = 45.0*M_PI/180.0;
 	      break;
 	    }
 	}
@@ -412,33 +409,6 @@ void MyModel::calculate_image()
 	    image[i][j][r] = 0.0;
     }
 
-
-  /*
-  // Determine if adding blobs
-  bool update = objects.get_removed().size() == 0;
-
-  // Get components
-  const vector< vector<double> >& components = (update)?(objects.get_added())
-                                                 :(objects.get_components());
-  
-  int i, j, r;
-  if(!update)
-    {
-      
-      // Zero the image
-      for(int h=0; h<nv; h++)
-	{
-	  // Get valid indices
-	  i = valid[h][0];
-	  j = valid[h][1];
-	  
-	  for(r=0; r<nr; r++) image[i][j][r] = 0.;
-	}
-      
-
-    }
-  */
-
   // LSF
   double wlsq, invwlsq;
   double invtwo_wlsq;
@@ -476,13 +446,6 @@ void MyModel::calculate_image()
   int n2upp_ind_max = nr; // Just to avoid initialisation warning
   int n2low_ind_min = 0; // Avoid initialisation warning
   double n2upp_lsq, n2low_lsq;
-
-  /*
-  vector<double> n2low_lsq;
-  vector<double> n2upp_lsq;
-  n2low_lsq.assign(nr, 0.);
-  n2upp_lsq.assign(nr, 0.);
-  */
 
 
 
@@ -525,7 +488,7 @@ void MyModel::calculate_image()
 	      // Determine velocity
 	      rel_lambda[i][j] = 2.0*vmax*atan(rad[i][j]*invvslope)*sin_inc*cos(angle)/M_PI;
 	      rel_lambda[i][j] += vsys;
-	      rel_lambda[i][j] /= C;
+	      rel_lambda[i][j] /= constants::C;
 	      rel_lambda[i][j] += 1.0;
 	      
 	    }
@@ -561,9 +524,9 @@ void MyModel::calculate_image()
 		{
 	      
 		  // Carry rel lambda over to each emline
-		  lambda = HA*rel_lambda[i][j];
-		  lambda_n2upp = N2UPP*rel_lambda[i][j];
-		  lambda_n2low = N2LOW*rel_lambda[i][j];
+		  lambda = constants::HA*rel_lambda[i][j];
+		  lambda_n2upp = constants::N2UPP*rel_lambda[i][j];
+		  lambda_n2low = constants::N2LOW*rel_lambda[i][j];
 		  
 		  for(int r=0; r<nr; r++)
 		    {
@@ -637,18 +600,10 @@ void MyModel::calculate_image()
 	  vdisp = components[k][6];
 	  if(model_n2lines == 1)
 	    Mn2 = components[k][7];
-
-
-	  // test
-	  rc = 0.0;
-	  thetac = 0.0;
-	  q = 1.0;
-	  wx = 1.0;
-	  vdisp = 20.0;
 	  
 
 	  // component manipulations
-	  sigma_lambda = vdisp*HA/C;
+	  sigma_lambda = vdisp*constants::HA/constants::C;
 	  
 	  // xc, yc in disk plane
 	  xc = rc*cos(thetac);
@@ -679,8 +634,6 @@ void MyModel::calculate_image()
 	    { si = 1; }
 	  else
 	    { si = 0; }
-	  // std::cout<<"si test "<<si<<" "<<q*wx<<" "<<dx<<std::endl;
-	  // si = 0;
 
 	  dxs = dx/(2.0*si + 1.0);
 	  dys = dy/(2.0*si + 1.0);
@@ -748,9 +701,9 @@ void MyModel::calculate_image()
 		    // sum_blobw = 0.0;
 		    
 		    // Calculate mean lambda for lines
-		    lambda = HA*rel_lambda[i][j];
-		    lambda_n2upp = N2UPP*rel_lambda[i][j];
-		    lambda_n2low = N2LOW*rel_lambda[i][j];
+		    lambda = constants::HA*rel_lambda[i][j];
+		    lambda_n2upp = constants::N2UPP*rel_lambda[i][j];
+		    lambda_n2low = constants::N2LOW*rel_lambda[i][j];
 
 		    for (int r=0; r<nr; r++)
 		      {

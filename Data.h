@@ -2,10 +2,20 @@
 #define DNest4_GalaxyField_Data
 
 #include <vector>
+#include <string>
 
 class Data
 {
  private:
+
+  // constants
+  double C, HA, N2UPP, N2LOW, INFTY;
+
+  // files
+  std::string metadata_file;
+  std::string cube_file;
+  std::string var_file;
+
   // model parameters
   int model;
   int nmax;
@@ -13,6 +23,14 @@ class Data
   int model_n2lines;
   double prior_inc;
   int convolve;
+  double vsys_gamma, vsys_max;
+  double vmax_min, vmax_max;
+  double fluxmu_min, fluxmu_max;
+  double lnfluxsd_min, lnfluxsd_max;
+  double vdispmu_min, vdispmu_max;
+  double lnvdispsd_min, lnvdispsd_max;
+  double qlim_min;
+  double sigma_min, sigma_max;
 
   // Number of pixels
   int ni, nj;
@@ -69,6 +87,8 @@ class Data
   // Valid spaxels
   std::vector< std::vector<int> > valid;
 
+  // Private functions
+  std::vector< std::vector< std::vector<double> > > arr_3d();
   void compute_ray_grid();
 
  public:
@@ -76,6 +96,10 @@ class Data
   void load(const char* moptions_file);
 
   // Getters
+  double get_C() const { return C; }
+  double get_HA() const { return HA; }
+  double get_N2UPP() const { return N2UPP; }
+  double get_N2LOW() const { return N2LOW; }
   int get_model() const { return model; }
   int get_nmax() const { return nmax; }
   bool get_nfixed() const { return nfixed; }
@@ -100,6 +124,21 @@ class Data
   double get_psf_sigma() const { return psf_sigma; }
   double get_lsf_sigma() const { return lsf_sigma; }
   double get_sigma_cutoff() const { return sigma_cutoff; }
+  double get_vsys_gamma() const { return vsys_gamma; }
+  double get_vsys_max() const { return vsys_max; }
+  double get_vmax_min() const { return vmax_min; }
+  double get_vmax_max() const { return vmax_max; }
+  double get_fluxmu_min() const { return fluxmu_min; }
+  double get_fluxmu_max() const { return fluxmu_max; }
+  double get_lnfluxsd_min() const { return lnfluxsd_min; }
+  double get_lnfluxsd_max() const { return lnfluxsd_max; }
+  double get_vdispmu_min() const { return vdispmu_min; }
+  double get_vdispmu_max() const { return vdispmu_max; }
+  double get_lnvdispsd_min() const { return lnvdispsd_min; }
+  double get_lnvdispsd_max() const { return lnvdispsd_max; }
+  double get_qlim_min() const { return qlim_min; }
+  double get_sigma_min() const { return sigma_min; }
+  double get_sigma_max() const { return sigma_max; }
   int get_x_pad() const { return x_pad; }
   int get_y_pad() const { return y_pad; }
   double get_x_pad_dx() const { return x_pad_dx; }

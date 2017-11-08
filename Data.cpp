@@ -1,11 +1,9 @@
 #include "Data.h"
-#include "Conv.h"
+#include "Constants.h"
 #include <iostream>
 #include <fstream>
 #include <cmath>
-
-#define C 2.99792458E5
-#define HA 6562.81
+#include <limits>
 
 using namespace std;
 
@@ -14,28 +12,6 @@ Data Data::instance;
 Data::Data()
 {
 
-}
-
-
-// Convert to desired size array
-std::vector< std::vector< std::vector<double> > > arr_3d()
-{
-  std::vector< std::vector< std::vector<double> > > arr;
-
-  size_t ni = Data::get_instance().get_ni();
-  size_t nj = Data::get_instance().get_nj();
-  size_t nr = Data::get_instance().get_nr();
-
-  arr.resize(ni);
-  for(size_t i=0; i<ni; i++)
-    {
-      arr[i].resize(nj);
-      for(size_t j=0; j<nj; j++)
-	{
-	  arr[i][j].resize(nr);
-	}
-    }
-  return arr;
 }
 
 
@@ -56,21 +32,38 @@ void Data::load(const char* moptions_file)
     z: galaxy redshift
     
   */
-  std::string metadata_file, cube_file, var_file;
+  // std::string metadata_file, cube_file, var_file;
   fstream fin(moptions_file, ios::in);
   if(!fin)
     cerr<<"# ERROR: couldn't open file "<<moptions_file<<"."<<endl;
-  getline(fin, metadata_file); 
-  getline(fin, cube_file);
-  getline(fin, var_file);
-  fin >> convolve; // Gaussian=0, Moffat(FFTW)=1
-  fin >> psf_fwhm; 
-  fin >> psf_beta; // Beta parameter if using moffat
-  fin >> lsf_fwhm;
+
+  while(fin.peek() == '#')
+    fin.ignore(1000000, '\n');
+
+  fin>>metadata_file; fin.ignore(1000000, '\n');
+  fin>>cube_file; fin.ignore(1000000, '\n');
+  fin>>var_file; fin.ignore(1000000, '\n');
+  fin>>convolve; fin.ignore(1000000, '\n'); // Gaussian=0, Moffat(FFTW)=1
+  fin>>psf_fwhm; fin.ignore(1000000, '\n');
+  fin>>psf_beta; fin.ignore(1000000, '\n'); // Beta parameter if using moffat
+  fin>>lsf_fwhm; fin.ignore(1000000, '\n');
+  fin>>nmax; fin.ignore(1000000, '\n');
+  fin>>nfixed; fin.ignore(1000000, '\n');
+  fin>>vsys_gamma; fin>>vsys_max; fin.ignore(1000000, '\n');
+  fin>>vmax_min; fin>>vmax_max; fin.ignore(1000000, '\n');
+  fin>>fluxmu_min; fin>>fluxmu_max; fin.ignore(1000000, '\n');
+  fin>>lnfluxsd_min; fin>>lnfluxsd_max; fin.ignore(1000000, '\n');
+  fin>>vdispmu_min; fin>>vdispmu_max; fin.ignore(1000000, '\n');
+  fin>>lnvdispsd_min; fin>>lnvdispsd_max; fin.ignore(1000000, '\n');
+  fin>>qlim_min; fin.ignore(1000000, '\n');
+  fin>>sigma_min; fin>>sigma_max; fin.ignore(10000000, '\n');
   fin.close();
+
+  // Print out parameters
   std::cout << "Input Metadata file: "<< metadata_file << std::endl;
   std::cout << "Input Cube file: "<< cube_file << std::endl;
   std::cout << "Input Variance Cube file: "<< var_file << std::endl;
+
 
   // PSF convolution method message
   psf_sigma = psf_fwhm/sqrt(8.0*log(2.0));
@@ -89,31 +82,31 @@ void Data::load(const char* moptions_file)
   
   // LSF convolution message
   // LSF in wavelength (needs to be redshift corrected)
-  lsf_sigma = HA*lsf_fwhm/(C*sqrt(8.0*log(2.0)));
+  lsf_sigma = constants::HA*lsf_fwhm/(constants::C*sqrt(8.0*log(2.0)));
   std::cout<<"Model assumes a gaussian instrumental broadening.\n";
-  std::cout<<"LSF FWHM (ANG): "<<HA*lsf_fwhm/C<<std::endl;
+  std::cout<<"LSF FWHM (ANG): "<<constants::HA*lsf_fwhm/constants::C<<std::endl;
 
+  // Print out remaining parameters
+  std::cout<<"Nmax blobs: "<<nmax<<std::endl;
+  std::cout<<"N fixed to Nmax: "<<nfixed<<std::endl;
+  std::cout<<"VSYSgamma, VSYSmax: "<<vsys_gamma<<", "<<vsys_max<<std::endl;
+  std::cout<<"VMAXmin, VMAXmax: "<<vmax_min<<", "<<vmax_max<<std::endl;
+  std::cout<<"FLUXMUmin, FLUXMUmax: "<<fluxmu_min<<", "<<fluxmu_max<<std::endl;
+  std::cout<<"LNFLUXSDmin, LNFLUXSDmax: "<<lnfluxsd_min<<", "<<lnfluxsd_max<<std::endl;
+  std::cout<<"VDISPMUmin, VDISPMUmax: "<<vdispmu_min<<", "<<vdispmu_max<<std::endl;
+  std::cout<<"LNVDISPSDmin, LNVDISPSDmax: "<<lnvdispsd_min<<", "<<lnvdispsd_max<<std::endl;
+  std::cout<<"QLIMmin: "<<qlim_min<<std::endl;
+  std::cout<<"SIGMAmin, SIGMAmax: "<<sigma_min<<", "<<sigma_max<<std::endl;
+
+  // Model choice (only for testing)
   model = 0;
   
+  // Override blob parameters for disk model
   if(model == 1)
     nmax = 0;
-  else
-    nmax = 10;
   
   if(model == 1)
     nfixed = true;
-  else
-    nfixed = false;
-
-  /*
-    Convolution method
-    gaussian = 0
-    moffat = 1 (via FFTW)
-  */
-  // convolve = 1;
-
-
-  prior_inc = 45.0*M_PI/180.0;
 
   // model n2 lines?
   model_n2lines = 0;
@@ -233,6 +226,27 @@ void Data::load(const char* moptions_file)
 	}
     }
   std::cout<<"Valid pixels determined...\n\n";
+}
+
+// Create desired size array
+std::vector< std::vector< std::vector<double> > > Data::arr_3d()
+{
+  std::vector< std::vector< std::vector<double> > > arr;
+
+  size_t ni = Data::get_instance().get_ni();
+  size_t nj = Data::get_instance().get_nj();
+  size_t nr = Data::get_instance().get_nr();
+
+  arr.resize(ni);
+  for(size_t i=0; i<ni; i++)
+    {
+      arr[i].resize(nj);
+      for(size_t j=0; j<nj; j++)
+	{
+	  arr[i][j].resize(nr);
+	}
+    }
+  return arr;
 }
 
 void Data::compute_ray_grid()

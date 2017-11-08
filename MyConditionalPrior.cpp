@@ -4,9 +4,6 @@
 #include <cmath>
 #include "boost/math/special_functions/erf.hpp"
 
-#define C 2.99792458E5
-#define HA 6562.81
-
 using namespace DNest4;
 
 MyConditionalPrior::MyConditionalPrior(double x_min, double x_max,
@@ -34,9 +31,11 @@ MyConditionalPrior::MyConditionalPrior(double x_min, double x_max,
 ,n2fluxlim_max(n2fluxlim_max)
 ,radiuslim_min(sqrt(dx*dy))
 ,radiuslim_max(3.0*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy)))
-,dispersion_min(1.0)
-,dispersion_max(200.0)
+,dispersion_min(Data::get_instance().get_vdispmu_min())
+,dispersion_max(Data::get_instance().get_vdispmu_max())
 {
+
+
 
 }
 
@@ -56,19 +55,19 @@ void MyConditionalPrior::from_prior(RNG& rng)
   
   radiuslim_width = radiuslim_max/radiuslim_min;
 
-  qlim_min = 0.2;
+  qlim_min = Data::get_instance().get_qlim_min();
 
   dispersion_mu_min = log(dispersion_min);
   dispersion_mu_width = log(dispersion_max) - dispersion_mu_min;
 
-  flux_std_min = 0.1;
-  flux_std_width = 2.0/flux_std_min;
+  flux_std_min = Data::get_instance().get_lnfluxsd_min();
+  flux_std_width = Data::get_instance().get_lnfluxsd_max()/flux_std_min;
   
-  n2flux_std_min = 0.1;
-  n2flux_std_width = 2.0/n2flux_std_min;
+  n2flux_std_min = Data::get_instance().get_lnfluxsd_min();
+  n2flux_std_width = Data::get_instance().get_lnfluxsd_max()/n2flux_std_min;
   
-  dispersion_std_min = 0.01;
-  dispersion_std_width = 1.0/dispersion_std_min;
+  dispersion_std_min = Data::get_instance().get_lnvdispsd_min();
+  dispersion_std_width = Data::get_instance().get_lnvdispsd_max()/dispersion_std_min;
 
   wd_min = 0.1*sqrt(dx*dy);
   wd_width = 3.0*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy))/wd_min;
@@ -259,10 +258,10 @@ void MyConditionalPrior::print(std::ostream& out) const
   
   double radiusmin = exp(log(radiuslim_min) + log(radiusmax/radiuslim_min)*radiusmin_ratio);
   
-  out<<flux_mu<<' '<<flux_std<<' '
+  out<<exp(flux_mu)<<' '<<flux_std<<' '
      <<radiusmin<<' '<<radiusmax<<' '
-     <<n2flux_mu<<' '<<n2flux_std<<' '
-     <<dispersion_mu<<' '<<dispersion_std<<' '
+     <<exp(n2flux_mu)<<' '<<n2flux_std<<' '
+     <<exp(dispersion_mu)<<' '<<dispersion_std<<' '
      <<q_min<<' '<<wd<<' ';
 
 }

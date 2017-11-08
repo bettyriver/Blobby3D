@@ -16,26 +16,6 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
   double n2fluxlim_min, n2fluxlim_max;
   double radiuslim_min, radiuslim_max;
   double dispersion_min, dispersion_max;
-		
-  /*
-  // Lower limit and 1/slope for Pareto interim prior
-  // for Ha flux
-  double fluxlim;
-  double gamma;
-
-  // Lower limit and 1/slope for Pareto interim prior
-  // for N2 flux
-  double n2fluxlim;
-  double gamma_n2;
-
-  // Lower limit and 1/slope for Pareto interim prior
-  // for radii
-  double radiuslim;
-  double gamma_radius;
-
-  // Lognormal for dispersion
-  double dispersion_mean, dispersion_sigma;
-  */
 
   // Lognormal for flux
   double flux_mu;
@@ -48,12 +28,12 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
   double n2flux_var, n2flux_std;
   double n2flux_std_min, n2flux_std_width;
 
-  // LogU with changing limits for W
+  // Loguniform with changing limits for W
   double radiuslim_width;
   double radiusmax;
   double radiusmin_ratio;
 
-  // LogNormal for dispersion
+  // Lognormal for dispersion
   double dispersion_mu;
   double dispersion_mu_min, dispersion_mu_width;
   double dispersion_var, dispersion_std;
