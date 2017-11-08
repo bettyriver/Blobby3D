@@ -21,7 +21,7 @@ Blobby3D is dependent on the following:
 
 ### Installing
 
-Once you have downloaded/installed [FFTW3](www.fftw.org) and [Boost](www.boost.org), I would suggest setting up DNest4 and Blobby3D within the same directory. So, go to the root directory where you would like to install the packages, and create a directory
+Once you have downloaded/installed [FFTW3](www.fftw.org) and [Boost](www.boost.org), I would suggest setting up DNest4 and Blobby3D within the same directory. So, go to the root directory where you would like to install the packages, and create a directory:
 
 mkdir Blobby3D
 cd Blobby3D
@@ -30,17 +30,17 @@ cd Blobby3D
 
 Then install DNest4 using the available instructions:
 
-git clone https://github.com/eggplantbren/DNest4
-cd DNest4/code
-make
-cd ../python
-python setup.py install
+git clone https://github.com/eggplantbren/DNest4  
+cd DNest4/code  
+make  
+cd ../python  
+python setup.py install   
 
 #### Installing Blobby3D
 
 Then install Blobby3D:
 
-cd ../.. # return to root directory
-git clone https://github.com/SpaceOdyssey/Blobby3D
-cd Blobby3D
-make
+cd ../.. # return to root directory  
+git clone https://github.com/SpaceOdyssey/Blobby3D  
+cd Blobby3D  
+make  
