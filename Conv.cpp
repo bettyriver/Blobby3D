@@ -46,30 +46,27 @@ Conv::Conv()
 	Setup gaussian convolution
       */
       double dist;
+      double cdf_min, cdf_max;
+      double sum_kernel = 0.;
 
-      // Construct kernel for x
-      norm = one_over_sample*dx/(sqrt(2.*M_PI)*psf_sigma);
       kernel_x.assign(2*x_pad+1, 0.0);
-      for(int i=-x_pad; i<=x_pad; i++)
+      for(int j=-x_pad; j<=x_pad; j++)
 	{
-	  for(int j=0; j<sample; j++)
-	    {
-	      dist = (i - 0.5)*dx + (j + 0.5)*one_over_sample*dx;
-	      kernel_x[i+x_pad] += norm*exp(-0.5*pow(dist/psf_sigma, 2));
-	    }
+	  cdf_min = 0.5 + 0.5*std::erf((j - 0.5)*dx/(psf_sigma*sqrt(2.0)));
+	  cdf_max = 0.5 + 0.5*std::erf((j + 0.5)*dx/(psf_sigma*sqrt(2.0)));
+	  kernel_x[j+x_pad] = cdf_max - cdf_min;
+	  // sum_kernel += cdf_max - cdf_min;
 	}
 
-      // Construct kernel for y
-      norm = one_over_sample*dy/(sqrt(2.*M_PI)*psf_sigma);
       kernel_y.assign(2*y_pad+1, 0.0);
       for(int i=-y_pad; i<=y_pad; i++)
 	{
-	  for(int j=0; j<sample; j++)
-	    {
-	      dist = (i - 0.5)*dy + (j + 0.5)*one_over_sample*dy;
-	      kernel_y[i+y_pad] += norm*exp(-0.5*pow(dist/psf_sigma, 2));
-	    }
+	  cdf_min = 0.5 + 0.5*std::erf((i - 0.5)*dy/(psf_sigma*sqrt(2.0)));
+	  cdf_max = 0.5 + 0.5*std::erf((i + 0.5)*dy/(psf_sigma*sqrt(2.0)));
+	  kernel_y[i+y_pad] = cdf_max - cdf_min;
+	  sum_kernel += cdf_max - cdf_min;
 	}
+      
     }
   else if(convolve == 1)
     {

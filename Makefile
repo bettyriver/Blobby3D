@@ -5,6 +5,7 @@ LIBS = -ldnest4 -lpthread -lfftw3
 DNEST_PATH = /home/mvar0005
 BOOSTINC = /usr/include
 
+
 default:
 	make noexamples -C $(DNEST_PATH)/DNest4/code
 	$(CXX) -I $(DNEST_PATH) $(CXXFLAGS) -c *.cpp -I $(BOOSTINC) $(CXXFLAGS)

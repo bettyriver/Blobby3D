@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -P BGM
 #PBS -l select=1:ncpus=8:mem=4GB
-#PBS -l walltime=00:30:00
+#PBS -l walltime=00:10:00
 #PBS -q defaultQ
 
 cd $PBS_O_WORKDIR
