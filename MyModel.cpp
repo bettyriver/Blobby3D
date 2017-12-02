@@ -5,6 +5,7 @@
 #include "Conv.h"
 #include "Constants.h"
 #include <cmath>
+#include "boost/math/special_functions/erf.hpp"
 
 using namespace std;
 using namespace DNest4;
@@ -112,6 +113,12 @@ void MyModel::from_prior(RNG& rng)
   vslope_min = sqrt(dx*dy);
   vslope_width = 5.0*sqrt((x_max - x_min)*(y_max - y_min))/vslope_min;
 
+  vgamma_min = 1.0;
+  vgamma_width = 50.0/vgamma_min;
+
+  vbeta_min = -1.0;
+  vbeta_width =  2.0;
+
   /*
     Limits: disk parameters
   */
@@ -170,6 +177,8 @@ void MyModel::from_prior(RNG& rng)
 
   vmax = exp(log(vmax_min) + log(vmax_width)*rng.rand());
   vslope = exp(log(vslope_min) + log(vslope_width)*rng.rand());
+  vgamma = exp(log(vgamma_min) + log(vgamma_width)*rng.rand());
+  vbeta = vbeta_min + vbeta_width*rng.rand();
 
   // Initialise: blobs
   if(model != 1)
@@ -202,7 +211,6 @@ void MyModel::from_prior(RNG& rng)
 
 double MyModel::perturb(RNG& rng)
 {
-
   const int model = Data::get_instance().get_model();
   const double prior_inc = Data::get_instance().get_prior_inc();
   
@@ -242,9 +250,9 @@ double MyModel::perturb(RNG& rng)
 	}
       else if(rnd <= 0.8)
 	{
-	  // Perturb rotational parameters
+	  // Perturb disk parameters
 	  rot_perturb = true;
-	  int which = rng.rand_int(7); // testing inclination
+	  int which = rng.rand_int(9);
 
 	  switch(which)
 	    {
@@ -279,10 +287,20 @@ double MyModel::perturb(RNG& rng)
 	      vslope = exp(vslope);
 	      break;
 	    case 5:
+	      vgamma = log(vgamma);
+	      vgamma += log(vgamma_width)*rng.randh();
+	      vgamma = mod(vgamma - log(vgamma_min), log(vgamma_width)) + log(vgamma_min);
+	      vgamma = exp(vgamma);
+	      break;
+	    case 6:
+	      vbeta += vbeta_width*rng.randh();
+	      vbeta = mod(vbeta - vbeta_min, vbeta_width) + vbeta_min;
+	      break;
+	    case 7:
 	      pa += 2.0*M_PI*rng.randh();
 	      pa = mod(pa, 2*M_PI);
 	      break;
-	    case 6:
+	    case 8:
 	      inc += 0.5*M_PI*rng.randh();
 	      inc = mod(inc, 0.5*M_PI);
 	      break;
@@ -486,7 +504,20 @@ void MyModel::calculate_image()
 		{ angle = atan2(yy_rot, xx_rot); }
 
 	      // Determine velocity
-	      rel_lambda[i][j] = 2.0*vmax*atan(rad[i][j]*invvslope)*sin_inc*cos(angle)/M_PI;
+	      // rel_lambda[i][j] = 2.0*vmax*atan(rad[i][j]*invvslope)*sin_inc*cos(angle)/M_PI;
+	      // rel_lambda[i][j] += vsys;
+
+	      if(rad[i][j] == 0.0)
+		{
+		  rel_lambda[i][j] = 0.0;
+		}
+	      else
+		{
+		  rel_lambda[i][j] = vmax*pow(1.0 + vslope/rad[i][j], vbeta);
+		  rel_lambda[i][j] /= pow(1.0 + pow(vslope/rad[i][j], vgamma), 1.0/vgamma);
+		  rel_lambda[i][j] *= sin_inc*cos(angle);
+		}
+	      
 	      rel_lambda[i][j] += vsys;
 	      rel_lambda[i][j] /= constants::C;
 	      rel_lambda[i][j] += 1.0;
@@ -721,10 +752,6 @@ void MyModel::calculate_image()
 			
 			image[i][j][r] += 0.5*amps*(ha_cdf_max - ha_cdf_min);
 
-			// sum_blob += 0.5*amps*(ha_cdf_max - ha_cdf_min);
-
-			// sum_blobw +=  0.5*amps*(ha_cdf_max - ha_cdf_min);
-
 			if(model_n2lines == 1)
 			  {
 			    // N2low contribution (invwlsq isn't exactly right)
@@ -736,37 +763,10 @@ void MyModel::calculate_image()
 			    image[i][j][r] += n2amps*Lookup::evaluate(0.5*n2upp_lsq);
 			  }
 		      }
-
-		    /*
-		      // Integration testing
-		    if(abs(log10(sum_blobw/amps)) > 0.01)
-		      {
-			std::cout<<"Sum Blob Wavelength: "<<sum_blobw;
-			std::cout<<" amps: "<<amps;
-			std::cout<<" lambda "<<lambda<<std::endl;
-		      }
-		    */
 		  }
 	      } 
   
 	    }
-
-	  // Integration testing
-	  /*
-	  if(abs(sum_blob/M - 1.0) > 0.001)
-	    {
-	      std::cout<<"diff: "<<sum_blob/M - 1.0;
-	      std::cout<<" M: "<<M;
-	      std::cout<<" si: "<<si<<" dxs: "<<dxs<<" dys: "<<dys;
-	      std::cout<<" wx: "<<wx;
-	      std::cout<<" vdisp: "<<vdisp;
-	      std::cout<<" wl: "<<sqrt(wlsq);
-	      std::cout<<" inc: "<<inc;
-	      std::cout<<" vmax: "<<vmax;
-	      std::cout<<" AMP: "<<amp;
-	      std::cout<<" Test blob sum... "<<" "<<sum_blob<<" si "<<si<<" xc "<<xc<<" yc "<<yc<<std::endl;
-	    }
-	  */
 
 	}
     }
@@ -856,6 +856,8 @@ void MyModel::print(std::ostream& out) const
   out<<vsys<<' ';
   out<<vmax<<' ';
   out<<vslope<<' ';
+  out<<vgamma<<' ';
+  out<<vbeta<<' ';
   out<<sigmad_lambda<<' ';
   out<<inc<<' ';
   out<<pa<<' ';

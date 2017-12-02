@@ -58,6 +58,12 @@ class MyModel
 		
   double vslope;
   double vslope_min, vslope_width;
+
+  double vgamma;
+  double vgamma_min, vgamma_width;
+
+  double vbeta;
+  double vbeta_min, vbeta_width;
   
   double sigmad_lambda;
   double sigmad_lambda_min, sigmad_lambda_width;
