@@ -1,5 +1,5 @@
-#ifndef DNest4_RJObject_GalaxyField_Lookup
-#define DNest4_RJObject_GalaxyField_Lookup
+#ifndef DNest4_RJObject_GalaxyField_LookupExp
+#define DNest4_RJObject_GalaxyField_LookupExp
 
 #include <vector>
 
@@ -8,17 +8,17 @@
 * Singleton pattern
 */
 
-class Lookup
+class LookupExp
 {
 	private:
 		int num;
 		double xMin, xMax, dx, one_over_dx;
 		std::vector<double> _exp; // exp(-x) for x >= 0
 
-		Lookup();
-		Lookup(const Lookup& other);
+		LookupExp();
+		LookupExp(const LookupExp& other);
 
-		static Lookup instance;
+		static LookupExp instance;
 
 	public:
 		static double evaluate(double x);

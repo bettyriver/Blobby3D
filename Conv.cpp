@@ -13,7 +13,8 @@ Conv Conv::instance;
 Conv::Conv()
   :convolve(Data::get_instance().get_convolve())
   ,psf_fwhm(Data::get_instance().get_psf_fwhm())
-  ,psf_sigma(psf_fwhm/sqrt(8.0*log(2)))
+  ,psf_beta(Data::get_instance().get_psf_beta())
+  ,psf_sigma(Data::get_instance().get_psf_sigma())
   ,ni(Data::get_instance().get_ni())
   ,nj(Data::get_instance().get_nj())
   ,nr(Data::get_instance().get_nr())
@@ -22,8 +23,6 @@ Conv::Conv()
   ,sigma_cutoff(Data::get_instance().get_sigma_cutoff())
   ,x_pad(Data::get_instance().get_x_pad())
   ,y_pad(Data::get_instance().get_y_pad())
-  ,sample(9)
-  ,one_over_sample(1.0/sample)
 {
 
   // Construct empty convolved matrix
@@ -39,45 +38,46 @@ Conv::Conv()
     Setup convolve method
   */
   double norm;
-
   if(convolve == 0)
     {
       /*
 	Setup gaussian convolution
       */
       double dist;
-      double cdf_min, cdf_max;
-      double sum_kernel = 0.;
+      double erf_min, erf_max;
+      // double sum_kernel = 0.;
 
       kernel_x.assign(2*x_pad+1, 0.0);
       for(int j=-x_pad; j<=x_pad; j++)
 	{
-	  cdf_min = 0.5 + 0.5*std::erf((j - 0.5)*dx/(psf_sigma*sqrt(2.0)));
-	  cdf_max = 0.5 + 0.5*std::erf((j + 0.5)*dx/(psf_sigma*sqrt(2.0)));
-	  kernel_x[j+x_pad] = cdf_max - cdf_min;
-	  // sum_kernel += cdf_max - cdf_min;
+	  erf_min = std::erf((j - 0.5)*dx/(psf_sigma*sqrt(2.0)));
+	  erf_max = std::erf((j + 0.5)*dx/(psf_sigma*sqrt(2.0)));
+	  kernel_x[j+x_pad] = 0.5*(erf_max - erf_min);
 	}
 
       kernel_y.assign(2*y_pad+1, 0.0);
       for(int i=-y_pad; i<=y_pad; i++)
 	{
-	  cdf_min = 0.5 + 0.5*std::erf((i - 0.5)*dy/(psf_sigma*sqrt(2.0)));
-	  cdf_max = 0.5 + 0.5*std::erf((i + 0.5)*dy/(psf_sigma*sqrt(2.0)));
-	  kernel_y[i+y_pad] = cdf_max - cdf_min;
-	  sum_kernel += cdf_max - cdf_min;
+	  erf_min = std::erf((i - 0.5)*dy/(psf_sigma*sqrt(2.0)));
+	  erf_max = std::erf((i + 0.5)*dy/(psf_sigma*sqrt(2.0)));
+	  kernel_y[i+y_pad] = 0.5*(erf_max - erf_min);
 	}
       
+      // setup temporary convolved kernel for single separable convolution
+      convolved_tmp_2d.resize(ni);
+      for(size_t i=0; i<convolved_tmp_2d.size(); i++)
+	convolved_tmp_2d[i].resize(nj - 2*y_pad);
+
     }
   else if(convolve == 1)
     {
       /*
 	Setup moffat convolve by fftw
       */
+      double invalphasq = 1.0/pow(psf_fwhm, 2);
 
-      // moffat parameters
-      double alpha = 2.5;
-      double beta = 3.5;
-      double invalphasq = 1.0/pow(alpha, 2);
+      // Sampling
+      int sample = 9;
       
       // Max size of kernel
       // Forced to be odd
@@ -93,10 +93,10 @@ Conv::Conv()
       
       double rsq;
       int os = (sample - 1)/2;
-      double dxs, dys;
-      dxs = dx/sample;
-      dys = dy/sample;
-      norm = dxs*dys*invalphasq*(beta - 1.0)/M_PI;
+      double dxfs, dyfs;
+      dxfs = dx/sample;
+      dyfs = dy/sample;
+      norm = dxfs*dyfs*invalphasq*(psf_beta - 1.0)/M_PI;
       
       // double tl = 0.0;
       for(int i=0; i<max_nik; i++)
@@ -107,10 +107,10 @@ Conv::Conv()
 		{
 		  for(int js=-os; js<=os; js++)
 		    {
-		      rsq = pow((i - max_midik)*dy + is*dys, 2);
-		      rsq += pow((j - max_midjk)*dx + js*dxs, 2);
-		      kernel_tmp[i][j] += norm*pow(1.0 + rsq*invalphasq, -beta);
-		      // tl += norm*pow(1.0 + rsq*invalphasq, -beta);
+		      rsq = pow((i - max_midik)*dy + is*dyfs, 2);
+		      rsq += pow((j - max_midjk)*dx + js*dxfs, 2);
+		      kernel_tmp[i][j] += norm*pow(1.0 + rsq*invalphasq, -psf_beta);
+		      // tl += norm*pow(1.0 + rsq*invalphasq, -psf_beta);
 		    }
 		}
 	    }
@@ -136,7 +136,7 @@ Conv::Conv()
 	      break;
 	    }
 	}
-
+      
       
       // overwrite nik, njk using a smaller kernel
       nik = 2*szk + 1;
@@ -265,20 +265,15 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
 			  preconvolved)
 {
   const std::vector< std::vector<int> >& valid = Data::get_instance().get_valid();
-  
-  for(size_t i=0; i<convolved.size(); i++)
-    for(size_t j=0; j<convolved[0].size(); j++)
-      for(size_t r=0; r<convolved[0][0].size(); r++)
-	convolved[i][j][r] = 0.0;
 
   /*
     Construct convolved_tmp 2d matrix.
     Used for blurring across columns.
   */
-  std::vector< std::vector<double> > convolved_tmp_2d;
-  convolved_tmp_2d.resize(ni);
-  for(size_t i=0; i<convolved_tmp_2d.size(); i++)
-    convolved_tmp_2d[i].resize(nj - 2*y_pad);
+  // std::vector< std::vector<double> > convolved_tmp_2d;
+  // convolved_tmp_2d.resize(ni);
+  // for(size_t i=0; i<convolved_tmp_2d.size(); i++)
+  //  convolved_tmp_2d[i].resize(nj - 2*y_pad);
 
   /*
     Calculate convolved matrix
@@ -306,12 +301,28 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
       // blur across rows for valid pixels
       for(size_t h=0; h<valid.size(); h++)
 	{
-	  i = valid[h][0] - x_pad;
-	  j = valid[h][1] - y_pad;
+	  i = valid[h][0];
+	  j = valid[h][1];
 
+	  convolved[i][j][r] = 0.0;
 	  for(int p=0; p<2*x_pad+1; p++)
 	    convolved[i][j][r] += convolved_tmp_2d[i+p][j]*kernel_y[p];
 	}
+      
+      /*
+      for(size_t i=0; i<nios; i++)
+	{
+	for(size_t j=0; j<njos; j++)
+	  {
+	    convolved[i][j][r] = 0.0;
+	    for(int p=0; p<2*x_pados+1; p++)
+	      convolved[i][j][r] += convolved_tmp_2d[i+p][j]*kernel_y[p];
+	  }
+	}
+      */
+	  
+
+
 
     }
 

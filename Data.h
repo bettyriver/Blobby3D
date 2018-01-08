@@ -31,7 +31,10 @@ class Data
   double lnvdispsd_min, lnvdispsd_max;
   double qlim_min;
   double sigma_min, sigma_max;
-
+  
+  // sampling
+  double sample;
+  
   // Number of pixels
   int ni, nj;
   
@@ -72,6 +75,12 @@ class Data
 		
   // Analytical paramaters
   double sum_flux;
+
+  // Spatial oversampling
+  double dxos, dyos;
+  double x_pados, y_pados;
+  double nios, njos;
+  double x_pad_dxos, y_pad_dyos;
 
   // Coordinates of pixel centers
   std::vector< std::vector<double> > x_rays;
@@ -121,6 +130,7 @@ class Data
   double get_dr() const { return dr; }
   double get_db() const { return db; }
   double get_psf_fwhm() const { return psf_fwhm; }
+  double get_psf_beta() const { return psf_beta; }
   double get_psf_sigma() const { return psf_sigma; }
   double get_lsf_sigma() const { return lsf_sigma; }
   double get_sigma_cutoff() const { return sigma_cutoff; }
@@ -144,6 +154,17 @@ class Data
   double get_x_pad_dx() const { return x_pad_dx; }
   double get_y_pad_dy() const { return y_pad_dy; }
   double get_sum_flux() const {return sum_flux; }
+  
+  int get_sample() const { return sample; }
+  double get_dxos() const { return dxos; }
+  double get_dyos() const { return dyos; }
+  double get_nios() const { return nios; }
+  double get_njos() const { return njos; }
+  double get_x_pados() const { return x_pados; }
+  double get_y_pados() const { return y_pados; }
+  double get_x_pad_dxos() const { return x_pad_dxos; }
+  double get_y_pad_dyos() const { return y_pad_dyos; }
+
 
   const std::vector< std::vector<double> >& get_x_rays() const
   { return x_rays; }

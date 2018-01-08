@@ -19,19 +19,17 @@ class Conv
   
   // psf
   double psf_fwhm;
+  double psf_beta;
   double psf_sigma;
   int ni, nj, nr;
   double dx, dy;
   double sigma_cutoff;
   int x_pad, y_pad;
 
-  // oversampling
-  int sample;
-  double one_over_sample;
-
   // vectors for separable kernel
   std::vector<double> kernel_x;
   std::vector<double> kernel_y;
+  std::vector< std::vector<double> > convolved_tmp_2d;
 
   // vector for moffat kernel
   std::vector< std::vector<double> > kernel;

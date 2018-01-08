@@ -1,13 +1,13 @@
-#include "Lookup.h"
+#include "LookupExp.h"
 #include <cmath>
 #include <cassert>
 
-Lookup Lookup::instance;
+LookupExp LookupExp::instance;
 
-Lookup::Lookup()
-:num(5001)
+LookupExp::LookupExp()
+:num(1251)
 ,xMin(0.0)
-,xMax(50.0)
+,xMax(12.5)
 ,dx((xMax - xMin)/(num-1))
 ,one_over_dx(1.0/dx)
 ,_exp(num)
@@ -16,7 +16,7 @@ Lookup::Lookup()
     _exp[i] = exp(-i*dx);
 }
 
-double Lookup::evaluate(double x)
+double LookupExp::evaluate(double x)
 {
   int i = static_cast<int>(x/instance.dx);
   double frac = (x - i*instance.dx)*instance.one_over_dx;

@@ -18,7 +18,9 @@ class MyModel
     Arrays
   */
   std::vector< std::vector< std::vector<double> > > image;
+  std::vector< std::vector< std::vector<double> > > imageos;
   std::vector< std::vector< std::vector<double> > > convolved;
+  std::vector< std::vector< std::vector<double> > > convolvedos;
   std::vector< std::vector<double> > rel_lambda;
   std::vector< std::vector<double> > rad;
 
