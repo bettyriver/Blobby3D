@@ -73,8 +73,11 @@ class MyModel
   double inc, pa;
 
   // Noise parameter
-  double sigma;
-  double sigma_min, sigma_width;
+  double sigma0;
+  double sigma0_min, sigma0_width;
+
+  double sigma1;
+  double sigma1_min, sigma1_width;
 
   // perturb booleans
   bool disk_perturb, rot_perturb;

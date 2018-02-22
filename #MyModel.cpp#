@@ -130,8 +130,8 @@ void MyModel::from_prior(RNG& rng)
   sigma0_min = Data::get_instance().get_sigma_min();
   sigma0_width = Data::get_instance().get_sigma_max()/sigma0_min;
 
-  sigma1_min = 1E-6;
-  sigma1_width = 1E6/sigma1_min;
+  sigma1_min = 1E-3;
+  sigma1_width = 1E3/sigma1_min;
 
 
   // Position
