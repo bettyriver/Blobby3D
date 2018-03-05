@@ -254,7 +254,6 @@ std::vector< std::vector< std::vector<double> > > Data::arr_3d()
 
 void Data::compute_ray_grid()
 {
-
   // Make vectors of the correct size
   x_rays.assign(ni, vector<double>(nj));
   y_rays.assign(ni, vector<double>(nj));

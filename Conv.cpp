@@ -26,12 +26,14 @@ Conv::Conv()
 {
 
   // Construct empty convolved matrix
-  convolved.resize(ni - 2*x_pad);
+  convolved.resize(ni - 2*y_pad);
   for(size_t i=0; i<convolved.size(); i++)
     {
-      convolved[i].resize(nj - 2*y_pad);
+      convolved[i].resize(nj - 2*x_pad);
       for(size_t j=0; j<convolved[i].size(); j++)
-	convolved[i][j].resize(nr);
+	{
+	  convolved[i][j].resize(nr);
+	}
     }
 
   /*
@@ -98,7 +100,7 @@ Conv::Conv()
       dyfs = dy/sample;
       norm = dxfs*dyfs*invalphasq*(psf_beta - 1.0)/M_PI;
       
-      // double tl = 0.0;
+      // double tltest = 0.0;
       for(int i=0; i<max_nik; i++)
 	{
 	  for(int j=0; j<max_njk; j++)
@@ -110,7 +112,7 @@ Conv::Conv()
 		      rsq = pow((i - max_midik)*dy + is*dyfs, 2);
 		      rsq += pow((j - max_midjk)*dx + js*dxfs, 2);
 		      kernel_tmp[i][j] += norm*pow(1.0 + rsq*invalphasq, -psf_beta);
-		      // tl += norm*pow(1.0 + rsq*invalphasq, -psf_beta);
+		      // tl += kernel_tmp[i][j];
 		    }
 		}
 	    }
@@ -136,7 +138,6 @@ Conv::Conv()
 	      break;
 	    }
 	}
-      
       
       // overwrite nik, njk using a smaller kernel
       nik = 2*szk + 1;
@@ -270,10 +271,6 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
     Construct convolved_tmp 2d matrix.
     Used for blurring across columns.
   */
-  // std::vector< std::vector<double> > convolved_tmp_2d;
-  // convolved_tmp_2d.resize(ni);
-  // for(size_t i=0; i<convolved_tmp_2d.size(); i++)
-  //  convolved_tmp_2d[i].resize(nj - 2*y_pad);
 
   /*
     Calculate convolved matrix

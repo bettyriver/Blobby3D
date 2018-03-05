@@ -31,7 +31,7 @@ MyModel::MyModel()
 			    Data::get_instance().get_fluxmu_max()*Data::get_instance().get_sum_flux()),
 	 PriorType::log_uniform)
 {
-  
+
   // initialise arrays
   size_t ni = Data::get_instance().get_ni();
   size_t nj = Data::get_instance().get_nj();
@@ -82,6 +82,7 @@ MyModel::MyModel()
   */
 
   // convolved cube
+  /*
   convolved.resize(ni - 2*y_pad);
   for(size_t i=0; i<convolved.size(); ++i)
     {
@@ -91,6 +92,7 @@ MyModel::MyModel()
 	  convolved[i][j].resize(nr);
 	}
    }
+  */
 
   // relative lambda for velocity
   rel_lambda.assign(ni, std::vector<double>(nj));
@@ -101,7 +103,7 @@ MyModel::MyModel()
 }
 
 void MyModel::from_prior(RNG& rng)
-{
+{ 
   // Get local variables from data
   const int model = Data::get_instance().get_model();
   const double prior_inc = Data::get_instance().get_prior_inc();
@@ -189,9 +191,9 @@ void MyModel::from_prior(RNG& rng)
       xcd = cauchy_xc.generate(rng);
     }while((xcd < x_min + x_pad_dx) || 
 	   (xcd > x_max - x_pad_dx));
-
-  DNest4::Cauchy cauchy_yc(y_imagecentre, gamma_pos);
+  
   y_imagecentre = (y_max + y_min)/2.0;
+  DNest4::Cauchy cauchy_yc(y_imagecentre, gamma_pos);
   do
     {
       ycd = cauchy_yc.generate(rng);
@@ -821,14 +823,13 @@ void MyModel::calculate_image()
 
   /* 
      Convolve Cube
-     HAVEN'T COMPLETED OVERSAMPLING YET!!!!
   */
   const int convolve = Data::get_instance().get_convolve();
   if(convolve == 0)
     convolved = conv.brute_gaussian_blur(image);
   else if(convolve == 1)
     convolved = conv.fftw_moffat_blur(image);
- 
+
   /*
     Collapse convolved cube
   */
