@@ -82,9 +82,9 @@ void Data::load(const char* moptions_file)
   
   // LSF convolution message
   // LSF in wavelength (needs to be redshift corrected)
-  lsf_sigma = constants::HA*lsf_fwhm/(constants::C*sqrt(8.0*log(2.0)));
+  lsf_sigma = lsf_fwhm/sqrt(8.0*log(2.0));
   std::cout<<"Model assumes a gaussian instrumental broadening.\n";
-  std::cout<<"LSF FWHM (ANG): "<<constants::HA*lsf_fwhm/constants::C<<std::endl;
+  std::cout<<"LSF FWHM (ANG): "<<lsf_fwhm<<std::endl;
 
   // Print out remaining parameters
   std::cout<<"Nmax blobs: "<<nmax<<std::endl;
