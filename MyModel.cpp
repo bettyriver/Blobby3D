@@ -384,6 +384,12 @@ double MyModel::perturb(RNG& rng)
 	    }
 	}
       
+      // Pre-rejection trick
+      if(rng.rand() >= exp(logH))
+	return -1E300;
+      else
+	logH = 0.0;
+
       calculate_image();
       
     }
@@ -410,6 +416,7 @@ double MyModel::perturb(RNG& rng)
     }
 
   return logH;
+
 }
 
 void MyModel::calculate_image()
