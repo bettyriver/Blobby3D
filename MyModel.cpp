@@ -832,14 +832,6 @@ void MyModel::calculate_image()
 	}
     }
 
-  
-  double sum_cube = 0.0;
-  for(size_t i=0; i<image.size(); i++)
-    for(int j=0; j<image[i].size(); j++)
-      for(int r=0; r<image[i][j].size(); r++)
-	sum_cube += image[i][j][r];
-  
-
   /* 
      Convolve Cube
   */
@@ -848,14 +840,6 @@ void MyModel::calculate_image()
     convolved = conv.brute_gaussian_blur(image);
   else if(convolve == 1)
     convolved = conv.fftw_moffat_blur(image);
-
-  
-  double sum_conv_cube = 0.0;
-  for(size_t i=0; i<convolved.size(); i++)
-    for(int j=0; j<convolved[i].size(); j++)
-      for(int r=0; r<convolved[i][j].size(); r++)
-	sum_conv_cube += convolved[i][j][r];
-  std::cout<<"SUM CUBE: "<<sum_cube<<" SUM CONV CUBE: "<<sum_conv_cube<<std::endl;
 
   /*
     Collapse convolved cube
