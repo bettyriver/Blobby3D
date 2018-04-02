@@ -687,11 +687,6 @@ void MyModel::calculate_image()
 	  vdisp = components[k][6];
 	  if(model_n2lines == 1)
 	    Mn2 = components[k][7];
-	  
-	  // Testing
-	  rc = 0.0;
-	  wx = 2.0;
-	  q = 1.0;
 
 	  // component manipulations
 	  sigma_lambda = vdisp*constants::HA/constants::C;
