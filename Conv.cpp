@@ -85,8 +85,8 @@ Conv::Conv()
       
       // Max size of kernel
       // Forced to be odd
-      int max_nik = ni + (1 + ni)%2;
-      int max_njk = nj + (1 + nj)%2;
+      int max_nik = 2*(ni - 2*y_pad) + 1;
+      int max_njk = 2*(nj - 2*x_pad) + 1;
       
       int max_midik = (max_nik - 1)/2;
       int max_midjk = (max_njk - 1)/2;
@@ -102,7 +102,6 @@ Conv::Conv()
       dyfs = dy/sample;
       norm = dxfs*dyfs*invalphasq*(psf_beta - 1.0)/M_PI;
       
-      // double tltest = 0.0;
       for(int i=0; i<max_nik; i++)
 	{
 	  for(int j=0; j<max_njk; j++)
@@ -114,7 +113,6 @@ Conv::Conv()
 		      rsq = pow((i - max_midik)*dy + is*dyfs, 2);
 		      rsq += pow((j - max_midjk)*dx + js*dxfs, 2);
 		      kernel_tmp[i][j] += norm*pow(1.0 + rsq*invalphasq, -psf_beta);
-		      // tl += kernel_tmp[i][j];
 		    }
 		}
 	    }
@@ -222,16 +220,13 @@ Conv::Conv()
 	kernelin[i] = 0.0;
       
       // add temporary kernel up to the required size
-      // double tl_kernelin = 0.;
       for(int i=0; i<nik; i++)
 	{
 	  for(int j=0; j<njk; j++)
 	    {
 	    kernelin[j + Nj*i] = kernel_tmp[(max_nik - nik)/2 + i][(max_njk - njk)/2 + j];
-	    // tl_kernelin += kernelin[j+Nj*i];
 	    }
 	}
-      // std::cout<<"Sum KernIn: "<<tl_kernelin<<std::endl;
       
       /*
       // kernel all
