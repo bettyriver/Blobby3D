@@ -15,12 +15,13 @@ Conv::Conv()
   ,psf_fwhm(Data::get_instance().get_psf_fwhm())
   ,psf_beta(Data::get_instance().get_psf_beta())
   ,psf_sigma(Data::get_instance().get_psf_sigma())
+  ,psf_sigma_overdx(Data::get_instance().get_psf_sigma_overdx())
+  ,psf_sigma_overdy(Data::get_instance().get_psf_sigma_overdy())
   ,ni(Data::get_instance().get_ni())
   ,nj(Data::get_instance().get_nj())
   ,nr(Data::get_instance().get_nr())
   ,dx(Data::get_instance().get_dx())
   ,dy(Data::get_instance().get_dy())
-  ,sigma_cutoff(Data::get_instance().get_sigma_cutoff())
   ,x_pad(Data::get_instance().get_x_pad())
   ,y_pad(Data::get_instance().get_y_pad())
 {
@@ -47,22 +48,23 @@ Conv::Conv()
       */
       double dist;
       double erf_min, erf_max;
-      // double sum_kernel = 0.;
 
-      kernel_x.assign(2*x_pad+1, 0.0);
-      for(int j=-x_pad; j<=x_pad; j++)
+      int szk_x = (int)ceil(5.0*psf_sigma_overdx);
+      kernel_x.assign(2*szk_x+1, 0.0);
+      for(int j=-szk_x; j<=szk_x; j++)
 	{
 	  erf_min = std::erf((j - 0.5)*dx/(psf_sigma*sqrt(2.0)));
 	  erf_max = std::erf((j + 0.5)*dx/(psf_sigma*sqrt(2.0)));
-	  kernel_x[j+x_pad] = 0.5*(erf_max - erf_min);
+	  kernel_x[j+szk_x] = 0.5*(erf_max - erf_min);
 	}
-
-      kernel_y.assign(2*y_pad+1, 0.0);
-      for(int i=-y_pad; i<=y_pad; i++)
+      
+      int szk_y = (int)ceil(5.0*psf_sigma_overdy);
+      kernel_y.assign(2*szk_y+1, 0.0);
+      for(int i=-szk_y; i<=szk_y; i++)
 	{
 	  erf_min = std::erf((i - 0.5)*dy/(psf_sigma*sqrt(2.0)));
 	  erf_max = std::erf((i + 0.5)*dy/(psf_sigma*sqrt(2.0)));
-	  kernel_y[i+y_pad] = 0.5*(erf_max - erf_min);
+	  kernel_y[i+szk_y] = 0.5*(erf_max - erf_min);
 	}
       
       // setup temporary convolved kernel for single separable convolution
@@ -266,6 +268,8 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
 			  preconvolved)
 {
   const std::vector< std::vector<int> >& valid = Data::get_instance().get_valid();
+  const double szk_x = (int)ceil(5.0*psf_sigma/dx);
+  const double szk_y = (int)ceil(5.0*psf_sigma/dy);
 
   /*
     Construct convolved_tmp 2d matrix.
@@ -281,17 +285,27 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
     Only valid for 2d gaussian PSFs.
   */
   int i, j;
+  double norm;
   for(int r=0; r<nr; r++)
     {
 
       // blur across columns
-      for(size_t i=0; i<convolved_tmp_2d.size(); i++)
+      for(i=0; i<convolved_tmp_2d.size(); i++)
 	{
-	  for(size_t j=0; j<convolved_tmp_2d[i].size(); j++)
+	  for(j=0; j<convolved_tmp_2d[i].size(); j++)
 	    {
 	      convolved_tmp_2d[i][j] = 0.0;
-	      for(int p=0; p<2*y_pad+1; p++)
-		convolved_tmp_2d[i][j] += preconvolved[i][j+p][r]*kernel_x[p];
+	      norm = 0.0;
+	      for(int p=-szk_x; p<=szk_x; p++)
+		{
+		  if((x_pad + j + p >= 0) & (x_pad + j + p < preconvolved[i].size()))
+		    {
+		     convolved_tmp_2d[i][j] += preconvolved[i][x_pad+j+p][r]*kernel_x[szk_x+p];
+		     norm += kernel_x[szk_x+p];
+		    }
+		}
+	       // renormalise
+	       convolved_tmp_2d[i][j] /= norm;
 	    }
 	}
 
@@ -302,10 +316,21 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
 	  j = valid[h][1];
 
 	  convolved[i][j][r] = 0.0;
-	  for(int p=0; p<2*x_pad+1; p++)
-	    convolved[i][j][r] += convolved_tmp_2d[i+p][j]*kernel_y[p];
+	  norm = 0.0;
+	  for(int p=-szk_y; p<=szk_y; p++)
+	    {
+	      if((y_pad + i + p >= 0) && (y_pad + i + p < convolved_tmp_2d.size()))
+		{
+		  convolved[i][j][r] += convolved_tmp_2d[y_pad+i+p][j]*kernel_y[szk_y+p];
+		  norm += kernel_y[szk_y+p];
+		}
+	    }
+	  // renormalise
+	  convolved[i][j][r] /= norm;
 	}
-      
+
+
+
       /*
       for(size_t i=0; i<nios; i++)
 	{

@@ -21,6 +21,7 @@ class Conv
   double psf_fwhm;
   double psf_beta;
   double psf_sigma;
+  double psf_sigma_overdx, psf_sigma_overdy;
   int ni, nj, nr;
   double dx, dy;
   double sigma_cutoff;

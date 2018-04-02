@@ -27,7 +27,7 @@ int main(int argc, char** argv)
   // Load data
   Data::get_instance().load(moptions_file);
 
-  // Setup and eun sampler
+  // Setup and run sampler
   Sampler<MyModel> sampler = setup<MyModel>(options);
   sampler.run();
 

@@ -57,6 +57,7 @@ void Data::load(const char* moptions_file)
   fin>>lnvdispsd_min; fin>>lnvdispsd_max; fin.ignore(1000000, '\n');
   fin>>qlim_min; fin.ignore(1000000, '\n');
   fin>>sigma_min; fin>>sigma_max; fin.ignore(10000000, '\n');
+  fin>>sigma_pad; fin.ignore(10000000, '\n');  
   fin.close();
 
   // Print out parameters
@@ -64,10 +65,11 @@ void Data::load(const char* moptions_file)
   std::cout << "Input Cube file: "<< cube_file << std::endl;
   std::cout << "Input Variance Cube file: "<< var_file << std::endl;
 
+  // sigma cutoff parameter for blobs
+  sigma_cutoff = 5.0;
 
   // PSF convolution method message
   psf_sigma = psf_fwhm/sqrt(8.0*log(2.0));
-  sigma_cutoff = 5.0;
   if(convolve == 0)
     {
       std::cout<<"Model will assume Gaussian convolution kernel.\n";
@@ -157,7 +159,7 @@ void Data::load(const char* moptions_file)
   // Variance cube from data input
   var_cube = arr_3d();
   for(size_t i=0; i<var_cube.size(); i++)
-    for(size_t j=0; j<var_cube[i].size()-x_pad; j++)
+    for(size_t j=0; j<var_cube[i].size(); j++)
       for(size_t r=0; r<var_cube[i][j].size(); r++)
 	fin >> var_cube[i][j][r];
   fin.close();
@@ -204,12 +206,12 @@ void Data::load(const char* moptions_file)
   dx = (x_max - x_min)/nj;
   dy = (y_max - y_min)/ni;
   dr = (r_max - r_min)/nr;
+  psf_sigma_overdx = psf_sigma/dx;
+  psf_sigma_overdy = psf_sigma/dy;
 
-  // Array needs to be padded due to 
-  // convolution and allows centre of blobs 
-  // to be given a buffer
-  x_pad = (int)ceil(sigma_cutoff*psf_sigma/dx - 0.5*dx/psf_sigma);
-  y_pad = (int)ceil(sigma_cutoff*psf_sigma/dy - 0.5*dy/psf_sigma);
+  // Array padding to help edge problems
+  x_pad = (int)ceil(sigma_pad*psf_sigma/dx);
+  y_pad = (int)ceil(sigma_pad*psf_sigma/dy);
   ni += 2*y_pad;
   nj += 2*x_pad;
   x_pad_dx = x_pad*dx;
@@ -223,8 +225,8 @@ void Data::load(const char* moptions_file)
   // Compute spatially oversampled parameters
   dxos = dx/sample;
   dyos = dy/sample;
-  x_pados = (int)ceil(sigma_cutoff*psf_sigma/dxos - 0.5*dxos/psf_sigma);
-  y_pados = (int)ceil(sigma_cutoff*psf_sigma/dyos - 0.5*dyos/psf_sigma);
+  x_pados = (int)ceil(sigma_pad*psf_sigma/dxos);
+  y_pados = (int)ceil(sigma_pad*psf_sigma/dyos);
   nios = sample*ni;
   njos = sample*nj;
   x_pad_dxos = x_pados*dxos;

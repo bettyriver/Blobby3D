@@ -523,9 +523,6 @@ void MyModel::calculate_image()
   int n2low_ind_min = 0; // Avoid initialisation warning
   double n2upp_lsq, n2low_lsq;
 
-
-
-
   // Calculate sin/cosine outside loops
   sin_pa = sin(pa); cos_pa = cos(pa);
   sin_inc = sin(inc); cos_inc = cos(inc);
@@ -672,7 +669,8 @@ void MyModel::calculate_image()
   double ha_cdf_min, ha_cdf_max;
 
   // Integration testing
-  // double sum_blob, sum_blobw;
+  double sum_blob; 
+  // double sum_blobw;
 
   // Blob contribution
   if(model != 1)
@@ -690,6 +688,10 @@ void MyModel::calculate_image()
 	  if(model_n2lines == 1)
 	    Mn2 = components[k][7];
 	  
+	  // Testing
+	  rc = 0.0;
+	  wx = 2.0;
+	  q = 1.0;
 
 	  // component manipulations
 	  sigma_lambda = vdisp*constants::HA/constants::C;
@@ -732,7 +734,7 @@ void MyModel::calculate_image()
 	  if(model_n2lines == 1)
 	    n2amp = dxfs*dyfs*Mn2/(2.0*M_PI*wxsq*cos_inc);
 
-	  // sum_blob = 0.0;
+	  sum_blob = 0.0;
 	  for(int i=0; i<ni; i++)
 	    {
 	    for(int j=0; j<nj; j++)
@@ -743,6 +745,7 @@ void MyModel::calculate_image()
 		  {
 		    for(int js=-si; js<=si; js++)
 		      {
+
 			/*
 			  Get rotated/inc disk coordinates
 			*/
@@ -773,7 +776,7 @@ void MyModel::calculate_image()
 			// Calculate normalised squared distance to centre of blob
 			rsq = q*xx_rot*xx_rot + invq*yy_rot*yy_rot;
 			rsq *= invwxsq;
-
+			
 			if(rsq < sigma_cutoffsq)
 			  {
 			    amps += amp*LookupExp::evaluate(0.5*rsq);
@@ -808,6 +811,7 @@ void MyModel::calculate_image()
 			ha_cdf_max = LookupErf::evaluate((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
 		
 			image[i][j][r] += 0.5*amps*(ha_cdf_max - ha_cdf_min);
+			sum_blob += image[i][j][r];
 
 			if(model_n2lines == 1)
 			  {
@@ -828,6 +832,14 @@ void MyModel::calculate_image()
 	}
     }
 
+  
+  double sum_cube = 0.0;
+  for(size_t i=0; i<image.size(); i++)
+    for(int j=0; j<image[i].size(); j++)
+      for(int r=0; r<image[i][j].size(); r++)
+	sum_cube += image[i][j][r];
+  
+
   /* 
      Convolve Cube
   */
@@ -836,6 +848,14 @@ void MyModel::calculate_image()
     convolved = conv.brute_gaussian_blur(image);
   else if(convolve == 1)
     convolved = conv.fftw_moffat_blur(image);
+
+  
+  double sum_conv_cube = 0.0;
+  for(size_t i=0; i<convolved.size(); i++)
+    for(int j=0; j<convolved[i].size(); j++)
+      for(int r=0; r<convolved[i][j].size(); r++)
+	sum_conv_cube += convolved[i][j][r];
+  std::cout<<"SUM CUBE: "<<sum_cube<<" SUM CONV CUBE: "<<sum_conv_cube<<std::endl;
 
   /*
     Collapse convolved cube

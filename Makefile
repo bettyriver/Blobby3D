@@ -16,4 +16,3 @@ nolib:
 	$(CXX) -I $(DNEST_PATH) $(CXXFLAGS) -c *.cpp
 	$(CXX) -pthread -L $(DNEST_PATH)/DNest4/code -o Blobby3D *.o $(LIBS)
 	rm *.o
-

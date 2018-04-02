@@ -64,6 +64,7 @@ class Data
   double psf_beta;
   double psf_sigma;
   double sigma_cutoff;
+  double sigma_pad;
 
   // LSF
   double lsf_fwhm;
@@ -72,6 +73,7 @@ class Data
   // Padding due to convolution
   double x_pad, y_pad;
   double x_pad_dx, y_pad_dy;
+  double psf_sigma_overdx, psf_sigma_overdy;
 		
   // Analytical paramaters
   double sum_flux;
@@ -134,6 +136,7 @@ class Data
   double get_psf_sigma() const { return psf_sigma; }
   double get_lsf_sigma() const { return lsf_sigma; }
   double get_sigma_cutoff() const { return sigma_cutoff; }
+  double get_sigma_pad() const { return sigma_pad; }
   double get_vsys_gamma() const { return vsys_gamma; }
   double get_vsys_max() const { return vsys_max; }
   double get_vmax_min() const { return vmax_min; }
@@ -154,6 +157,9 @@ class Data
   double get_x_pad_dx() const { return x_pad_dx; }
   double get_y_pad_dy() const { return y_pad_dy; }
   double get_sum_flux() const {return sum_flux; }
+
+  double get_psf_sigma_overdx() const { return psf_sigma_overdx; }
+  double get_psf_sigma_overdy() const { return psf_sigma_overdy; }
   
   int get_sample() const { return sample; }
   double get_dxos() const { return dxos; }
