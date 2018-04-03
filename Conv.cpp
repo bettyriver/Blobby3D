@@ -120,8 +120,9 @@ Conv::Conv()
 
       /*
 	Determine required size of kernel
-	Sum up square kernel sum and as soon as > 0.999 
-	don't make kernel any larger
+	Sum up square kernel sum and as soon as > 0.997 
+	don't make kernel any larger. 
+	0.997 is equivalent to 3-sigma, so seems reasonable.
       */
       int szk = min((max_nik - 1)/2, (max_njk - 1)/2);
       double tl = kernel_tmp[max_midik][max_midjk];
@@ -132,13 +133,15 @@ Conv::Conv()
 	      tl += 4.0*kernel_tmp[max_midik - s][max_midjk + j];
 	    }
 	  
-	  if(tl > 0.999)
+	  if(tl > 0.997)
 	    {
 	      szk = s;
 	      break;
 	    }
 	}
-      
+      std::cout<<szk<<std::endl;
+
+
       // overwrite nik, njk using a smaller kernel
       nik = 2*szk + 1;
       njk = 2*szk + 1;
