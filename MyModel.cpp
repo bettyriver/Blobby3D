@@ -217,13 +217,18 @@ void MyModel::from_prior(RNG& rng)
   vbeta = vbeta_min + vbeta_width*rng.rand();
 
   // Initialise: blobs
-  if(model != 1)
+  if(model == 0)
     {
       do{
-	objects.from_prior(rng);
+	object.from_prior(rng);
       }
       while(objects.get_components.size() == 0);
     }
+  else if(model == 2)
+    {
+      objects.from_prior(rng);
+    }
+
 
   // Initialise: disk
   if((model == 1) || (model == 2))
