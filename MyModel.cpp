@@ -219,7 +219,10 @@ void MyModel::from_prior(RNG& rng)
   // Initialise: blobs
   if(model != 1)
     {
-      objects.from_prior(rng);
+      do{
+	objects.from_prior(rng);
+      }
+      while(objects.get_components.size() == 0);
     }
 
   // Initialise: disk
@@ -872,7 +875,6 @@ double MyModel::log_likelihood() const
   const int nv = Data::get_instance().get_nv();
   const int x_pad = Data::get_instance().get_x_pad();
   const int y_pad = Data::get_instance().get_y_pad();
-
   
   // If no blobs return prob = 0
   if((model == 0) && (objects.get_components().size() == 0)) 

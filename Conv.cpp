@@ -139,7 +139,6 @@ Conv::Conv()
 	      break;
 	    }
 	}
-      std::cout<<szk<<std::endl;
 
 
       // overwrite nik, njk using a smaller kernel

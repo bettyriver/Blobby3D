@@ -105,7 +105,7 @@ void MyConditionalPrior::from_prior(RNG& rng)
 
 double MyConditionalPrior::perturb_hyperparameters(RNG& rng)
 {
-  double logH = 0.;
+  double logH = 0.0;
 
   int which;
   if(Data::get_instance().get_model_n2lines() == 1)
