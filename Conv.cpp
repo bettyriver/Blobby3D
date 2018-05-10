@@ -46,7 +46,6 @@ Conv::Conv()
       /*
 	Setup gaussian convolution
       */
-      double dist;
       double erf_min, erf_max;
 
       int szk_x = (int)ceil(5.0*psf_sigma_overdx);
@@ -140,7 +139,6 @@ Conv::Conv()
 	    }
 	}
 
-
       // overwrite nik, njk using a smaller kernel
       nik = 2*szk + 1;
       njk = 2*szk + 1;
@@ -152,67 +150,37 @@ Conv::Conv()
       Ni = ni + nik - 1;
       Nj = nj + njk - 1;
 
-      // variables for FFTW advanced interface
-      int rank = 2;
-      int Nin[] = {Ni, Nj};
-      int Nout[] = {Ni, Nj/2 + 1};
-      int howmany = 1;
-      int idist = 0;
-      int odist = 0;
-      int istride = 1;
-      int ostride = 1;
-      int *inembed = Nin;
-      int *onembed = Nout;
-
       // fftw arrays
+      in = new double[Ni*Nj];
       in2 = new double[Ni*Nj];
       double* kernelin = new double[Ni*Nj];
-      in = new double[Ni*Nj];
 
-      // in_all = new double[Ni*Nj*nr];
-      // double* kernelin_all = new double[Ni*Nj*nr];
 
       out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*Ni*(Nj/2+1));
       kernelout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*Ni*(Nj/2+1));
       conv = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*Ni*(Nj/2+1));
 
-      // out_all = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*Ni*Nj*(nr/2+1));
-      // kernelout_all = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*Ni*Nj*(nr/2+1));
-
-      // create plans
-      /*
-      p = fftw_plan_many_dft_r2c(rank, Nin, howmany,
-				 in, inembed, istride, idist,
-				 out, onembed, ostride, odist, 
-				 FFTW_PATIENT);
-      */
-      p = fftw_plan_dft_r2c_2d(Ni, Nj, in, out, FFTW_PATIENT);
-      
-      /*
-      p_all = fftw_plan_many_dft_r2c(rank, Nin, nr,
-				     in_all, inembed, nr, 1,
-				     out_all, onembed, nr, 1,
-				     FFTW_PATIENT);
-      */
-
+      p = fftw_plan_dft_r2c_2d(Ni, Nj, in, out, FFTW_ESTIMATE);
       k = fftw_plan_dft_r2c_2d(Ni, Nj, kernelin, kernelout, FFTW_ESTIMATE);
+      q = fftw_plan_dft_c2r_2d(Ni, Nj, conv, in2, FFTW_ESTIMATE);
       
-      /*
-      k_all = fftw_plan_many_dft_r2c(rank, Nin, nr, 
-				     kernelin_all, inembed, nr, 1,
-				     kernelout_all, onembed, nr, 1,
-				     FFTW_ESTIMATE);
-      */
-      
-      /*
-      q = fftw_plan_many_dft_c2r(rank, Nout, howmany,
-				 conv, onembed, ostride, odist,
-				 in2, inembed, istride, idist,
-				 FFTW_PATIENT);
-      */
-      
-      q = fftw_plan_dft_c2r_2d(Ni, Nj, conv, in2, FFTW_PATIENT);
-      
+      // clear in arrays
+      for(int i=0; i<Ni*Nj; i++)
+	{
+	  in[i] = 0.0;
+	  in2[i] = 0.0;
+	  kernelin[i] = 0.0;
+	}
+
+      // Clear out arrays
+      for(int i=0; i<Ni*(Nj/2+1); i++)
+	{
+	  out[i][0] = 0.0; out[i][1] = 0.0;
+	  kernelout[i][0] = 0.0; kernelout[i][1] = 0.0;
+	  conv[i][0] = 0.0; conv[i][1] = 0.0;
+	}
+
+
       /*
 	Construct padded kernel
       */
@@ -229,31 +197,42 @@ Conv::Conv()
 	    kernelin[j + Nj*i] = kernel_tmp[(max_nik - nik)/2 + i][(max_njk - njk)/2 + j];
 	    }
 	}
-      
+
+      // TESTING: Use Gaussian Convolution
       /*
-      // kernel all
-      std::cout<<"start test\n";
-      for(int i=0; i<Ni*Nj*nr; i++)
-	kernelin_all[i] = 0.0;      
-      std::cout<<"kernel all zeroed\n";
+      double erf_min, erf_max;
+
+      int szk_x = (njk - 1)/2;
+      kernel_x.assign(nik, 0.0);
+      for(int j=-szk_x; j<=szk_x; j++)
+	{
+	  erf_min = std::erf((j - 0.5)*dx/(psf_sigma*sqrt(2.0)));
+	  erf_max = std::erf((j + 0.5)*dx/(psf_sigma*sqrt(2.0)));
+	  kernel_x[j+szk_x] = 0.5*(erf_max - erf_min);
+	}
+      
+      int szk_y = (nik - 1)/2;
+      kernel_y.assign(nik, 0.0);
+      for(int i=-szk_y; i<=szk_y; i++)
+	{
+	  erf_min = std::erf((i - 0.5)*dy/(psf_sigma*sqrt(2.0)));
+	  erf_max = std::erf((i + 0.5)*dy/(psf_sigma*sqrt(2.0)));
+	  kernel_y[i+szk_y] = 0.5*(erf_max - erf_min);
+	}
+
 
       for(int i=0; i<nik; i++)
-	for(int j=0; j<njk; j++)
-	  for(int r=0; r<nr; r++)
-	    kernelin_all[r + nr*j + i*nr*Nj] = kernelin[j + Nj*i];
-      std::cout<<"kernelin_all constructed\n";
+	{
+	  for(int j=0; j<njk; j++)
+	    {
+	    kernelin[j + Nj*i] = kernel_y[i]*kernel_x[j];
+	    }
+	} 
       */
       
       // transform moffat kernel
       fftw_execute(k);
       fftw_destroy_plan(k);
-
-      /*
-      fftw_execute(k_all);
-      fftw_destroy_plan(k_all);
-      */
-      
-      // std::cout<<"kernel transformed\n";
 
     }
 
@@ -354,48 +333,6 @@ Conv::fftw_moffat_blur(std::vector< std::vector< std::vector<double> > >&
 			  preconvolved)
 {
 
-  /*
-    Convolving cube at same time
-  */
-  
-  /*
-  // put model into fftw double
-  std::cout<<"in all"<<std::endl;
-  for(int i=0; i<ni; i++)
-    {
-    for(int j=0; j<nj; j++)
-      {
-      for(int r=0; r<nr; r++)
-	{
-	  std::cout<<r<<" "<<j<<" "<<i<<std::endl;
-	  std::cout<<"Sz: "<<nr<<" "<<nj<<" "<<ni<<std::endl;
-	  std::cout<<"I: "<<r + j*nr + i*nr*Nj<<" "<<Ni*Nj*nr<<std::endl;
-	  std::cout<<"PRES: "<<preconvolved.size()<<" "
-		   <<preconvolved[0].size()<<" "
-		   <<preconvolved[0][0].size()<<std::endl;
-	  in_all[r + j*nr + i*nr*Nj] = preconvolved[i][j][r];
-	}
-      }
-    }
-
-  // transform model
-  fftw_execute(p_all);
-
-  // perform convolution
-  std::cout<<"Conv_all\n";
-  for(int i=0; i<Ni*Nj*(nr/2+1); i++)
-	{
-	  conv_all[i][0] = out_all[i][0]*kernelout_all[i][0] - out_all[i][1]*kernelout_all[i][1];
-	  conv_all[i][1] = out_all[i][0]*kernelout_all[i][1] + out_all[i][1]*kernelout_all[i][0];
-	}
-
-
-  // inverse transform
-
-  // put back into a vector
-
-  */
-
   for(int r=0; r<nr; r++)
     {
       
@@ -412,26 +349,13 @@ Conv::fftw_moffat_blur(std::vector< std::vector< std::vector<double> > >&
       // std::cout<<"TLS: "<<tls<<std::endl;
 
       // transform slice
-      fftw_execute(p);   
-
+      fftw_execute(p);
 
       // convolve
       for(int i=0; i<Ni*(Nj/2+1); i++)
 	{
 	  conv[i][0] = out[i][0]*kernelout[i][0] - out[i][1]*kernelout[i][1];
 	  conv[i][1] = out[i][0]*kernelout[i][1] + out[i][1]*kernelout[i][0];
-	  /*
-	  if(conv[i][0] != conv[i][0])
-	    {
-	      std::cout<<"REAL: "<<conv[i][0]<<" "<<i<<std::endl;
-	      std::cout<<"INPUTS: "
-		       <<in[i]<<" "
-		       <<out[i][0]<<" "<<out[i][1]
-		       <<kernelout[i][0]<<" "<<kernelout[i][1]<<std::endl;;
-	    }
-	  if(conv[i][1] != conv[i][1])
-	    std::cout<<"IMAG: "<<conv[i][1]<<" "<<i<<std::endl;
-	  */
 	}
 
       // backwards transform to slice

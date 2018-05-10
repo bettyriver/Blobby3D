@@ -20,7 +20,6 @@ class MyModel
   std::vector< std::vector< std::vector<double> > > image;
   std::vector< std::vector< std::vector<double> > > imageos;
   std::vector< std::vector< std::vector<double> > > convolved;
-  std::vector< std::vector< std::vector<double> > > convolvedos;
   std::vector< std::vector<double> > rel_lambda;
   std::vector< std::vector<double> > rad;
 
@@ -42,14 +41,8 @@ class MyModel
   double Md;
   double Md_min, Md_width;
 
-  double Mdn2;
-  double Mdn2_min, Mdn2_width;
-
   double wxd;
   double wxd_min, wxd_width;
-
-  double wxd_n2;
-  double wxd_n2_min, wxd_n2_width;
 
   double vsys;
   double gamma_vsys;
@@ -67,8 +60,8 @@ class MyModel
   double vbeta;
   double vbeta_min, vbeta_width;
   
-  double sigmad_lambda;
-  double sigmad_lambda_min, sigmad_lambda_width;
+  double sigmad;
+  double sigmad_min, sigmad_width;
 
   double inc, pa;
 

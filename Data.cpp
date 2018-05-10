@@ -101,7 +101,7 @@ void Data::load(const char* moptions_file)
   std::cout<<"SIGMAmin, SIGMAmax: "<<sigma_min<<", "<<sigma_max<<std::endl;
 
   // Model choice (only for testing)
-  model = 0;
+  model = 1;
   
   // Override blob parameters for disk model
   if(model == 1)
@@ -110,11 +110,13 @@ void Data::load(const char* moptions_file)
   if(model == 1)
     nfixed = true;
 
-  // model n2 lines?
-  model_n2lines = 0;
-
   // Spatial sampling of cube
   sample = 1;
+
+  // step size
+  hp_step = 0.2;
+  disc_step = 0.2;
+  sigma_step = 0.2;
 
   /*
    * First, read in the metadata
@@ -167,6 +169,7 @@ void Data::load(const char* moptions_file)
 
   /*
    * Determine the valid data pixels
+    Considered valid if sigma > 0.0 and there is at least 1 non-zero value.
    */
   valid.assign(1, vector<int>(2));
   double tmp_im, tmp_sig;
@@ -181,12 +184,13 @@ void Data::load(const char* moptions_file)
 	  tmp_sig = 0.;
 	  for(int r=0; r<image[i][j].size(); r++)
 	    {
-	      tmp_im += image[i][j][r];
+	      if(image[i][j][r] != 0.0)
+		{ tmp_im = 1.0; }
 	      tmp_sig += var_cube[i][j][r];
 	    }
 	  
 	  // Add valid pixels to array
-	  if(tmp_im != 0. && tmp_sig != 0.)
+	  if((tmp_im == 1.0) && (tmp_sig > 0.))
 	    {
 	      tmp_vec[0] = i; tmp_vec[1] = j;
 	      sum_flux += tmp_im;

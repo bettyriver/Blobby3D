@@ -20,7 +20,6 @@ class Data
   int model;
   int nmax;
   bool nfixed;
-  int model_n2lines;
   double prior_inc;
   int convolve;
   double vsys_gamma, vsys_max;
@@ -84,6 +83,11 @@ class Data
   double nios, njos;
   double x_pad_dxos, y_pad_dyos;
 
+  // step size
+  double hp_step;
+  double disc_step;
+  double sigma_step;
+
   // Coordinates of pixel centers
   std::vector< std::vector<double> > x_rays;
   std::vector< std::vector<double> > y_rays;
@@ -114,8 +118,6 @@ class Data
   int get_model() const { return model; }
   int get_nmax() const { return nmax; }
   bool get_nfixed() const { return nfixed; }
-  double get_prior_inc() const { return prior_inc; }
-  int get_model_n2lines() const { return model_n2lines; }
   int get_convolve() const { return convolve; }
   int get_ni() const { return ni; }
   int get_nj() const { return nj; }
@@ -157,6 +159,10 @@ class Data
   double get_x_pad_dx() const { return x_pad_dx; }
   double get_y_pad_dy() const { return y_pad_dy; }
   double get_sum_flux() const {return sum_flux; }
+
+  double get_hp_step() const { return hp_step; }
+  double get_disc_step() const { return disc_step; }
+  double get_sigma_step() const { return sigma_step; }
 
   double get_psf_sigma_overdx() const { return psf_sigma_overdx; }
   double get_psf_sigma_overdy() const { return psf_sigma_overdy; }
