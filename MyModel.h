@@ -13,7 +13,6 @@ class MyModel
   Conv conv; // setup convolution kernels
   DNest4::RJObject<MyConditionalPrior> objects;
 
-
   /*
     Arrays
   */

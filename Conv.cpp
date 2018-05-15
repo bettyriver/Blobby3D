@@ -12,6 +12,7 @@ Conv Conv::instance;
 
 Conv::Conv()
   :convolve(Data::get_instance().get_convolve())
+  ,psf_amp(Data::get_instance().get_psf_amp())
   ,psf_fwhm(Data::get_instance().get_psf_fwhm())
   ,psf_beta(Data::get_instance().get_psf_beta())
   ,psf_sigma(Data::get_instance().get_psf_sigma())
@@ -43,33 +44,39 @@ Conv::Conv()
   double norm;
   if(convolve == 0)
     {
-      /*
-	Setup gaussian convolution
-      */
-      double erf_min, erf_max;
 
-      int szk_x = (int)ceil(5.0*psf_sigma_overdx);
-      kernel_x.assign(2*szk_x+1, 0.0);
-      for(int j=-szk_x; j<=szk_x; j++)
+      // Setup size of kernels due to number of gaussians
+      kernel_x.resize(psf_sigma.size());
+      kernel_y.resize(psf_sigma.size());
+
+      // Setup each gaussian kernel
+      double erf_min, erf_max;
+      int szk_x, szk_y;
+      for(size_t k=0; k<psf_sigma.size(); k++)
 	{
-	  erf_min = std::erf((j - 0.5)*dx/(psf_sigma*sqrt(2.0)));
-	  erf_max = std::erf((j + 0.5)*dx/(psf_sigma*sqrt(2.0)));
-	  kernel_x[j+szk_x] = 0.5*(erf_max - erf_min);
-	}
+	  szk_x = (int)ceil(5.0*psf_sigma_overdx[k]);
+	  kernel_x[k].assign(2*szk_x+1, 0.0);
+	  for(int j=-szk_x; j<=szk_x; j++)
+	    {
+	      erf_min = std::erf((j - 0.5)*dx/(psf_sigma[k]*sqrt(2.0)));
+	      erf_max = std::erf((j + 0.5)*dx/(psf_sigma[k]*sqrt(2.0)));
+	      kernel_x[k][j+szk_x] = 0.5*(erf_max - erf_min);
+	    }
       
-      int szk_y = (int)ceil(5.0*psf_sigma_overdy);
-      kernel_y.assign(2*szk_y+1, 0.0);
-      for(int i=-szk_y; i<=szk_y; i++)
-	{
-	  erf_min = std::erf((i - 0.5)*dy/(psf_sigma*sqrt(2.0)));
-	  erf_max = std::erf((i + 0.5)*dy/(psf_sigma*sqrt(2.0)));
-	  kernel_y[i+szk_y] = 0.5*(erf_max - erf_min);
+	  szk_y = (int)ceil(5.0*psf_sigma_overdy[k]);
+	  kernel_y[k].assign(2*szk_y+1, 0.0);
+	  for(int i=-szk_y; i<=szk_y; i++)
+	    {
+	      erf_min = std::erf((i - 0.5)*dy/(psf_sigma[k]*sqrt(2.0)));
+	      erf_max = std::erf((i + 0.5)*dy/(psf_sigma[k]*sqrt(2.0)));
+	      kernel_y[k][i+szk_y] = 0.5*(erf_max - erf_min);
+	    }
 	}
-      
-      // setup temporary convolved kernel for single separable convolution
-      convolved_tmp_2d.resize(ni);
-      for(size_t i=0; i<convolved_tmp_2d.size(); i++)
-	convolved_tmp_2d[i].resize(nj - 2*y_pad);
+
+       // setup temporary convolved kernel for single separable convolution
+       convolved_tmp_2d.resize(ni);
+       for(size_t i=0; i<convolved_tmp_2d.size(); i++)
+	 convolved_tmp_2d[i].resize(nj - 2*y_pad);
 
     }
   else if(convolve == 1)
@@ -77,7 +84,7 @@ Conv::Conv()
       /*
 	Setup moffat convolve by fftw
       */
-      double invalphasq = 1.0/pow(psf_fwhm, 2);
+      double invalphasq = 1.0/pow(psf_fwhm[0], 2);
 
       // Sampling
       int sample = 9;
@@ -154,7 +161,6 @@ Conv::Conv()
       in = new double[Ni*Nj];
       in2 = new double[Ni*Nj];
       double* kernelin = new double[Ni*Nj];
-
 
       out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*Ni*(Nj/2+1));
       kernelout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*Ni*(Nj/2+1));
@@ -244,13 +250,6 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
 			  preconvolved)
 {
   const std::vector< std::vector<int> >& valid = Data::get_instance().get_valid();
-  const double szk_x = (int)ceil(5.0*psf_sigma/dx);
-  const double szk_y = (int)ceil(5.0*psf_sigma/dy);
-
-  /*
-    Construct convolved_tmp 2d matrix.
-    Used for blurring across columns.
-  */
 
   /*
     Calculate convolved matrix
@@ -259,69 +258,83 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
     first convolving across the columns, then across rows.
 
     Only valid for 2d gaussian PSFs.
+
+    It performs the multiple gaussian convolution 
+    by convolving by each gaussian kernel in turn.
+    This uses the distributive property of convolution.
   */
+
+  // Clear convolved matrix
   int i, j;
+  for(size_t h=0; h<valid.size(); h++)
+    {
+      i = valid[h][0];
+      j = valid[h][1];
+      for(int r=0; r<nr; r++)
+	convolved[i][j][r] = 0.0;
+    }
+
   double norm;
+  int szk_x, szk_y;
+  double tl_pre, tl_con;
   for(int r=0; r<nr; r++)
     {
 
-      // blur across columns
-      for(i=0; i<convolved_tmp_2d.size(); i++)
-	{
-	  for(j=0; j<convolved_tmp_2d[i].size(); j++)
-	    {
-	      convolved_tmp_2d[i][j] = 0.0;
-	      norm = 0.0;
-	      for(int p=-szk_x; p<=szk_x; p++)
-		{
-		  if((x_pad + j + p >= 0) & (x_pad + j + p < preconvolved[i].size()))
-		    {
-		     convolved_tmp_2d[i][j] += preconvolved[i][x_pad+j+p][r]*kernel_x[szk_x+p];
-		     norm += kernel_x[szk_x+p];
-		    }
-		}
-	       // renormalise
-	       convolved_tmp_2d[i][j] /= norm;
-	    }
-	}
-
-      // blur across rows for valid pixels
-      for(size_t h=0; h<valid.size(); h++)
-	{
-	  i = valid[h][0];
-	  j = valid[h][1];
-
-	  convolved[i][j][r] = 0.0;
-	  norm = 0.0;
-	  for(int p=-szk_y; p<=szk_y; p++)
-	    {
-	      if((y_pad + i + p >= 0) && (y_pad + i + p < convolved_tmp_2d.size()))
-		{
-		  convolved[i][j][r] += convolved_tmp_2d[y_pad+i+p][j]*kernel_y[szk_y+p];
-		  norm += kernel_y[szk_y+p];
-		}
-	    }
-	  // renormalise
-	  convolved[i][j][r] /= norm;
-	}
-
-
+      /*
+	Clear convolved matrices.
+      */
 
       /*
-      for(size_t i=0; i<nios; i++)
-	{
-	for(size_t j=0; j<njos; j++)
-	  {
-	    convolved[i][j][r] = 0.0;
-	    for(int p=0; p<2*x_pados+1; p++)
-	      convolved[i][j][r] += convolved_tmp_2d[i+p][j]*kernel_y[p];
-	  }
-	}
+	Convolve slice for each Gaussian kernel
       */
-	  
+      for(size_t k=0; k<psf_sigma.size(); k++)
+	{
 
+	  szk_x = (int)ceil(5.0*psf_sigma[k]/dx);
+	  szk_y = (int)ceil(5.0*psf_sigma[k]/dy);
 
+	  // blur across columns
+	  for(i=0; i<convolved_tmp_2d.size(); i++)
+	    {
+	      for(j=0; j<convolved_tmp_2d[i].size(); j++)
+		{
+		  convolved_tmp_2d[i][j] = 0.0;
+		  norm = 0.0;
+		  for(int p=-szk_x; p<=szk_x; p++)
+		    {
+		      if((x_pad + j + p >= 0) & (x_pad + j + p < convolved_tmp_2d[i].size()))
+			{
+			  convolved_tmp_2d[i][j] += preconvolved[i][x_pad+j+p][r]*kernel_x[k][szk_x+p];
+			  norm += kernel_x[k][szk_x+p];
+			}
+		    }
+		  // renormalise
+		  convolved_tmp_2d[i][j] /= norm;
+		}
+	    }
 
+	  /* 
+	     blur across rows for valid pixels
+	  */
+	  for(size_t h=0; h<valid.size(); h++)
+	    {
+	      i = valid[h][0];
+	      j = valid[h][1];
+	      
+	      norm = 0.0;
+	      for(int p=-szk_y; p<=szk_y; p++)
+		{
+		  if((y_pad + i + p >= 0) && (y_pad + i + p < convolved_tmp_2d.size()))
+		    {
+		      convolved[i][j][r] += convolved_tmp_2d[y_pad+i+p][j]*kernel_y[k][szk_y+p];
+		      norm += kernel_y[k][szk_y+p];
+		    }
+		}
+	      // renormalise
+	      convolved[i][j][r] /= norm;
+	      convolved[i][j][r] *= psf_amp[k];
+	    }
+	}
     }
 
   return convolved;

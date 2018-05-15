@@ -59,9 +59,10 @@ class Data
   double db;
 
   // PSF
-  double psf_fwhm;
+  std::vector<double> psf_amp;
+  std::vector<double> psf_fwhm;
   double psf_beta;
-  double psf_sigma;
+  std::vector<double> psf_sigma;
   double sigma_cutoff;
   double sigma_pad;
 
@@ -72,7 +73,8 @@ class Data
   // Padding due to convolution
   double x_pad, y_pad;
   double x_pad_dx, y_pad_dy;
-  double psf_sigma_overdx, psf_sigma_overdy;
+  std::vector<double> psf_sigma_overdx;
+  std::vector<double> psf_sigma_overdy;
 		
   // Analytical paramaters
   double sum_flux;
@@ -133,9 +135,10 @@ class Data
   double get_dy() const { return dy; }
   double get_dr() const { return dr; }
   double get_db() const { return db; }
-  double get_psf_fwhm() const { return psf_fwhm; }
+  std::vector<double> get_psf_amp() const { return psf_amp; }
+  std::vector<double> get_psf_fwhm() const { return psf_fwhm; }
   double get_psf_beta() const { return psf_beta; }
-  double get_psf_sigma() const { return psf_sigma; }
+  std::vector<double> get_psf_sigma() const { return psf_sigma; }
   double get_lsf_sigma() const { return lsf_sigma; }
   double get_sigma_cutoff() const { return sigma_cutoff; }
   double get_sigma_pad() const { return sigma_pad; }
@@ -164,8 +167,8 @@ class Data
   double get_disc_step() const { return disc_step; }
   double get_sigma_step() const { return sigma_step; }
 
-  double get_psf_sigma_overdx() const { return psf_sigma_overdx; }
-  double get_psf_sigma_overdy() const { return psf_sigma_overdy; }
+  std::vector<double> get_psf_sigma_overdx() const { return psf_sigma_overdx; }
+  std::vector<double> get_psf_sigma_overdy() const { return psf_sigma_overdy; }
   
   int get_sample() const { return sample; }
   double get_dxos() const { return dxos; }

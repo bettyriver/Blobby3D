@@ -44,7 +44,25 @@ void Data::load(const char* moptions_file)
   fin>>cube_file; fin.ignore(1000000, '\n');
   fin>>var_file; fin.ignore(1000000, '\n');
   fin>>convolve; fin.ignore(1000000, '\n'); // Gaussian=0, Moffat(FFTW)=1
-  fin>>psf_fwhm; fin.ignore(1000000, '\n');
+
+  // Read in AMPs (multiple for multi-gauss fit)
+  double tmp_amp;
+  while(fin.peek() != '#')
+    {
+      fin>>tmp_amp;
+      psf_amp.push_back(tmp_amp);
+    }
+  fin.ignore(1000000, '\n');
+
+  // Read in FWHMs (multiple for multi-gauss conv)
+  double tmp_fwhm;
+  while(fin.peek() != '#')
+    {
+      fin>>tmp_fwhm;
+      psf_fwhm.push_back(tmp_fwhm);
+    }
+  fin.ignore(1000000, '\n');
+
   fin>>psf_beta; fin.ignore(1000000, '\n'); // Beta parameter if using moffat
   fin>>lsf_fwhm; fin.ignore(1000000, '\n');
   fin>>nmax; fin.ignore(1000000, '\n');
@@ -64,21 +82,31 @@ void Data::load(const char* moptions_file)
   std::cout << "Input Metadata file: "<< metadata_file << std::endl;
   std::cout << "Input Cube file: "<< cube_file << std::endl;
   std::cout << "Input Variance Cube file: "<< var_file << std::endl;
-
   // sigma cutoff parameter for blobs
   sigma_cutoff = 5.0;
 
   // PSF convolution method message
-  psf_sigma = psf_fwhm/sqrt(8.0*log(2.0));
+  for(size_t i=0; i<psf_fwhm.size(); i++)
+    psf_sigma.push_back(psf_fwhm[i]/sqrt(8.0*log(2.0))); 
+
+  // Print out convolution parameters
   if(convolve == 0)
     {
       std::cout<<"Model will assume Gaussian convolution kernel.\n";
-      std::cout<<"PSF FWHM (ASEC): "<<psf_fwhm<<std::endl;
+      std::cout<<"PSF AMP:";
+      for(size_t i=0; i<psf_amp.size(); i++)
+	std::cout<<" "<<psf_amp[i];
+      std::cout<<std::endl;
+
+      std::cout<<"PSF FWHM (ASEC):";
+      for(size_t i=0; i<psf_fwhm.size(); i++)
+	std::cout<<" "<<psf_fwhm[i];
+      std::cout<<std::endl;
     }
   else if(convolve == 1)
     {
       std::cout<<"Model will assume Moffat convolution kernel.\n";
-      std::cout<<"PSF FWHM (ASEC): "<<psf_fwhm<<std::endl;
+      std::cout<<"PSF FWHM (ASEC): "<<psf_fwhm[0]<<std::endl;
       std::cout<<"PSF BETA: "<<psf_beta<<std::endl<<std::endl;
     }
   
@@ -210,12 +238,15 @@ void Data::load(const char* moptions_file)
   dx = (x_max - x_min)/nj;
   dy = (y_max - y_min)/ni;
   dr = (r_max - r_min)/nr;
-  psf_sigma_overdx = psf_sigma/dx;
-  psf_sigma_overdy = psf_sigma/dy;
+  for(size_t i=0; i<psf_sigma.size(); i++)
+    {
+      psf_sigma_overdx.push_back(psf_sigma[i]/dx);
+      psf_sigma_overdy.push_back(psf_sigma[i]/dy);
+    }
 
   // Array padding to help edge problems
-  x_pad = (int)ceil(sigma_pad*psf_sigma/dx);
-  y_pad = (int)ceil(sigma_pad*psf_sigma/dy);
+  x_pad = (int)ceil(sigma_pad*psf_sigma[0]/dx);
+  y_pad = (int)ceil(sigma_pad*psf_sigma[0]/dy);
   ni += 2*y_pad;
   nj += 2*x_pad;
   x_pad_dx = x_pad*dx;
@@ -229,8 +260,8 @@ void Data::load(const char* moptions_file)
   // Compute spatially oversampled parameters
   dxos = dx/sample;
   dyos = dy/sample;
-  x_pados = (int)ceil(sigma_pad*psf_sigma/dxos);
-  y_pados = (int)ceil(sigma_pad*psf_sigma/dyos);
+  x_pados = (int)ceil(sigma_pad*psf_sigma[0]/dxos);
+  y_pados = (int)ceil(sigma_pad*psf_sigma[0]/dyos);
   nios = sample*ni;
   njos = sample*nj;
   x_pad_dxos = x_pados*dxos;

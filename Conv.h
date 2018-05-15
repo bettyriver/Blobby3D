@@ -18,18 +18,19 @@ class Conv
   int convolve;
   
   // psf
-  double psf_fwhm;
+  std::vector<double> psf_amp;
+  std::vector<double> psf_fwhm;
   double psf_beta;
-  double psf_sigma;
-  double psf_sigma_overdx, psf_sigma_overdy;
+  std::vector<double> psf_sigma;
+  std::vector<double> psf_sigma_overdx, psf_sigma_overdy;
   int ni, nj, nr;
   double dx, dy;
   double sigma_cutoff;
   int x_pad, y_pad;
 
   // vectors for separable kernel
-  std::vector<double> kernel_x;
-  std::vector<double> kernel_y;
+  std::vector< std::vector<double> > kernel_x;
+  std::vector< std::vector<double> > kernel_y;
   std::vector< std::vector<double> > convolved_tmp_2d;
 
   // vector for moffat kernel
@@ -57,22 +58,17 @@ class Conv
  public:
  
   // Constructor
-  Conv(); 
+  Conv();
 
   // brute force gaussian blur
   std::vector< std::vector< std::vector<double> > > 
     brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >& 
 			preconvolved);
-
-  // brute force moffat blur
-  std::vector< std::vector< std::vector<double> > > 
-    brute_moffat_blur(std::vector< std::vector< std::vector<double> > >& 
-			preconvolved);  
-
+  
   // fftw moffat blur
   std::vector< std::vector< std::vector<double> > > 
     fftw_moffat_blur(std::vector< std::vector< std::vector<double> > >& 
-			preconvolved); 
+			preconvolved);
 
 };
 
