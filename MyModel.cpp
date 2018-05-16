@@ -775,8 +775,8 @@ double MyModel::log_likelihood() const
 	{
 	  if((data[i][j][r] != 0.0) && (var_cube[i][j][r] != 0.0))
 	    {
-	      // var = var_cube[i][j][r] + sigma0sq + image[i][j][r]*sigma1;
-	      var = var_cube[i][j][r]; // Testing convolution on likelihood first
+	      var = var_cube[i][j][r] + sigma0sq + image[i][j][r]*sigma1;
+	      // var = var_cube[i][j][r]; // Testing convolution on likelihood first
 	      
 	      logL += -0.5*log(2.0*M_PI*var)
 		-0.5*pow(data[i][j][r] - convolved[i][j][r], 2)/var;
