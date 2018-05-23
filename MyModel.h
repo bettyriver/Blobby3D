@@ -72,8 +72,8 @@ class MyModel
   double sigma1_min, sigma1_width;
 
   // perturb booleans
-  bool disk_perturb, rot_perturb;
-
+  bool disk_perturb;
+  bool rot_perturb;
 
  public:
   MyModel();

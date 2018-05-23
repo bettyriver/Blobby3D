@@ -43,10 +43,6 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
   double qlim_min;
   double q_min;
 
-  double xc, yc;
-  double wd;
-  double wd_min, wd_width;
-
   double perturb_hyperparameters(DNest4::RNG& rng);
 
  public:

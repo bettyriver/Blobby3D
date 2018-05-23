@@ -129,7 +129,7 @@ void Data::load(const char* moptions_file)
   std::cout<<"SIGMAmin, SIGMAmax: "<<sigma_min<<", "<<sigma_max<<std::endl;
 
   // Model choice (only for testing)
-  model = 1;
+  model = 0;
   
   // Override blob parameters for disk model
   if(model == 1)

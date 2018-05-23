@@ -126,9 +126,6 @@ void MyModel::from_prior(RNG& rng)
       Md_min = 1E-2*sum_flux;
       Md_width = 10.0*sum_flux/Md_min;
 
-      wxd_min = sqrt(dx*dy);
-      wxd_width = 3.0*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy))/wxd_min;
-
       sigmad_min = 1.0;
       sigmad_width = 200.0/sigmad_min;
     }
@@ -161,6 +158,9 @@ void MyModel::from_prior(RNG& rng)
   pa = 2.0*M_PI*rng.rand();
   inc = 0.5*M_PI*rng.rand();
 
+  wxd_min = sqrt(dx*dy);
+  wxd_width = 3.0*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy))/wxd_min;
+
   // Initialise: Velocity
   DNest4::Cauchy cauchy_vsys(0.0, gamma_vsys);
   do
@@ -191,9 +191,9 @@ void MyModel::from_prior(RNG& rng)
   if((model == 1) || (model == 2))
     {
       Md = exp(log(Md_min) + log(Md_width)*rng.rand());
-      wxd = exp(log(wxd_min) + log(wxd_width)*rng.rand());
       sigmad = exp(log(sigmad_min) + log(sigmad_width)*rng.rand());
     }
+  wxd = exp(log(wxd_min) + log(wxd_width)*rng.rand());
 
   // Calculate image
   rot_perturb = true;
@@ -251,7 +251,7 @@ double MyModel::perturb(RNG& rng)
 	{
 	  // Perturb disc parameters
 	  rot_perturb = true;
-	  int which = rng.rand_int(9);
+	  int which = rng.rand_int(10);
 
 	  switch(which)
 	    {
@@ -303,6 +303,12 @@ double MyModel::perturb(RNG& rng)
 	      inc += disc_step*0.5*M_PI*rng.randh();
 	      inc = mod(inc, 0.5*M_PI);
 	      break;
+	    case 9:
+	      wxd = log(wxd);
+	      wxd += disc_step*log(wxd_width)*rng.randh();
+	      wxd = mod(wxd - log(wxd_min), log(wxd_width)) + log(wxd_min);
+	      wxd = exp(wxd);
+	      break;
 	    }
 	}
       else
@@ -310,7 +316,7 @@ double MyModel::perturb(RNG& rng)
 	  // Perturb disc flux parameters
 	  disk_perturb = true;
 	  int which;
-	  which = rng.rand_int(3);
+	  which = rng.rand_int(2);
 	  
 	  switch(which)
 	    {
@@ -321,12 +327,6 @@ double MyModel::perturb(RNG& rng)
 	      Md = exp(Md);
 	      break;
 	    case 1:
-	      wxd = log(wxd);
-	      wxd += disc_step*log(wxd_width)*rng.randh();
-	      wxd = mod(wxd - log(wxd_min), log(wxd_width)) + log(wxd_min);
-	      wxd = exp(wxd);
-	      break;
-	    case 2:
 	      sigmad = log(sigmad);
 	      sigmad += disc_step*log(sigmad_width)*rng.randh();
 	      sigmad = mod(sigmad - log(sigmad_min), log(sigmad_width));
@@ -603,7 +603,7 @@ void MyModel::calculate_image()
       for(size_t k=0; k<components.size(); ++k)
 	{
 	  // Components
-	  rc = components[k][0]; 
+	  rc = components[k][0]*wxd; 
 	  thetac = components[k][1];
 	  M = components[k][2];
 	  wx = components[k][3]; 
