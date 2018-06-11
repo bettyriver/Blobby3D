@@ -15,7 +15,6 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
   double fluxlim_min, fluxlim_max; 
   double n2fluxlim_min, n2fluxlim_max;
   double radiuslim_min, radiuslim_max;
-  double dispersion_min, dispersion_max;
 
   // Lognormal for flux
   double flux_mu;
@@ -32,12 +31,6 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
   double radiuslim_width;
   double radiusmax;
   double radiusmin_ratio;
-
-  // Lognormal for dispersion
-  double dispersion_mu;
-  double dispersion_mu_min, dispersion_mu_width;
-  double dispersion_var, dispersion_std;
-  double dispersion_std_min, dispersion_std_width;
 
   // Triangular with changing lower limit
   double qlim_min;

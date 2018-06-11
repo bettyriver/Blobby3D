@@ -20,6 +20,7 @@ class MyModel
   std::vector< std::vector< std::vector<double> > > imageos;
   std::vector< std::vector< std::vector<double> > > convolved;
   std::vector< std::vector<double> > rel_lambda;
+  std::vector< std::vector<double> > vdisp;
   std::vector< std::vector<double> > rad;
 
   void calculate_image();
@@ -59,8 +60,9 @@ class MyModel
   double vbeta;
   double vbeta_min, vbeta_width;
   
-  double sigmad;
-  double sigmad_min, sigmad_width;
+  int vdisp_order;
+  double vdisp0_min, vdisp0_width;
+  std::vector<double> vdisp_param;
 
   double inc, pa;
 

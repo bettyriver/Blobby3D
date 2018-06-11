@@ -63,6 +63,9 @@ MyModel::MyModel()
   // relative lambda for velocity
   rel_lambda.assign(ni, std::vector<double>(nj));
 
+  // velocity dispersion
+  vdisp.assign(ni, std::vector<double>(nj));
+
   // radius
   rad.assign(ni, std::vector<double>(nj));
 
@@ -118,6 +121,9 @@ void MyModel::from_prior(RNG& rng)
   vbeta_min = -0.75;
   vbeta_width = 1.5;
 
+  vdisp0_min = log(1.0);
+  vdisp0_width = log(200.0/1.0);
+
   /*
     Limits: disk parameters
   */
@@ -125,10 +131,8 @@ void MyModel::from_prior(RNG& rng)
     {
       Md_min = 1E-2*sum_flux;
       Md_width = 10.0*sum_flux/Md_min;
-
-      sigmad_min = 1.0;
-      sigmad_width = 200.0/sigmad_min;
     }
+
 
   /*
     Initialise: global parameters
@@ -191,8 +195,20 @@ void MyModel::from_prior(RNG& rng)
   if((model == 1) || (model == 2))
     {
       Md = exp(log(Md_min) + log(Md_width)*rng.rand());
-      sigmad = exp(log(sigmad_min) + log(sigmad_width)*rng.rand());
     }
+  else
+    {
+      Md = 0.0;
+    }
+
+  // Dispersion
+  vdisp_order = 1;
+  DNest4::Cauchy cauchy_vdisp(0.0, 1.0);
+  vdisp_param.assign(vdisp_order+1, 0.0);
+  vdisp_param[0] = vdisp0_min + vdisp0_width*rng.rand();
+  for(int v=1; v<vdisp_order+1; v++)
+      vdisp_param[v] = cauchy_vdisp.generate(rng);
+
   wxd = exp(log(wxd_min) + log(wxd_width)*rng.rand());
 
   // Calculate image
@@ -223,6 +239,7 @@ double MyModel::perturb(RNG& rng)
   DNest4::Cauchy cauchy_xc(x_imagecentre, gamma_pos);
   DNest4::Cauchy cauchy_yc(y_imagecentre, gamma_pos);
   DNest4::Cauchy cauchy_vsys(0.0, gamma_vsys);
+  DNest4::Cauchy cauchy_vdisp(0.0, 1.0);
 
   double logH = 0.0;
   double rnd = rng.rand();
@@ -251,7 +268,7 @@ double MyModel::perturb(RNG& rng)
 	{
 	  // Perturb disc parameters
 	  rot_perturb = true;
-	  int which = rng.rand_int(10);
+	  int which = rng.rand_int(12);
 
 	  switch(which)
 	    {
@@ -309,31 +326,26 @@ double MyModel::perturb(RNG& rng)
 	      wxd = mod(wxd - log(wxd_min), log(wxd_width)) + log(wxd_min);
 	      wxd = exp(wxd);
 	      break;
+	    case 10:
+	      vdisp_param[0] += disc_step*vdisp0_width*rng.randh();
+	      vdisp_param[0] = mod(vdisp_param[0] - vdisp0_min, vdisp0_width);
+	      vdisp_param[0] += vdisp0_min;
+	      break;
+	    case 11:
+	      which = rng.rand_int(vdisp_order);
+	      logH += cauchy_vdisp.perturb(vdisp_param[which+1], rng);
+	      break;
 	    }
 	}
       else
 	{
 	  // Perturb disc flux parameters
 	  disk_perturb = true;
-	  int which;
-	  which = rng.rand_int(2);
 	  
-	  switch(which)
-	    {
-	    case 0:
-	      Md = log(Md);
-	      Md += disc_step*log(Md_width)*rng.randh();
-	      Md = mod(Md - log(Md_min), log(Md_width)) + log(Md_min);
-	      Md = exp(Md);
-	      break;
-	    case 1:
-	      sigmad = log(sigmad);
-	      sigmad += disc_step*log(sigmad_width)*rng.randh();
-	      sigmad = mod(sigmad - log(sigmad_min), log(sigmad_width));
-	      sigmad += log(sigmad_min);
-	      sigmad = exp(sigmad);
-	      break;
-	    }
+	  Md = log(Md);
+	  Md += disc_step*log(Md_width)*rng.randh();
+	  Md = mod(Md - log(Md_min), log(Md_width)) + log(Md_min);
+	  Md = exp(Md);
 	}
       
       // Pre-rejection trick
@@ -399,6 +411,11 @@ void MyModel::calculate_image()
   // const double dxos = Data::get_instance().get_dxos();
   // const double dyos = Data::get_instance().get_dyos();
   
+  const double x_pad_dx = Data::get_instance().get_x_pad_dx();
+  const double y_pad_dy = Data::get_instance().get_y_pad_dy();
+  const double image_width = sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy));
+
+
   const double sigma_lsfsq = lsf_sigma*lsf_sigma;
 
   // Determine if adding blobs
@@ -508,11 +525,15 @@ void MyModel::calculate_image()
 		  rel_lambda[i][j] /= pow(1.0 + pow(vslope/rad[i][j], vgamma), 1.0/vgamma);
 		  rel_lambda[i][j] *= sin_inc*cos(angle);
 		}
-	      
 	      rel_lambda[i][j] += vsys;
 	      rel_lambda[i][j] /= constants::C;
 	      rel_lambda[i][j] += 1.0;
-	      
+
+	      // Calc dispersion (assuming constant atm)
+	      vdisp[i][j] = vdisp_param[0];
+	      for(int v=0; v<vdisp_order; v++)
+		vdisp[i][j] += vdisp_param[v+1]*pow(rad[i][j]/image_width, v+1);
+	      vdisp[i][j] = exp(vdisp[i][j]);
 	    }
 	}
     }
@@ -521,16 +542,12 @@ void MyModel::calculate_image()
   /*
     Disk component
   */
+  double sigma_lambda;
   if(model != 0)
     {  
       double invwxd;
-      double sigmad_lambda;
       if(disk_perturb || rot_perturb || !update)
 	{
-	  // line width
-	  sigmad_lambda = sigmad*constants::HA/constants::C;
-	  wlsq = sigmad_lambda*sigmad_lambda + sigma_lsfsq;
-	  invwlsq = 1.0/wlsq;
 
 	  // disk flux width
 	  invwxd = 1.0/wxd;
@@ -544,6 +561,13 @@ void MyModel::calculate_image()
 	      
 		  // Carry rel lambda over to each emline
 		  lambda = constants::HA*rel_lambda[i][j];
+
+		  // Calculate line width
+		  sigma_lambda = vdisp[i][j]*constants::HA/constants::C;
+		  wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
+		  invwlsq = 1.0/wlsq;
+
+		  // Calculate disk contribution to spaxels
 		  for(int r=0; r<nr; r++)
 		    {
 
@@ -565,7 +589,6 @@ void MyModel::calculate_image()
   double rc, thetac, M, wx, q, phi;
   double xc, yc;
   double xc_inc, yc_inc, xc_rot, yc_rot;
-  double vdisp, sigma_lambda;
   double wy, wxsq, wysq, corr;
   double qsq, invq, sqrtq;
   double invwxsq;
@@ -609,18 +632,10 @@ void MyModel::calculate_image()
 	  wx = components[k][3]; 
 	  q = components[k][4];
 	  phi = components[k][5];
-	  vdisp = components[k][6];
-
-	  // component manipulations
-	  sigma_lambda = vdisp*constants::HA/constants::C;
 	  
 	  // xc, yc in disk plane
 	  xc = rc*cos(thetac);
 	  yc = rc*sin(thetac);
-
-	  // Variance of instrumentally broadened line
-	  wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
-	  invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
 
 	  /*
 	    Component manipulations
@@ -706,6 +721,11 @@ void MyModel::calculate_image()
 		    // Calculate mean lambda for lines
 		    lambda = constants::HA*rel_lambda[i][j];
 
+		    // Calculate line width
+		    sigma_lambda = vdisp[i][j]*constants::HA/constants::C;
+		    wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
+		    invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
+
 		    for (int r=0; r<nr; r++)
 		      {
 			// Ha contribution
@@ -784,35 +804,6 @@ double MyModel::log_likelihood() const
 	}
     }
 
-  /*
-  // testing spatial dist
-  double collapse_var;
-  double collapse_im;
-  double collapse_data;
-  int i, j;  
-  for(int h=0; h<nv; h++)
-    {
-      i = valid[h][0];
-      j = valid[h][1];
-      
-      collapse_var = 0.0;
-      collapse_im = 0.0;
-      collapse_data = 0.0;
-      for(int r=0; r<nr; r++)
-	{
-	  if((data[i][j][r] != 0.0) && (var_cube[i][j][r] != 0.0))
-	    {
-	      collapse_var += var_cube[i][j][r];
-	      // collapse_im += convolved[i][j][r];
-	      collapse_im += image[i][j][r]; // TESTING: perform on preconvolved image
-	      collapse_data += data[i][j][r];
-	    }
-	}
-      logL += -0.5*log(2.0*M_PI*collapse_var)
-	-0.5*pow(collapse_data - collapse_im, 2)/collapse_var;
-    }
-  */
-
   return logL;
 }
 
@@ -848,7 +839,8 @@ void MyModel::print(std::ostream& out) const
   out<<vslope<<' ';
   out<<vgamma<<' ';
   out<<vbeta<<' ';
-  out<<sigmad<<' ';
+  for(int i=0; i<vdisp_order+1; i++)
+    out<<vdisp_param[i]<<' ';
   out<<inc<<' ';
   out<<pa<<' ';
   out<<sigma0<<' ';

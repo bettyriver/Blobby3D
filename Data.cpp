@@ -142,9 +142,9 @@ void Data::load(const char* moptions_file)
   sample = 1;
 
   // step size
-  hp_step = 0.2;
-  disc_step = 0.2;
-  sigma_step = 0.2;
+  hp_step = 1.0;
+  disc_step = 1.0;
+  sigma_step = 1.0;
 
   /*
    * First, read in the metadata
