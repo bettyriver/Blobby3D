@@ -155,7 +155,7 @@ void MyConditionalPrior::to_uniform(std::vector<double>& vec) const
   vec[0] = 1.0 - exp(-vec[0]);
   vec[1] = 0.5*vec[1]/M_PI;
   vec[2] = 0.5 + 0.5*erf((log(vec[2]) - flux_mu)/sqrt(2.0*flux_var));
-  vec[3] = (vec[3] - radiusmin)/(radisumax - radiusmin);
+  vec[3] = (vec[3] - radiusmin)/(radiusmax - radiusmin);
   vec[4] = pow(vec[4] - q_min, 2)/pow(1.0 - q_min, 2);
   vec[5] = vec[5]/M_PI;
 }
