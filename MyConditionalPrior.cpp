@@ -30,7 +30,7 @@ MyConditionalPrior::MyConditionalPrior(double x_min, double x_max,
 ,n2fluxlim_min(n2fluxlim_min)
 ,n2fluxlim_max(n2fluxlim_max)
 ,radiuslim_min(sqrt(dx*dy))
-,radiuslim_max(3.0*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy)))
+,radiuslim_max(2.0*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy)))
 {
 
 
@@ -74,7 +74,7 @@ double MyConditionalPrior::perturb_hyperparameters(RNG& rng)
   double logH = 0.0;
 
   int which;
-  which = rng.rand_int(5);
+  which = rng.rand_int(4);
 
   switch(which)
     {
@@ -99,10 +99,6 @@ double MyConditionalPrior::perturb_hyperparameters(RNG& rng)
       radiusmax = exp(radiusmax);
       break;
     case 3:
-      radiusmin_ratio += hp_step*rng.randh();
-      radiusmin_ratio = mod(radiusmin_ratio, 1.0);
-      break;
-    case 4:
       q_min += hp_step*(1.0 - qlim_min)*rng.randh();
       q_min = mod(q_min - qlim_min, 1.0 - qlim_min);
       q_min += qlim_min;
@@ -115,7 +111,7 @@ double MyConditionalPrior::perturb_hyperparameters(RNG& rng)
 
 double MyConditionalPrior::log_pdf(const std::vector<double>& vec) const
 {
-  double radiusmin = exp(log(radiuslim_min) + log(radiusmax/radiuslim_min)*radiusmin_ratio);
+  double radiusmin = 0.5;
 
   if(vec[0] < 0.0 ||
      vec[1] < 0.0 || vec[1] > 2.0*M_PI ||
@@ -134,7 +130,7 @@ double MyConditionalPrior::log_pdf(const std::vector<double>& vec) const
   logp += -log(vec[2]*sqrt(2.0*M_PI*flux_var)) - 0.5*pow(log(vec[2]) - flux_mu, 2)/flux_var;
   
   // LogUniform for width with changing boundaries
-  logp += -log(vec[3]*log(radiusmax/radiusmin));
+  logp += -log(radiusmax - radiusmin);
 
   // Triangular distribution for q
   logp += 2.0*(vec[4] - q_min)/pow(1.0 - q_min, 2);
@@ -145,32 +141,31 @@ double MyConditionalPrior::log_pdf(const std::vector<double>& vec) const
 
 void MyConditionalPrior::from_uniform(std::vector<double>& vec) const
 { 
-  double radiusmin = exp(log(radiuslim_min) + log(radiusmax/radiuslim_min)*radiusmin_ratio);
+  double radiusmin = 0.5;
 
   vec[0] = -log(1.0 - vec[0]);
   vec[1] = 2.0*M_PI*vec[1];
   vec[2] = exp(sqrt(2.0*flux_var)*boost::math::erf_inv((2.0*vec[2] - 1.0)*(1.0 - 1E-15)) + flux_mu); 
-  vec[3] = exp(log(radiusmin) + log(radiusmax/radiusmin)*vec[3]);
+  vec[3] = radiusmin + (radiusmax - radiusmin)*vec[3];
   vec[4] = (1.0 - q_min)*sqrt(vec[4]) + q_min;
   vec[5] = M_PI*vec[5];
 }
 
 void MyConditionalPrior::to_uniform(std::vector<double>& vec) const
 {
-  double radiusmin = exp(log(radiuslim_min) + log(radiusmax/radiuslim_min)*radiusmin_ratio);
+  double radiusmin = radiuslim_min + (radiusmax - radiuslim_min)*radiusmin_ratio;
 
   vec[0] = 1.0 - exp(-vec[0]);
   vec[1] = 0.5*vec[1]/M_PI;
   vec[2] = 0.5 + 0.5*erf((log(vec[2]) - flux_mu)/sqrt(2.0*flux_var));
-  vec[3] = log(vec[3]/radiusmin)/log(radiusmax/radiusmin);
+  vec[3] = (vec[3] - radiusmin)/(radisumax - radiusmin);
   vec[4] = pow(vec[4] - q_min, 2)/pow(1.0 - q_min, 2);
   vec[5] = vec[5]/M_PI;
 }
 
 void MyConditionalPrior::print(std::ostream& out) const
 {
-  
-  double radiusmin = exp(log(radiuslim_min) + log(radiusmax/radiuslim_min)*radiusmin_ratio);
+  double radiusmin = 0.5;
   
   out<<exp(flux_mu)<<' '<<flux_std<<' '
      <<radiusmin<<' '<<radiusmax<<' '
