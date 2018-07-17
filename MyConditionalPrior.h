@@ -29,8 +29,7 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
 
   // Loguniform with changing limits for W
   double radiuslim_width;
-  double radiusmax;
-  double radiusmin_ratio;
+  double radiusmin, radiusmax;
 
   // Triangular with changing lower limit
   double qlim_min;
