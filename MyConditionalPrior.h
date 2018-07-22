@@ -13,7 +13,6 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
   double dx, dy, dr;
   double x_pad_dx, y_pad_dy;
   double fluxlim_min, fluxlim_max; 
-  double n2fluxlim_min, n2fluxlim_max;
   double radiuslim_min, radiuslim_max;
 
   // Lognormal for flux
@@ -45,8 +44,7 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
 		     double dy, 
 		     double dr,
 		     double x_pad_dx, double y_pad_dy,
-		     double fluxlim_min, double fluxlim_max,
-		     double n2fluxlim_min, double n2fluxlim_max);
+		     double fluxlim_min, double fluxlim_max);
 
   void from_prior(DNest4::RNG& rng);
 

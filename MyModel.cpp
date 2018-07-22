@@ -11,7 +11,7 @@ using namespace std;
 using namespace DNest4;
 
 MyModel::MyModel()
-:objects(7,  Data::get_instance().get_nmax(), 
+:objects(7, Data::get_instance().get_nmax(), 
 	   Data::get_instance().get_nfixed(), 
 	 MyConditionalPrior(Data::get_instance().get_x_min(), 
 			    Data::get_instance().get_x_max(),
@@ -24,10 +24,8 @@ MyModel::MyModel()
 			    Data::get_instance().get_dr(),
 			    Data::get_instance().get_x_pad_dx(),
 			    Data::get_instance().get_y_pad_dy(),
-			    Data::get_instance().get_fluxmu_min()*Data::get_instance().get_sum_flux(),
-			    Data::get_instance().get_fluxmu_max()*Data::get_instance().get_sum_flux(),
-			    Data::get_instance().get_fluxmu_min()*Data::get_instance().get_sum_flux(), 
-			    Data::get_instance().get_fluxmu_max()*Data::get_instance().get_sum_flux()),
+			    log(Data::get_instance().get_fluxmu_min()),
+			    log(Data::get_instance().get_fluxmu_max())),
 	 PriorType::log_uniform)
 {
 
@@ -59,6 +57,9 @@ MyModel::MyModel()
 	  convolved[i][j].resize(nr);
 	}
    }
+
+  // Flux profile
+  flux.assign(ni, std::vector<double>(nj));
 
   // relative lambda for velocity
   rel_lambda.assign(ni, std::vector<double>(nj));
@@ -113,10 +114,10 @@ void MyModel::from_prior(RNG& rng)
   vmax_width = Data::get_instance().get_vmax_max()/vmax_min;
 
   vslope_min = sqrt(dx*dy);
-  vslope_width = 5.0*sqrt((x_max - x_min)*(y_max - y_min))/vslope_min;
+  vslope_width = 2.0*sqrt((x_max - x_min)*(y_max - y_min))/vslope_min;
 
   vgamma_min = 1.0;
-  vgamma_width = 50.0/vgamma_min;
+  vgamma_width = 100.0/vgamma_min;
 
   vbeta_min = -0.75;
   vbeta_width = 1.5;
@@ -203,11 +204,11 @@ void MyModel::from_prior(RNG& rng)
 
   // Dispersion
   vdisp_order = 1;
-  DNest4::Cauchy cauchy_vdisp(0.0, 1.0);
+  DNest4::Gaussian gaussian_vdisp(0.0, 0.2);
   vdisp_param.assign(vdisp_order+1, 0.0);
   vdisp_param[0] = vdisp0_min + vdisp0_width*rng.rand();
   for(int v=1; v<vdisp_order+1; v++)
-      vdisp_param[v] = cauchy_vdisp.generate(rng);
+      vdisp_param[v] = gaussian_vdisp.generate(rng);
 
   wxd = exp(log(wxd_min) + log(wxd_width)*rng.rand());
 
@@ -239,7 +240,7 @@ double MyModel::perturb(RNG& rng)
   DNest4::Cauchy cauchy_xc(x_imagecentre, gamma_pos);
   DNest4::Cauchy cauchy_yc(y_imagecentre, gamma_pos);
   DNest4::Cauchy cauchy_vsys(0.0, gamma_vsys);
-  DNest4::Cauchy cauchy_vdisp(0.0, 1.0);
+  DNest4::Gaussian gaussian_vdisp(0.0, 0.2);
 
   double logH = 0.0;
   double rnd = rng.rand();
@@ -333,7 +334,7 @@ double MyModel::perturb(RNG& rng)
 	      break;
 	    case 11:
 	      which = rng.rand_int(vdisp_order);
-	      logH += cauchy_vdisp.perturb(vdisp_param[which+1], rng);
+	      logH += gaussian_vdisp.perturb(vdisp_param[which+1], rng);
 	      break;
 	    }
 	}
@@ -428,7 +429,7 @@ void MyModel::calculate_image()
 
   /*
     CLEAR CUBE
-   */
+  */
   if(model != 1)
     {
       if(disk_perturb || rot_perturb || !update)
@@ -436,7 +437,12 @@ void MyModel::calculate_image()
 	  // get all components
 	  components = objects.get_components();
 	  
-	  // clear image
+	  // clear flux map
+	  for(int i=0; i<ni; i++)
+	    for(int j=0; j<nj; j++)
+	      flux[i][j] = 0.0;
+
+	  // clear cube
 	  for(int i=0; i<ni; i++)
 	    for(int j=0; j<nj; j++)
 	      for(int r=0; r<nr; r++)
@@ -444,13 +450,24 @@ void MyModel::calculate_image()
 	}
       else
 	{
+	  // clear cube
+	  for(int i=0; i<ni; i++)
+	    for(int j=0; j<nj; j++)
+	      for(int r=0; r<nr; r++)
+		image[i][j][r] = 0.0;	  
+	  
 	  // only get added components
 	  components = objects.get_added();
 	}
     }
   else
     {
-      // clear image
+      // clear flux map
+      for(int i=0; i<ni; i++)
+	for(int j=0; j<nj; j++)
+	  flux[i][j] = 0.0;      
+      
+      // clear cube
       for(int i=0; i<ni; i++)
 	for(int j=0; j<nj; j++)
 	  for(int r=0; r<nr; r++)
@@ -532,7 +549,7 @@ void MyModel::calculate_image()
 	      // Calc dispersion (assuming constant atm)
 	      vdisp[i][j] = vdisp_param[0];
 	      for(int v=0; v<vdisp_order; v++)
-		vdisp[i][j] += vdisp_param[v+1]*pow(rad[i][j]/image_width, v+1);
+		vdisp[i][j] += vdisp_param[v+1]*pow(rad[i][j], v+1);
 	      vdisp[i][j] = exp(vdisp[i][j]);
 	    }
 	}
@@ -559,6 +576,9 @@ void MyModel::calculate_image()
 	      for(int j=0; j<nj; j++)
 		{
 	      
+		  flux[i][j] += amp*LookupExp::evaluate(rad[i][j]*invwxd);
+
+		  /*
 		  // Carry rel lambda over to each emline
 		  lambda = constants::HA*rel_lambda[i][j];
 
@@ -579,6 +599,7 @@ void MyModel::calculate_image()
 		      // image[i][j][r] += amp*LookupExp::evaluate(rad[i][j]*invwxd)/30.0;
 
 		    }
+		  */
 		}
 	    }
 	}
@@ -714,6 +735,9 @@ void MyModel::calculate_image()
 		      }
 		  }
 
+		flux[i][j] += amps;
+
+		/*
 		if(amps > 0.0)
 		  {
 		    // sum_blobw = 0.0;
@@ -744,12 +768,49 @@ void MyModel::calculate_image()
 			// sum_blob += image[i][j][r];
 		      }
 		  }
-	      } 
+		*/
+	      }
   
 	    }
 
 	}
     }
+
+  
+  /*
+    Create cube
+  */
+  for(int i=0; i<ni; i++)
+    {
+      for(int j=0; j<nj; j++)
+	{
+	  if(flux[i][j] > 0.0)
+	    {
+	      // Calculate mean lambda for lines
+	      lambda = constants::HA*rel_lambda[i][j];
+	      
+	      // Calculate line width
+	      sigma_lambda = vdisp[i][j]*constants::HA/constants::C;
+	      wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
+	      invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
+	      
+	      // Calculate image for 1st wavelength bin
+	      ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
+	      ha_cdf_max = LookupErf::evaluate((wave[0] + 0.5*dr - lambda)*invtwo_wlsq);
+	      image[i][j][0] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
+	      
+	      // Loop through remaining bins
+	      for(int r=1; r<nr; r++)
+		{
+		  ha_cdf_min = ha_cdf_max;
+		  ha_cdf_max = LookupErf::evaluate((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
+		  image[i][j][r] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
+		}
+	    }
+	}
+    }
+
+
 
   /* 
      Convolve Cube
@@ -795,7 +856,7 @@ double MyModel::log_likelihood() const
 	{
 	  if((data[i][j][r] != 0.0) && (var_cube[i][j][r] != 0.0))
 	    {
-	      var = var_cube[i][j][r] + sigma0sq + image[i][j][r]*sigma1;
+	      var = var_cube[i][j][r] + sigma0sq + convolved[i][j][r]*sigma1;
 	      // var = var_cube[i][j][r]; // Testing convolution on likelihood first
 	      
 	      logL += -0.5*log(2.0*M_PI*var)
