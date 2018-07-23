@@ -11,7 +11,7 @@ using namespace std;
 using namespace DNest4;
 
 MyModel::MyModel()
-:objects(7, Data::get_instance().get_nmax(), 
+:objects(6, Data::get_instance().get_nmax(), 
 	   Data::get_instance().get_nfixed(), 
 	 MyConditionalPrior(Data::get_instance().get_x_min(), 
 			    Data::get_instance().get_x_max(),
