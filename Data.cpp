@@ -75,7 +75,8 @@ void Data::load(const char* moptions_file)
   fin>>lnvdispsd_min; fin>>lnvdispsd_max; fin.ignore(1000000, '\n');
   fin>>qlim_min; fin.ignore(1000000, '\n');
   fin>>sigma_min; fin>>sigma_max; fin.ignore(10000000, '\n');
-  fin>>sigma_pad; fin.ignore(10000000, '\n');  
+  fin>>sigma_pad; fin.ignore(10000000, '\n');
+  fin>>gama_inc; fin.ignore(10000000, '\n');
   fin.close();
 
   // Print out parameters
@@ -127,6 +128,7 @@ void Data::load(const char* moptions_file)
   std::cout<<"LNVDISPSDmin, LNVDISPSDmax: "<<lnvdispsd_min<<", "<<lnvdispsd_max<<std::endl;
   std::cout<<"QLIMmin: "<<qlim_min<<std::endl;
   std::cout<<"SIGMAmin, SIGMAmax: "<<sigma_min<<", "<<sigma_max<<std::endl;
+  std::cout<<"GAMA INC: "<<gama_inc<<std::endl;
 
   // Model choice (only for testing)
   model = 0;

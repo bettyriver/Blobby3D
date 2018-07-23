@@ -65,6 +65,7 @@ class MyModel
   double vdisp0_min, vdisp0_width;
   std::vector<double> vdisp_param;
 
+  double gama_inc;
   double inc, pa;
 
   // Noise parameter

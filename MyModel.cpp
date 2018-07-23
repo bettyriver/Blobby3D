@@ -92,6 +92,7 @@ void MyModel::from_prior(RNG& rng)
   const double y_pad_dy = Data::get_instance().get_y_pad_dy();
   const double sum_flux = Data::get_instance().get_sum_flux();
   const double vsys_max = Data::get_instance().get_vsys_max();
+  const double gama_inc = Data::get_instance().get_gama_inc();
 
   /*
     Limits: global parameters
@@ -161,7 +162,8 @@ void MyModel::from_prior(RNG& rng)
 	   (ycd > y_max - y_pad_dy));
 
   pa = 2.0*M_PI*rng.rand();
-  inc = 0.5*M_PI*rng.rand();
+  // inc = 0.5*M_PI*rng.rand();
+  inc = gama_inc;
 
   wxd_min = sqrt(dx*dy);
   wxd_width = 3.0*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy))/wxd_min;
@@ -236,6 +238,8 @@ double MyModel::perturb(RNG& rng)
   const double y_pad_dy = Data::get_instance().get_y_pad_dy();
   const double disc_step = Data::get_instance().get_disc_step();
   const double sigma_step = Data::get_instance().get_sigma_step();
+
+  const double gama_inc = Data::get_instance().get_gama_inc();
 
   DNest4::Cauchy cauchy_xc(x_imagecentre, gamma_pos);
   DNest4::Cauchy cauchy_yc(y_imagecentre, gamma_pos);
@@ -320,6 +324,7 @@ double MyModel::perturb(RNG& rng)
 	    case 8:
 	      inc += disc_step*0.5*M_PI*rng.randh();
 	      inc = mod(inc, 0.5*M_PI);
+	      inc = gama_inc;
 	      break;
 	    case 9:
 	      wxd = log(wxd);

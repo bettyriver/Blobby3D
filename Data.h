@@ -30,6 +30,7 @@ class Data
   double lnvdispsd_min, lnvdispsd_max;
   double qlim_min;
   double sigma_min, sigma_max;
+  double gama_inc;
   
   // sampling
   double sample;
@@ -157,6 +158,7 @@ class Data
   double get_qlim_min() const { return qlim_min; }
   double get_sigma_min() const { return sigma_min; }
   double get_sigma_max() const { return sigma_max; }
+  double get_gama_inc() const { return gama_inc; }
   int get_x_pad() const { return x_pad; }
   int get_y_pad() const { return y_pad; }
   double get_x_pad_dx() const { return x_pad_dx; }
