@@ -15,6 +15,10 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
   double fluxlim_min, fluxlim_max; 
   double radiuslim_min, radiuslim_max;
 
+  // Exponential for wd
+  double wd_min, wd_width;
+  double wd;
+
   // Lognormal for flux
   double flux_mu;
   double fluxlim_width;

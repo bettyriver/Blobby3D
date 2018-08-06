@@ -289,6 +289,17 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
       */
       for(size_t k=0; k<psf_sigma.size(); k++)
 	{
+	  /*
+	  std::cout<<"NKERN: "<<psf_sigma.size()<<std::endl;
+
+	  std::cout<<"KERNEL: "<<k
+		   <<"KERN SIGMA: "<<psf_sigma[k]
+		   <<"KERN FWHM: "<<psf_sigma[k]*sqrt(8.0*log(2.0))
+		   <<"KERN AMP: "<<psf_amp[k]<<std::endl;
+
+	  std::cout<<"KERNX LENGTH: "<<kernel_x[k].size()
+		   <<"KERNY LENGTH "<<kernel_y[k].size()<<std::endl;
+	  */
 
 	  szk_x = (int)ceil(5.0*psf_sigma[k]/dx);
 	  szk_y = (int)ceil(5.0*psf_sigma[k]/dy);

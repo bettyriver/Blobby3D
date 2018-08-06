@@ -11,8 +11,9 @@ using namespace std;
 using namespace DNest4;
 
 MyModel::MyModel()
-:objects(6, Data::get_instance().get_nmax(), 
-	   Data::get_instance().get_nfixed(), 
+:objects(7, 
+	 Data::get_instance().get_nmax(), 
+	 Data::get_instance().get_nfixed(), 
 	 MyConditionalPrior(Data::get_instance().get_x_min(), 
 			    Data::get_instance().get_x_max(),
 			    Data::get_instance().get_y_min(), 
@@ -114,8 +115,8 @@ void MyModel::from_prior(RNG& rng)
   vmax_min = Data::get_instance().get_vmax_min();
   vmax_width = Data::get_instance().get_vmax_max()/vmax_min;
 
-  vslope_min = sqrt(dx*dy);
-  vslope_width = 2.0*sqrt((x_max - x_min)*(y_max - y_min))/vslope_min;
+  vslope_min = 0.03;
+  vslope_width = 30.0/vslope_min;
 
   vgamma_min = 1.0;
   vgamma_width = 100.0/vgamma_min;
@@ -125,6 +126,7 @@ void MyModel::from_prior(RNG& rng)
 
   vdisp0_min = log(1.0);
   vdisp0_width = log(200.0/1.0);
+
 
   /*
     Limits: disk parameters
@@ -165,8 +167,8 @@ void MyModel::from_prior(RNG& rng)
   // inc = 0.5*M_PI*rng.rand();
   inc = gama_inc;
 
-  wxd_min = sqrt(dx*dy);
-  wxd_width = 3.0*sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy))/wxd_min;
+  wxd_min = 0.3;
+  wxd_width = 30.0/wxd_min;
 
   // Initialise: Velocity
   DNest4::Cauchy cauchy_vsys(0.0, gamma_vsys);
@@ -198,10 +200,12 @@ void MyModel::from_prior(RNG& rng)
   if((model == 1) || (model == 2))
     {
       Md = exp(log(Md_min) + log(Md_width)*rng.rand());
+      wxd = exp(log(wxd_min) + log(wxd_width)*rng.rand());
     }
   else
     {
       Md = 0.0;
+      wxd = 0.0;
     }
 
   // Dispersion
@@ -212,7 +216,7 @@ void MyModel::from_prior(RNG& rng)
   for(int v=1; v<vdisp_order+1; v++)
       vdisp_param[v] = gaussian_vdisp.generate(rng);
 
-  wxd = exp(log(wxd_min) + log(wxd_width)*rng.rand());
+
 
   // Calculate image
   rot_perturb = true;
@@ -273,7 +277,7 @@ double MyModel::perturb(RNG& rng)
 	{
 	  // Perturb disc parameters
 	  rot_perturb = true;
-	  int which = rng.rand_int(12);
+	  int which = rng.rand_int(11);
 
 	  switch(which)
 	    {
@@ -327,17 +331,11 @@ double MyModel::perturb(RNG& rng)
 	      inc = gama_inc;
 	      break;
 	    case 9:
-	      wxd = log(wxd);
-	      wxd += disc_step*log(wxd_width)*rng.randh();
-	      wxd = mod(wxd - log(wxd_min), log(wxd_width)) + log(wxd_min);
-	      wxd = exp(wxd);
-	      break;
-	    case 10:
 	      vdisp_param[0] += disc_step*vdisp0_width*rng.randh();
 	      vdisp_param[0] = mod(vdisp_param[0] - vdisp0_min, vdisp0_width);
 	      vdisp_param[0] += vdisp0_min;
 	      break;
-	    case 11:
+	    case 10:
 	      which = rng.rand_int(vdisp_order);
 	      logH += gaussian_vdisp.perturb(vdisp_param[which+1], rng);
 	      break;
@@ -348,10 +346,21 @@ double MyModel::perturb(RNG& rng)
 	  // Perturb disc flux parameters
 	  disk_perturb = true;
 	  
-	  Md = log(Md);
-	  Md += disc_step*log(Md_width)*rng.randh();
-	  Md = mod(Md - log(Md_min), log(Md_width)) + log(Md_min);
-	  Md = exp(Md);
+	  int which = rng.rand_int(2);
+	  switch(which){
+	    case 0:
+	      Md = log(Md);
+	      Md += disc_step*log(Md_width)*rng.randh();
+	      Md = mod(Md - log(Md_min), log(Md_width)) + log(Md_min);
+	      Md = exp(Md);
+	      break;
+	    case 1:
+	      wxd = log(wxd);
+	      wxd += disc_step*log(wxd_width)*rng.randh();
+	      wxd = mod(wxd - log(wxd_min), log(wxd_width)) + log(wxd_min);
+	      wxd = exp(wxd);
+	      break;
+	  }
 	}
       
       // Pre-rejection trick
@@ -652,7 +661,7 @@ void MyModel::calculate_image()
       for(size_t k=0; k<components.size(); ++k)
 	{
 	  // Components
-	  rc = components[k][0]*wxd; 
+	  rc = components[k][0]; 
 	  thetac = components[k][1];
 	  M = components[k][2];
 	  wx = components[k][3]; 
