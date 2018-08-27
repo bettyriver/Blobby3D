@@ -337,13 +337,12 @@ Conv::brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >&
 		{
 		  if((y_pad + i + p >= 0) && (y_pad + i + p < convolved_tmp_2d.size()))
 		    {
-		      convolved[i][j][r] += convolved_tmp_2d[y_pad+i+p][j]*kernel_y[k][szk_y+p];
+		      convolved[i][j][r] += psf_amp[k]*convolved_tmp_2d[y_pad+i+p][j]*kernel_y[k][szk_y+p];
 		      norm += kernel_y[k][szk_y+p];
 		    }
 		}
 	      // renormalise
 	      convolved[i][j][r] /= norm;
-	      convolved[i][j][r] *= psf_amp[k];
 	    }
 	}
     }
