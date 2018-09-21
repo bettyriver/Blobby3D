@@ -9,15 +9,9 @@ using namespace std;
 
 Data Data::instance;
 
-Data::Data()
-{
+Data::Data() {}
 
-}
-
-
-void Data::load(const char* moptions_file)
-{
-
+void Data::load(const char* moptions_file) {
   /*
     Model parameters:
     model:
@@ -34,10 +28,10 @@ void Data::load(const char* moptions_file)
   */
   // std::string metadata_file, cube_file, var_file;
   fstream fin(moptions_file, ios::in);
-  if(!fin)
+  if (!fin)
     cerr<<"# ERROR: couldn't open file "<<moptions_file<<"."<<endl;
 
-  while(fin.peek() == '#')
+  while (fin.peek() == '#')
     fin.ignore(1000000, '\n');
 
   fin>>metadata_file; fin.ignore(1000000, '\n');
@@ -47,20 +41,18 @@ void Data::load(const char* moptions_file)
 
   // Read in AMPs (multiple for multi-gauss fit)
   double tmp_amp;
-  while(fin.peek() != '#')
-    {
+  while (fin.peek() != '#') {
       fin>>tmp_amp;
       psf_amp.push_back(tmp_amp);
-    }
+  }
   fin.ignore(1000000, '\n');
 
   // Read in FWHMs (multiple for multi-gauss conv)
   double tmp_fwhm;
-  while(fin.peek() != '#')
-    {
-      fin>>tmp_fwhm;
-      psf_fwhm.push_back(tmp_fwhm);
-    }
+  while (fin.peek() != '#') {
+    fin>>tmp_fwhm;
+    psf_fwhm.push_back(tmp_fwhm);
+  }
   fin.ignore(1000000, '\n');
 
   fin>>psf_beta; fin.ignore(1000000, '\n'); // Beta parameter if using moffat
@@ -83,6 +75,7 @@ void Data::load(const char* moptions_file)
   std::cout << "Input Metadata file: "<< metadata_file << std::endl;
   std::cout << "Input Cube file: "<< cube_file << std::endl;
   std::cout << "Input Variance Cube file: "<< var_file << std::endl;
+
   // sigma cutoff parameter for blobs
   sigma_cutoff = 5.0;
 
@@ -91,25 +84,22 @@ void Data::load(const char* moptions_file)
     psf_sigma.push_back(psf_fwhm[i]/sqrt(8.0*log(2.0))); 
 
   // Print out convolution parameters
-  if(convolve == 0)
-    {
-      std::cout<<"Model will assume Gaussian convolution kernel.\n";
-      std::cout<<"PSF AMP:";
-      for(size_t i=0; i<psf_amp.size(); i++)
-	std::cout<<" "<<psf_amp[i];
-      std::cout<<std::endl;
+  if (convolve == 0) {
+    std::cout<<"Model will assume Gaussian convolution kernel.\n";
+    std::cout<<"PSF AMP:";
+    for (size_t i=0; i<psf_amp.size(); i++)
+      std::cout<<" "<<psf_amp[i];
+    std::cout<<std::endl;
 
-      std::cout<<"PSF FWHM (ASEC):";
-      for(size_t i=0; i<psf_fwhm.size(); i++)
-	std::cout<<" "<<psf_fwhm[i];
-      std::cout<<std::endl;
-    }
-  else if(convolve == 1)
-    {
-      std::cout<<"Model will assume Moffat convolution kernel.\n";
-      std::cout<<"PSF FWHM (ASEC): "<<psf_fwhm[0]<<std::endl;
-      std::cout<<"PSF BETA: "<<psf_beta<<std::endl<<std::endl;
-    }
+    std::cout<<"PSF FWHM (ASEC):";
+    for (size_t i=0; i<psf_fwhm.size(); i++)
+      std::cout<<" "<<psf_fwhm[i];
+    std::cout<<std::endl;
+  } else if (convolve == 1) {
+    std::cout<<"Model will assume Moffat convolution kernel.\n";
+    std::cout<<"PSF FWHM (ASEC): "<<psf_fwhm[0]<<std::endl;
+    std::cout<<"PSF BETA: "<<psf_beta<<std::endl<<std::endl;
+  }
   
   // LSF convolution message
   // LSF in wavelength (needs to be redshift corrected)
@@ -134,10 +124,10 @@ void Data::load(const char* moptions_file)
   model = 0;
   
   // Override blob parameters for disk model
-  if(model == 1)
+  if (model == 1)
     nmax = 0;
   
-  if(model == 1)
+  if (model == 1)
     nfixed = true;
 
   // Spatial sampling of cube
@@ -152,7 +142,7 @@ void Data::load(const char* moptions_file)
    * First, read in the metadata
   */
   fin.open(metadata_file, ios::in);
-  if(!fin)
+  if (!fin)
     cerr<<"# ERROR: couldn't open file "<<metadata_file<<"."<<endl;
   fin >> ni >> nj;
   fin >> nr;
@@ -161,7 +151,7 @@ void Data::load(const char* moptions_file)
   fin.close();
 
   // Make sure maximum > minimum
-  if(x_max <= x_min || y_max <= y_min)
+  if (x_max <= x_min || y_max <= y_min)
     cerr<<"# ERROR: strange input in "<<metadata_file<<"."<<endl;
 
 
@@ -172,12 +162,12 @@ void Data::load(const char* moptions_file)
    * Now, load the image
   */
   fin.open(cube_file, ios::in);
-  if(!fin)
+  if (!fin)
     cerr<<"# ERROR: couldn't open file "<<cube_file<<"."<<endl;
   image = arr_3d();
-  for(size_t i=0; i<image.size(); i++)
-    for(size_t j=0; j<image[i].size(); j++)
-      for(size_t r=0; r<image[i][j].size(); r++)
+  for (size_t i=0; i<image.size(); i++)
+    for (size_t j=0; j<image[i].size(); j++)
+      for (size_t r=0; r<image[i][j].size(); r++)
 	fin >> image[i][j][r];
   fin.close();
   std::cout<<"Image Loaded...\n";
@@ -186,13 +176,13 @@ void Data::load(const char* moptions_file)
    * Load the sigma map
    */
   fin.open(var_file, ios::in);
-  if(!fin)
+  if (!fin)
     cerr<<"# ERROR: couldn't open file "<<var_file<<"."<<endl;
   // Variance cube from data input
   var_cube = arr_3d();
-  for(size_t i=0; i<var_cube.size(); i++)
-    for(size_t j=0; j<var_cube[i].size(); j++)
-      for(size_t r=0; r<var_cube[i][j].size(); r++)
+  for (size_t i=0; i<var_cube.size(); i++)
+    for (size_t j=0; j<var_cube[i].size(); j++)
+      for (size_t r=0; r<var_cube[i][j].size(); r++)
 	fin >> var_cube[i][j][r];
   fin.close();
   std::cout<<"Variance Loaded...\n";
@@ -206,45 +196,39 @@ void Data::load(const char* moptions_file)
   vector<int> tmp_vec(2);
   nv = 0;
   sum_flux = 0.0;
-  for(int i=0; i<image.size(); i++)
-    {
-      for(int j=0; j<image[i].size(); j++)
-	{
-	  tmp_im = 0.;
-	  tmp_sig = 0.;
-	  for(int r=0; r<image[i][j].size(); r++)
-	    {
-	      if(image[i][j][r] != 0.0)
-		{ tmp_im = 1.0; }
-	      tmp_sig += var_cube[i][j][r];
-	    }
+  for (int i=0; i<image.size(); i++) {
+    for(int j=0; j<image[i].size(); j++) {
+      tmp_im = 0.;
+      tmp_sig = 0.;
+      for (int r=0; r<image[i][j].size(); r++) {
+        if (image[i][j][r] != 0.0) { tmp_im = 1.0; }
+	tmp_sig += var_cube[i][j][r];
+	}
 	  
-	  // Add valid pixels to array
-	  if((tmp_im == 1.0) && (tmp_sig > 0.))
-	    {
-	      tmp_vec[0] = i; tmp_vec[1] = j;
-	      sum_flux += tmp_im;
+	// Add valid pixels to array
+	if ((tmp_im == 1.0) && (tmp_sig > 0.0)) {
+	  tmp_vec[0] = i; tmp_vec[1] = j;
+	  sum_flux += tmp_im;
 	      
-	      if(nv != 0)
-		valid.push_back(tmp_vec);
-	      else
-		valid[0] = tmp_vec;
+	  if (nv != 0)
+	    valid.push_back(tmp_vec);
+	  else
+	    valid[0] = tmp_vec;
 
-	      nv += 1;
-	    }
+	  nv += 1;
 	}
     }
+  }
   std::cout<<"Valid pixels determined...\n\n";
 
   // Compute pixel widths
   dx = (x_max - x_min)/nj;
   dy = (y_max - y_min)/ni;
   dr = (r_max - r_min)/nr;
-  for(size_t i=0; i<psf_sigma.size(); i++)
-    {
+  for (size_t i=0; i<psf_sigma.size(); i++) {
       psf_sigma_overdx.push_back(psf_sigma[i]/dx);
       psf_sigma_overdy.push_back(psf_sigma[i]/dy);
-    }
+  }
 
   // Array padding to help edge problems
   x_pad = (int)ceil(sigma_pad*psf_sigma[0]/dx);
@@ -271,40 +255,34 @@ void Data::load(const char* moptions_file)
 
   // Compute (oversampled) x, y, r arrays
   compute_ray_grid();
-
 }
 
 // Create desired size array
-std::vector< std::vector< std::vector<double> > > Data::arr_3d()
-{
+std::vector< std::vector< std::vector<double> > > Data::arr_3d() {
   std::vector< std::vector< std::vector<double> > > arr;
 
   arr.resize(ni);
-  for(size_t i=0; i<ni; i++)
-    {
-      arr[i].resize(nj);
-      for(size_t j=0; j<nj; j++)
-	{
-	  arr[i][j].resize(nr);
-	}
+  for (size_t i=0; i<ni; i++) {
+    arr[i].resize(nj);
+    for(size_t j=0; j<nj; j++) {
+      arr[i][j].resize(nr);
     }
+  }
+
   return arr;
 }
 
-void Data::compute_ray_grid()
-{
+void Data::compute_ray_grid() {
   // Make vectors of the correct size
   x_rays.assign(ni, vector<double>(nj));
   y_rays.assign(ni, vector<double>(nj));
 
-  for(size_t i=0; i<x_rays.size(); i++)
-    {
-      for(size_t j=0; j<x_rays[i].size(); j++)
-	{
-	  x_rays[i][j] = x_min + (j + 0.5)*dx;
-	  y_rays[i][j] = y_max - (i + 0.5)*dy;
-	}
+  for (size_t i=0; i<x_rays.size(); i++) {
+    for (size_t j=0; j<x_rays[i].size(); j++) {
+      x_rays[i][j] = x_min + (j + 0.5)*dx;
+      y_rays[i][j] = y_max - (i + 0.5)*dy;
     }
+  }
 
   r_rays.assign(nr, 0.0);	
   for(size_t r=0; r<r_rays.size(); r++)
