@@ -1,8 +1,10 @@
+#include "Conv.h"
+
 #include <iostream>
 #include <cmath>
+
 #include "DNest4/code/DNest4.h"
 #include "Data.h"
-#include "Conv.h"
 
 using namespace std;
 using namespace DNest4;

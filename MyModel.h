@@ -2,6 +2,7 @@
 #define DNest4_GalaxyField_MyModel
 
 #include <vector>
+
 #include "DNest4/code/DNest4.h"
 #include "MyConditionalPrior.h"
 #include "Conv.h"

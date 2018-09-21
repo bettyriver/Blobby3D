@@ -1,8 +1,10 @@
 #include "MyConditionalPrior.h"
-#include "DNest4/code/DNest4.h"
-#include "Data.h"
+
 #include <cmath>
 #include "boost/math/special_functions/erf.hpp"
+
+#include "DNest4/code/DNest4.h"
+#include "Data.h"
 
 using namespace DNest4;
 

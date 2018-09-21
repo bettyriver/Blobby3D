@@ -1,9 +1,11 @@
 #include "Data.h"
-#include "Constants.h"
+
 #include <iostream>
 #include <fstream>
 #include <cmath>
 #include <limits>
+
+#include "Constants.h"
 
 using namespace std;
 

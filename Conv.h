@@ -3,12 +3,12 @@
 
 #include <vector>
 #include <fftw3.h>
+
 #include "Data.h"
 
 /*
   Class for convolving by the PSF
 */
-
 
 class Conv
 {

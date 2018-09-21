@@ -1,4 +1,5 @@
 #include <iostream>
+
 #include "DNest4/code/DNest4.h"
 #include "Data.h"
 #include "MyModel.h"

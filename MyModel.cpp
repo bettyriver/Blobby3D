@@ -1,11 +1,13 @@
 #include "MyModel.h"
+
+#include <cmath>
+
 #include "DNest4/code/DNest4.h"
 #include "Data.h"
 #include "LookupExp.h"
 #include "LookupErf.h"
 #include "Conv.h"
 #include "Constants.h"
-#include <cmath>
 
 using namespace std;
 using namespace DNest4;
