@@ -1,5 +1,5 @@
-#ifndef DNest4_RJObject_GalaxyField_LookupExp
-#define DNest4_RJObject_GalaxyField_LookupExp
+#ifndef BLOBBY3D_LOOKUPEXP_H_
+#define BLOBBY3D_LOOKUPEXP_H_
 
 #include <vector>
 
@@ -7,23 +7,20 @@
 * Lookup tables for speeding things up
 * Singleton pattern
 */
+class LookupExp {
+  private:
+    int num;
+    double xMin, xMax, dx, one_over_dx;
+    std::vector<double> _exp; // exp(-x) for x >= 0
 
-class LookupExp
-{
-	private:
-		int num;
-		double xMin, xMax, dx, one_over_dx;
-		std::vector<double> _exp; // exp(-x) for x >= 0
+    LookupExp();
+    LookupExp(const LookupExp& other);
 
-		LookupExp();
-		LookupExp(const LookupExp& other);
+    static LookupExp instance;
 
-		static LookupExp instance;
-
-	public:
-		static double evaluate(double x);
-
+    public:
+      static double evaluate(double x);
 };
 
-#endif
+#endif  // BLOBBY3D_LOOKUPEXP_H_
 

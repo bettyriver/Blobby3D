@@ -1,5 +1,5 @@
-#ifndef Constants
-#define Constants
+#ifndef BLOBBY3D_CONSTANTS_H_
+#define BLOBBY3D_CONSTANTS_H_
 
 namespace constants {
   const double C = 2.99792458E5; // speed of light (km/s)
@@ -8,4 +8,4 @@ namespace constants {
   const double N2UPP = 6583.1; // N2lower line (Angstrom)
 }
 
-# endif
+# endif  // BLOBBY3D_CONSTANTS_H_

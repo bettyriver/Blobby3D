@@ -1,5 +1,5 @@
-#ifndef CONV
-#define CONV
+#ifndef BLOBBY3D_CONV_H_
+#define BLOBBY3D_CONV_H_
 
 #include <vector>
 #include <fftw3.h>
@@ -9,15 +9,12 @@
 /*
   Class for convolving by the PSF
 */
-
-class Conv
-{
+class Conv {
  private:
-  
   // convolve method
   int convolve;
   
-  // psf
+  // PSF
   std::vector<double> psf_amp;
   std::vector<double> psf_fwhm;
   double psf_beta;
@@ -56,20 +53,20 @@ class Conv
   static Conv instance;
 
  public:
- 
   // Constructor
   Conv();
 
   // brute force gaussian blur
   std::vector< std::vector< std::vector<double> > > 
-    brute_gaussian_blur(std::vector< std::vector< std::vector<double> > >& 
-			preconvolved);
+    brute_gaussian_blur(
+      std::vector< std::vector< std::vector<double> > >& 
+	preconvolved);
   
   // fftw moffat blur
   std::vector< std::vector< std::vector<double> > > 
-    fftw_moffat_blur(std::vector< std::vector< std::vector<double> > >& 
-			preconvolved);
-
+    fftw_moffat_blur(
+      std::vector< std::vector< std::vector<double> > >& 
+	preconvolved);
 };
 
-#endif
+#endif  // CONV_H_

@@ -1,11 +1,10 @@
-#ifndef DNest4_GalaxyField_MyConditionalPrior
-#define DNest4_GalaxyField_MyConditionalPrior
+#ifndef BLOBBY3D_MYCONDITIONALPRIOR_H_
+#define BLOBBY3D_MYCONDITIONALPRIOR_H_
 
 #include "DNest4/code/DNest4.h"
 
 // Hyperparameters setting interim prior for galaxy properties
-class MyConditionalPrior:public DNest4::ConditionalPrior
-{
+class MyConditionalPrior:public DNest4::ConditionalPrior {
  private:
   // Limits
   double x_min, x_max, y_min, y_max;
@@ -41,23 +40,23 @@ class MyConditionalPrior:public DNest4::ConditionalPrior
   double perturb_hyperparameters(DNest4::RNG& rng);
 
  public:
-  MyConditionalPrior(double x_min, double x_max,
-		     double y_min, double y_max,
-		     double r_min, double r_max, 
-		     double dx, 
-		     double dy, 
-		     double dr,
-		     double x_pad_dx, double y_pad_dy,
-		     double fluxlim_min, double fluxlim_max);
+   MyConditionalPrior(
+     double x_min, double x_max,
+     double y_min, double y_max,
+     double r_min, double r_max, 
+     double dx, double dy, double dr,
+     double x_pad_dx, double y_pad_dy,
+     double fluxlim_min, double fluxlim_max
+     );
 
-  void from_prior(DNest4::RNG& rng);
+   void from_prior(DNest4::RNG& rng);
 
-  double log_pdf(const std::vector<double>& vec) const;
-  void from_uniform(std::vector<double>& vec) const;
-  void to_uniform(std::vector<double>& vec) const;
+   double log_pdf(const std::vector<double>& vec) const;
+   void from_uniform(std::vector<double>& vec) const;
+   void to_uniform(std::vector<double>& vec) const;
 
-  void print(std::ostream& out) const;
+   void print(std::ostream& out) const;
 };
 
-#endif
+#endif  // BLOBBY3D_MYCONDITIONALPRIOR_H_
 

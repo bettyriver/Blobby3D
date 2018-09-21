@@ -1,5 +1,5 @@
-#ifndef DNest4_GalaxyField_Data
-#define DNest4_GalaxyField_Data
+#ifndef BLOBBY3D_DATA_H_
+#define BLOBBY3D_DATA_H_
 
 #include <vector>
 #include <string>
@@ -203,5 +203,5 @@ class Data
   static Data& get_instance() { return instance; }
 };
 
-#endif
+#endif  // DATA_H_
 
