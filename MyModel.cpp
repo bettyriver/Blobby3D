@@ -652,9 +652,8 @@ void MyModel::calculate_image(){
 	      rsq = q*xx_rot*xx_rot + invq*yy_rot*yy_rot;
 	      rsq *= invwxsq;
 			
-	      if (rsq < sigma_cutoffsq) {
+	      if (rsq < sigma_cutoffsq)
 	        amps += amp*LookupExp::evaluate(0.5*rsq);
-	      }
 	    }
 	  }
 	  flux[i][j] += amps;
@@ -682,7 +681,7 @@ void MyModel::calculate_image(){
 	ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
 	ha_cdf_max = LookupErf::evaluate((wave[0] + 0.5*dr - lambda)*invtwo_wlsq);
 	image[i][j][0] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
-	      
+
 	// Loop through remaining bins
 	for (int r=1; r<nr; r++) {
 	  ha_cdf_min = ha_cdf_max;
