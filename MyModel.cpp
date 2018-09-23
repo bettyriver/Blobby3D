@@ -12,6 +12,10 @@
 using namespace std;
 using namespace DNest4;
 
+// TODO: Remove references to sigma1 throughout code.
+// TODO: Remove references to inc throughout code.
+// TODO: Resolve issue regarding 7 vs 6 blob parameters.
+
 MyModel::MyModel()
     :objects(
   7, Data::get_instance().get_nmax(), 
@@ -94,7 +98,6 @@ void MyModel::from_prior(RNG& rng) {
   /*
     Limits: global parameters
   */
-
   // Error
   sigma0_min = Data::get_instance().get_sigma_min();
   sigma0_width = Data::get_instance().get_sigma_max()/sigma0_min;
@@ -409,6 +412,8 @@ void MyModel::calculate_image(){
   /*
     CLEAR CUBE
   */
+  // TODO: Construct code such so that I don't have to clear cube every time.
+  // Can do this by constructing cube using += rather than =. Requires testing.
   if (model != 1) {
     if (disk_perturb || rot_perturb || !update) { 
       // get all components
@@ -571,10 +576,6 @@ void MyModel::calculate_image(){
   // calculation for cdf
   double ha_cdf_min, ha_cdf_max;
 
-  // Integration testing
-  // double sum_blob; 
-  // double sum_blobw;
-
   // Blob contribution
   if (model != 1) {
     for (size_t k=0; k<components.size(); ++k) {
@@ -644,7 +645,7 @@ void MyModel::calculate_image(){
 	      y_shft = yyd_rot - yc;
 			
 	      // Rotate
-	      xx_rot =  x_shft*cos_phi + y_shft*sin_phi;
+	      xx_rot = x_shft*cos_phi + y_shft*sin_phi;
 	      yy_rot = -x_shft*sin_phi + y_shft*cos_phi;
 			      
 	      // Calculate normalised squared distance to centre of blob
@@ -664,13 +665,15 @@ void MyModel::calculate_image(){
   /*
     Create cube
   */
+  // TODO: See clear cube TODO.
   for (int i=0; i<ni; i++) {
-    for(int j=0; j<nj; j++)  {
-      if(flux[i][j] > 0.0)  {
+    for (int j=0; j<nj; j++)  {
+      if (flux[i][j] > 0.0)  {
         // Calculate mean lambda for lines
 	lambda = constants::HA*rel_lambda[i][j];
 	      
 	// Calculate line width
+        // TODO: Remove from for loop.
 	sigma_lambda = vdisp[i][j]*constants::HA/constants::C;
 	wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
 	invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
@@ -693,6 +696,8 @@ void MyModel::calculate_image(){
   /* 
      Convolve Cube
   */
+  // TODO: Move if statement to a function within convolve model
+  // that takes arguments image, convolve.
   if (convolve == 0)
     convolved = conv.brute_gaussian_blur(image);
   else if (convolve == 1)
@@ -726,7 +731,6 @@ double MyModel::log_likelihood() const {
     j = valid[h][1];
     for (int r=0; r<nr; r++) {
       if ((data[i][j][r] != 0.0) && (var_cube[i][j][r] != 0.0)) {
-        // var = var_cube[i][j][r] + sigma0sq + convolved[i][j][r]*sigma1;
 	var = var_cube[i][j][r] + sigma0sq;
 	logL += -0.5*log(2.0*M_PI*var);
         logL += -0.5*pow(data[i][j][r] - convolved[i][j][r], 2)/var;
@@ -737,8 +741,7 @@ double MyModel::log_likelihood() const {
   return logL;
 }
 
-void MyModel::print(std::ostream& out) const
-{
+void MyModel::print(std::ostream& out) const {
   const int x_pad = Data::get_instance().get_x_pad();
   const int y_pad = Data::get_instance().get_y_pad();
 
@@ -769,7 +772,7 @@ void MyModel::print(std::ostream& out) const
   out<<vslope<<' ';
   out<<vgamma<<' ';
   out<<vbeta<<' ';
-  for(int i=0; i<vdisp_order+1; i++)
+  for (int i=0; i<vdisp_order+1; i++)
     out<<vdisp_param[i]<<' ';
   out<<inc<<' ';
   out<<pa<<' ';
