@@ -53,16 +53,16 @@ Conv::Conv()
       kernel_x[k].assign(2*szk_x+1, 0.0);
       for (int j=-szk_x; j<=szk_x; j++) {
         erf_min = std::erf((j - 0.5)*dx/(psf_sigma[k]*sqrt(2.0)));
-	erf_max = std::erf((j + 0.5)*dx/(psf_sigma[k]*sqrt(2.0)));
-	kernel_x[k][j+szk_x] = 0.5*(erf_max - erf_min);
+        erf_max = std::erf((j + 0.5)*dx/(psf_sigma[k]*sqrt(2.0)));
+        kernel_x[k][j+szk_x] = 0.5*(erf_max - erf_min);
       }
 
       szk_y = (int)ceil(5.0*psf_sigma_overdy[k]);
       kernel_y[k].assign(2*szk_y+1, 0.0);
       for (int i=-szk_y; i<=szk_y; i++) {
         erf_min = std::erf((i - 0.5)*dy/(psf_sigma[k]*sqrt(2.0)));
-	erf_max = std::erf((i + 0.5)*dy/(psf_sigma[k]*sqrt(2.0)));
-	kernel_y[k][i+szk_y] = 0.5*(erf_max - erf_min);
+        erf_max = std::erf((i + 0.5)*dy/(psf_sigma[k]*sqrt(2.0)));
+        kernel_y[k][i+szk_y] = 0.5*(erf_max - erf_min);
       }
     }
 
@@ -103,12 +103,12 @@ Conv::Conv()
     for (int i=0; i<max_nik; i++) {
       for (int j=0; j<max_njk; j++) {
         for (int is=-os; is<=os; is++) {
-	  for(int js=-os; js<=os; js++) {
-	    rsq = pow((i - max_midik)*dy + is*dyfs, 2);
-	    rsq += pow((j - max_midjk)*dx + js*dxfs, 2);
-	    kernel_tmp[i][j] += norm*pow(1.0 + rsq*invalphasq, -psf_beta);
-	  }
-	}
+          for(int js=-os; js<=os; js++) {
+            rsq = pow((i - max_midik)*dy + is*dyfs, 2);
+            rsq += pow((j - max_midjk)*dx + js*dxfs, 2);
+            kernel_tmp[i][j] += norm*pow(1.0 + rsq*invalphasq, -psf_beta);
+          }
+        }
       }
     }
 
@@ -156,7 +156,7 @@ Conv::Conv()
     q = fftw_plan_dft_c2r_2d(Ni, Nj, conv, in2, FFTW_ESTIMATE);
 
     // clear in arrays
-    for (int i=0; i<Ni*Nj; i++){
+    for (int i=0; i<Ni*Nj; i++) {
       in[i] = 0.0;
       in2[i] = 0.0;
       kernelin[i] = 0.0;
@@ -257,7 +257,7 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
         norm = 0.0;
         for (int p=-szk_y; p<=szk_y; p++) {
           if ((y_pad + i + p >= 0)
-                    && (y_pad + i + p < convolved_tmp_2d.size())) {
+              && (y_pad + i + p < convolved_tmp_2d.size())) {
             convolved[i][j][r] += psf_amp[k]*convolved_tmp_2d[y_pad+i+p][j]*kernel_y[k][szk_y+p];
             norm += kernel_y[k][szk_y+p];
           }
