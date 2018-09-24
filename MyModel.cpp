@@ -18,24 +18,24 @@ using namespace DNest4;
 
 MyModel::MyModel()
     :objects(
-  7, Data::get_instance().get_nmax(), 
-  Data::get_instance().get_nfixed(),
-  MyConditionalPrior(
-    Data::get_instance().get_x_min(),
-    Data::get_instance().get_x_max(),
-    Data::get_instance().get_y_min(), 
-    Data::get_instance().get_y_max(),
-    Data::get_instance().get_r_min(), 
-    Data::get_instance().get_r_max(),
-    Data::get_instance().get_dx(),
-    Data::get_instance().get_dy(),
-    Data::get_instance().get_dr(),
-    Data::get_instance().get_x_pad_dx(),
-    Data::get_instance().get_y_pad_dy(),
-    log(Data::get_instance().get_fluxmu_min()),
-    log(Data::get_instance().get_fluxmu_max())),
-  PriorType::log_uniform
-  ) {
+      7, Data::get_instance().get_nmax(),
+      Data::get_instance().get_nfixed(),
+      MyConditionalPrior(
+        Data::get_instance().get_x_min(),
+        Data::get_instance().get_x_max(),
+        Data::get_instance().get_y_min(),
+        Data::get_instance().get_y_max(),
+        Data::get_instance().get_r_min(),
+        Data::get_instance().get_r_max(),
+        Data::get_instance().get_dx(),
+        Data::get_instance().get_dy(),
+        Data::get_instance().get_dr(),
+        Data::get_instance().get_x_pad_dx(),
+        Data::get_instance().get_y_pad_dy(),
+        log(Data::get_instance().get_fluxmu_min()),
+        log(Data::get_instance().get_fluxmu_max())),
+      PriorType::log_uniform) {
+
   // initialise arrays
   size_t ni = Data::get_instance().get_ni();
   size_t nj = Data::get_instance().get_nj();
@@ -74,7 +74,7 @@ MyModel::MyModel()
   rad.assign(ni, std::vector<double>(nj));
 }
 
-void MyModel::from_prior(RNG& rng) { 
+void MyModel::from_prior(RNG& rng) {
   // Get local variables from data
   const int model = Data::get_instance().get_model();
   const double x_min = Data::get_instance().get_x_min();
@@ -129,8 +129,7 @@ void MyModel::from_prior(RNG& rng) {
   /*
     Limits: disk parameters
   */
-  if(model != 0)
-    {
+  if (model != 0) {
       Md_min = 1E-2*sum_flux;
       Md_width = 10.0*sum_flux/Md_min;
     }
@@ -146,13 +145,15 @@ void MyModel::from_prior(RNG& rng) {
   // Initialise: Position
   x_imagecentre = (x_max + x_min)/2.0;
   DNest4::Cauchy cauchy_xc(x_imagecentre, gamma_pos);
-  do{xcd = cauchy_xc.generate(rng);}
-  while((xcd < x_min + x_pad_dx) || (xcd > x_max - x_pad_dx));
-  
+  do {
+    xcd = cauchy_xc.generate(rng);
+  } while ((xcd < x_min + x_pad_dx) || (xcd > x_max - x_pad_dx));
+
   y_imagecentre = (y_max + y_min)/2.0;
   DNest4::Cauchy cauchy_yc(y_imagecentre, gamma_pos);
-  do{ycd = cauchy_yc.generate(rng);}
-  while((ycd < y_min + y_pad_dy) || (ycd > y_max - y_pad_dy));
+  do {
+    ycd = cauchy_yc.generate(rng);
+  } while ((ycd < y_min + y_pad_dy) || (ycd > y_max - y_pad_dy));
 
   pa = 2.0*M_PI*rng.rand();
   // inc = 0.5*M_PI*rng.rand();
@@ -165,33 +166,33 @@ void MyModel::from_prior(RNG& rng) {
     Initialise: Velocity
   */
   DNest4::Cauchy cauchy_vsys(0.0, gamma_vsys);
-  do{vsys = cauchy_vsys.generate(rng);}
-  while((vsys < -vsys_max) || (vsys >  vsys_max)); 
+  do {
+    vsys = cauchy_vsys.generate(rng);
+  } while ((vsys < -vsys_max) || (vsys >  vsys_max));
 
   vmax = exp(log(vmax_min) + log(vmax_width)*rng.rand());
   vslope = exp(log(vslope_min) + log(vslope_width)*rng.rand());
   vgamma = exp(log(vgamma_min) + log(vgamma_width)*rng.rand());
   vbeta = vbeta_min + vbeta_width*rng.rand();
 
-  /* 
+  /*
     Initialise: blobs
   */
-  if(model == 0){
-    do{objects.from_prior(rng);}
-    while(objects.get_components().size() == 0);
-  }
-  else if(model == 2){
+  if (model == 0) {
+    do {
+      objects.from_prior(rng);
+    } while (objects.get_components().size() == 0);
+  } else if (model == 2) {
     objects.from_prior(rng);
   }
 
-  /* 
+  /*
     Initialise: disk
   */
-  if((model == 1) || (model == 2)){
+  if ((model == 1) || (model == 2)) {
     Md = exp(log(Md_min) + log(Md_width)*rng.rand());
     wxd = exp(log(wxd_min) + log(wxd_width)*rng.rand());
-  }
-  else{
+  } else {
     Md = 0.0;
     wxd = 0.0;
   }
@@ -204,11 +205,11 @@ void MyModel::from_prior(RNG& rng) {
   for(int v=1; v<vdisp_order+1; v++)
       vdisp_param[v] = gaussian_vdisp.generate(rng);
 
-  /* 
+  /*
     Calculate image
   */
   rot_perturb = true;
-  if(model == 0)
+  if (model == 0)
     disk_perturb = false;
   else
     disk_perturb = true;
@@ -238,7 +239,7 @@ double MyModel::perturb(RNG& rng) {
   double rnd = rng.rand();
   disk_perturb = false;
   rot_perturb = false;
-  
+
   if (rnd <= 0.9) {
     // skip disk perturb for model 0
     if (model == 0)
@@ -284,7 +285,7 @@ double MyModel::perturb(RNG& rng) {
 	case 4:
 	  vslope = log(vslope);
 	  vslope += disc_step*log(vslope_width)*rng.randh();
-	  vslope = mod(vslope - log(vslope_min), log(vslope_width)); 
+	  vslope = mod(vslope - log(vslope_min), log(vslope_width));
           vslope += log(vslope_min);
 	  vslope = exp(vslope);
 	  break;
@@ -322,7 +323,7 @@ double MyModel::perturb(RNG& rng) {
     } else {
       // Perturb disc flux parameters
       disk_perturb = true;
-	  
+
       int which = rng.rand_int(2);
       switch(which){
         case 0:
@@ -340,14 +341,14 @@ double MyModel::perturb(RNG& rng) {
 	  break;
       }
     }
-      
+
     // Pre-rejection trick
     if(rng.rand() >= exp(logH))
       return -1E300;
     else
       logH = 0.0;
 
-    calculate_image(); 
+    calculate_image();
   } else {
     int which = rng.rand_int(2);
     switch (which) {
@@ -396,7 +397,7 @@ void MyModel::calculate_image(){
   const int convolve = Data::get_instance().get_convolve();
   // const double dxos = Data::get_instance().get_dxos();
   // const double dyos = Data::get_instance().get_dyos();
-  
+
   const double x_pad_dx = Data::get_instance().get_x_pad_dx();
   const double y_pad_dy = Data::get_instance().get_y_pad_dy();
   const double image_width = sqrt((x_max - x_min - 2.0*x_pad_dx)*(y_max - y_min - 2.0*y_pad_dy));
@@ -405,7 +406,7 @@ void MyModel::calculate_image(){
 
   // Determine if adding blobs
   bool update = false;
-  vector< vector<double> > components;  
+  vector< vector<double> > components;
   if(model != 1)
     update = objects.get_removed().size() == 0;
 
@@ -415,10 +416,10 @@ void MyModel::calculate_image(){
   // TODO: Construct code such so that I don't have to clear cube every time.
   // Can do this by constructing cube using += rather than =. Requires testing.
   if (model != 1) {
-    if (disk_perturb || rot_perturb || !update) { 
+    if (disk_perturb || rot_perturb || !update) {
       // get all components
       components = objects.get_components();
-	  
+
       // clear flux map
       for (int i=0; i<ni; i++)
         for (int j=0; j<nj; j++)
@@ -434,8 +435,8 @@ void MyModel::calculate_image(){
       for (int i=0; i<ni; i++)
         for (int j=0; j<nj; j++)
 	  for (int r=0; r<nr; r++)
-	    image[i][j][r] = 0.0;	  
-	  
+	    image[i][j][r] = 0.0;
+
        // only get added components
        components = objects.get_added();
     }
@@ -443,8 +444,8 @@ void MyModel::calculate_image(){
     // clear flux map
     for (int i=0; i<ni; i++)
       for (int j=0; j<nj; j++)
-        flux[i][j] = 0.0;      
-      
+        flux[i][j] = 0.0;
+
     // clear cube
     for (int i=0; i<ni; i++)
       for (int j=0; j<nj; j++)
@@ -458,7 +459,7 @@ void MyModel::calculate_image(){
 
   /*
     Calculate exponential disk component
-    
+
     Also calculate lambda array.
     (wavelength corresponding to mean velocity)
   */
@@ -468,7 +469,7 @@ void MyModel::calculate_image(){
   double sin_inc, cos_inc;
   double invcos_inc;
   double invvslope;
-  double x_shft, y_shft; 
+  double x_shft, y_shft;
   double xx_rot, yy_rot, yy_inc;
   double rsq;
   double amp;
@@ -487,42 +488,42 @@ void MyModel::calculate_image(){
     for (int i=0; i<ni; i++) {
       for (int j=0; j<nj; j++) {
         // Shift
-	x_shft = x[i][j] - xcd;
-	y_shft = y[i][j] - ycd;
+	      x_shft = x[i][j] - xcd;
+        y_shft = y[i][j] - ycd;
 
-	// rotate by pa around z (counter-clockwise, East pa = 0)
-	xx_rot =  x_shft*cos_pa + y_shft*sin_pa;
-	yy_rot = -x_shft*sin_pa + y_shft*cos_pa;
-	  
-	// rotate by inclination around yy_rot
-	yy_rot *= invcos_inc;
+        // rotate by pa around z (counter-clockwise, East pa = 0)
+        xx_rot =  x_shft*cos_pa + y_shft*sin_pa;
+        yy_rot = -x_shft*sin_pa + y_shft*cos_pa;
 
-	// calculate radius
-	rad[i][j] = sqrt(xx_rot*xx_rot + yy_rot*yy_rot);
+        // rotate by inclination around yy_rot
+        yy_rot *= invcos_inc;
 
-	// calculate angle to receding major axis
-	if ((xx_rot == 0.0) & (yy_rot == 0.0))
-          angle = 0.0;
-	else
-          angle = atan2(yy_rot, xx_rot);
-	      
-	// Calc relative lambda
-	if (rad[i][j] == 0.0) {
-	  rel_lambda[i][j] = 0.0;
-	} else {
-	  rel_lambda[i][j] = vmax*pow(1.0 + vslope/rad[i][j], vbeta);
-	  rel_lambda[i][j] /= pow(1.0 + pow(vslope/rad[i][j], vgamma), 1.0/vgamma);
-	  rel_lambda[i][j] *= sin_inc*cos(angle);
-	}
-        rel_lambda[i][j] += vsys;
-	rel_lambda[i][j] /= constants::C;
-	rel_lambda[i][j] += 1.0;
+        // calculate radius
+        rad[i][j] = sqrt(xx_rot*xx_rot + yy_rot*yy_rot);
 
-	// Calc dispersion (assuming constant atm)
-	vdisp[i][j] = vdisp_param[0];
-	for (int v=0; v<vdisp_order; v++)
-          vdisp[i][j] += vdisp_param[v+1]*pow(rad[i][j], v+1);
-	vdisp[i][j] = exp(vdisp[i][j]);
+        // calculate angle to receding major axis
+        if ((xx_rot == 0.0) & (yy_rot == 0.0))
+                angle = 0.0;
+        else
+                angle = atan2(yy_rot, xx_rot);
+
+        // Calc relative lambda
+        if (rad[i][j] == 0.0) {
+          rel_lambda[i][j] = 0.0;
+        } else {
+          rel_lambda[i][j] = vmax*pow(1.0 + vslope/rad[i][j], vbeta);
+          rel_lambda[i][j] /= pow(1.0 + pow(vslope/rad[i][j], vgamma), 1.0/vgamma);
+          rel_lambda[i][j] *= sin_inc*cos(angle);
+        }
+              rel_lambda[i][j] += vsys;
+        rel_lambda[i][j] /= constants::C;
+        rel_lambda[i][j] += 1.0;
+
+        // Calc dispersion (assuming constant atm)
+        vdisp[i][j] = vdisp_param[0];
+        for (int v=0; v<vdisp_order; v++)
+                vdisp[i][j] += vdisp_param[v+1]*pow(rad[i][j], v+1);
+        vdisp[i][j] = exp(vdisp[i][j]);
       }
     }
   }
@@ -531,7 +532,7 @@ void MyModel::calculate_image(){
     Disk component
   */
   double sigma_lambda;
-  if (model != 0) {  
+  if (model != 0) {
     double invwxd;
     if (disk_perturb || rot_perturb || !update) {
       // disk flux width
@@ -558,7 +559,7 @@ void MyModel::calculate_image(){
   int r_ind_min, r_ind_max;
   int i_min, i_max;
   int j_min, j_max;
-  const double two_pi = pow(2.0*M_PI, -1.5); 
+  const double two_pi = pow(2.0*M_PI, -1.5);
 
   // Rotated disk coordinates
   double xd_shft, yd_shft;
@@ -580,13 +581,13 @@ void MyModel::calculate_image(){
   if (model != 1) {
     for (size_t k=0; k<components.size(); ++k) {
       // Components
-      rc = components[k][0]; 
+      rc = components[k][0];
       thetac = components[k][1];
       M = components[k][2];
-      wx = components[k][3]; 
+      wx = components[k][3];
       q = components[k][4];
       phi = components[k][5];
-	  
+
       // xc, yc in disk plane
       xc = rc*cos(thetac);
       yc = rc*sin(thetac);
@@ -621,46 +622,46 @@ void MyModel::calculate_image(){
         for (int j=0; j<nj; j++) {
           amps = 0.0;
           for (int is=-si; is<=si; is++) {
-            for(int js=-si; js<=si; js++) {
+            for (int js=-si; js<=si; js++) {
               /*
-	        Get rotated/inc disk coordinates
-	      */
-	      // Shift
-	      xd_shft = x[i][j] + js*dxfs - xcd;
-	      yd_shft = y[i][j] + is*dyfs - ycd;
+                Get rotated/inc disk coordinates
+              */
+              // Shift
+              xd_shft = x[i][j] + js*dxfs - xcd;
+              yd_shft = y[i][j] + is*dyfs - ycd;
 
-	      // rotate by pa around z (counter-clockwise, East pa = 0)
-	      xxd_rot =  xd_shft*cos_pa + yd_shft*sin_pa;
-	      yyd_rot = -xd_shft*sin_pa + yd_shft*cos_pa;
-	  
-	      // rotate by inclination around yy_rot
-	      yyd_rot *= invcos_inc;
+              // rotate by pa around z (counter-clockwise, East pa = 0)
+              xxd_rot =  xd_shft*cos_pa + yd_shft*sin_pa;
+              yyd_rot = -xd_shft*sin_pa + yd_shft*cos_pa;
 
-	      /*
-	        Get distance wrt centre of blob 
-	        in rotated/inc disk coord
-	      */
-	      // Shift
-	      x_shft = xxd_rot - xc;
-	      y_shft = yyd_rot - yc;
-			
-	      // Rotate
-	      xx_rot = x_shft*cos_phi + y_shft*sin_phi;
-	      yy_rot = -x_shft*sin_phi + y_shft*cos_phi;
-			      
-	      // Calculate normalised squared distance to centre of blob
-	      rsq = q*xx_rot*xx_rot + invq*yy_rot*yy_rot;
-	      rsq *= invwxsq;
-			
-	      if (rsq < sigma_cutoffsq)
-	        amps += amp*LookupExp::evaluate(0.5*rsq);
-	    }
-	  }
-	  flux[i][j] += amps;
+              // rotate by inclination around yy_rot
+              yyd_rot *= invcos_inc;
+
+              /*
+                Get distance wrt centre of blob
+                in rotated/inc disk coord
+              */
+              // Shift
+              x_shft = xxd_rot - xc;
+              y_shft = yyd_rot - yc;
+
+              // Rotate
+              xx_rot = x_shft*cos_phi + y_shft*sin_phi;
+              yy_rot = -x_shft*sin_phi + y_shft*cos_phi;
+
+              // Calculate normalised squared distance to centre of blob
+              rsq = q*xx_rot*xx_rot + invq*yy_rot*yy_rot;
+              rsq *= invwxsq;
+
+              if (rsq < sigma_cutoffsq)
+                amps += amp*LookupExp::evaluate(0.5*rsq);
+            }
+          }
+          flux[i][j] += amps;
         }
       }
     }
-  
+
   /*
     Create cube
   */
@@ -669,30 +670,30 @@ void MyModel::calculate_image(){
     for (int j=0; j<nj; j++)  {
       if (flux[i][j] > 0.0)  {
         // Calculate mean lambda for lines
-	lambda = constants::HA*rel_lambda[i][j];
-	      
-	// Calculate line width
-        // TODO: Remove from for loop.
-	sigma_lambda = vdisp[i][j]*constants::HA/constants::C;
-	wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
-	invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
-	      
-	// Calculate image for 1st wavelength bin
-	ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
-	ha_cdf_max = LookupErf::evaluate((wave[0] + 0.5*dr - lambda)*invtwo_wlsq);
-	image[i][j][0] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
+        lambda = constants::HA*rel_lambda[i][j];
 
-	// Loop through remaining bins
-	for (int r=1; r<nr; r++) {
-	  ha_cdf_min = ha_cdf_max;
-	  ha_cdf_max = LookupErf::evaluate((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
-	  image[i][j][r] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
-	}
+        // Calculate line width
+        // TODO: Remove from for loop.
+        sigma_lambda = vdisp[i][j]*constants::HA/constants::C;
+        wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
+        invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
+
+        // Calculate image for 1st wavelength bin
+        ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
+        ha_cdf_max = LookupErf::evaluate((wave[0] + 0.5*dr - lambda)*invtwo_wlsq);
+        image[i][j][0] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
+
+        // Loop through remaining bins
+        for (int r=1; r<nr; r++) {
+          ha_cdf_min = ha_cdf_max;
+          ha_cdf_max = LookupErf::evaluate((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
+          image[i][j][r] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
+        }
       }
     }
   }
 
-  /* 
+  /*
      Convolve Cube
   */
   // TODO: Move if statement to a function within convolve model
@@ -712,9 +713,9 @@ double MyModel::log_likelihood() const {
   const int nv = Data::get_instance().get_nv();
   const int x_pad = Data::get_instance().get_x_pad();
   const int y_pad = Data::get_instance().get_y_pad();
-  
+
   // If no blobs return prob = 0
-  if ((model == 0) && (objects.get_components().size() == 0)) 
+  if ((model == 0) && (objects.get_components().size() == 0))
     return -1E300;
 
   long double logL;
@@ -724,14 +725,14 @@ double MyModel::log_likelihood() const {
   logL = 0.0;
   sigma0sq = sigma0*sigma0;
 
-  int i, j;  
+  int i, j;
   for (int h=0; h<nv; h++) {
     i = valid[h][0];
     j = valid[h][1];
     for (int r=0; r<nr; r++) {
       if ((data[i][j][r] != 0.0) && (var_cube[i][j][r] != 0.0)) {
-	var = var_cube[i][j][r] + sigma0sq;
-	logL += -0.5*log(2.0*M_PI*var);
+        var = var_cube[i][j][r] + sigma0sq;
+        logL += -0.5*log(2.0*M_PI*var);
         logL += -0.5*pow(data[i][j][r] - convolved[i][j][r], 2)/var;
       }
     }
