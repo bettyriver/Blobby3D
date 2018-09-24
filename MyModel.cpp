@@ -631,15 +631,15 @@ void MyModel::calculate_image() {
               yd_shft = y[i][j] + is*dyfs - ycd;
 
               // rotate by pa around z (counter-clockwise, East pa = 0)
-              xxd_rot =  xd_shft*cos_pa + yd_shft*sin_pa;
+              xxd_rot = xd_shft*cos_pa + yd_shft*sin_pa;
               yyd_rot = -xd_shft*sin_pa + yd_shft*cos_pa;
 
               // rotate by inclination around yy_rot
               yyd_rot *= invcos_inc;
 
               /*
-                Get distance wrt centre of blob
-                in rotated/inc disk coord
+                Get distance wrt centre of blob in
+                rotated/inc disk coordinates.
               */
               // Shift
               x_shft = xxd_rot - xc;
@@ -662,6 +662,7 @@ void MyModel::calculate_image() {
       }
     }
   }
+
 
   /*
     Create cube
