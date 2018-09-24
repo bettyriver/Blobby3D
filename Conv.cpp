@@ -280,7 +280,7 @@ std::vector< std::vector< std::vector<double> > > Conv::fftw_moffat_blur(
   for (int r=0; r<nr; r++) {
     // put wavelength slice vector into fftw double
     for (int i=0; i<ni; i++)
-      for(int j=0; j<nj; j++)
+      for (int j=0; j<nj; j++)
         in[j + Nj*i] = preconvolved[i][j][r];
 
     // transform slice
