@@ -8,75 +8,100 @@
 #include "Conv.h"
 
 class MyModel {
- private:
-   Conv conv; // setup convolution kernels
-   DNest4::RJObject<MyConditionalPrior> objects;
+  private:
+    Conv conv; // setup convolution kernels
+    DNest4::RJObject<MyConditionalPrior> objects;
 
-   /*
-     Arrays
-   */
-   std::vector< std::vector< std::vector<double> > > image;
-   std::vector< std::vector< std::vector<double> > > imageos;
-   std::vector< std::vector< std::vector<double> > > convolved;
-   std::vector< std::vector<double> > flux;
-   std::vector< std::vector<double> > rel_lambda;
-   std::vector< std::vector<double> > vdisp;
-   std::vector< std::vector<double> > rad;
+    /*
+       Arrays
+    */
+    std::vector< std::vector< std::vector<double> > > image;
+    std::vector< std::vector< std::vector<double> > > imageos;
+    std::vector< std::vector< std::vector<double> > > convolved;
 
-   void calculate_image();
+    std::vector< std::vector<double> > x_shft;
+    std::vector< std::vector<double> > y_shft;
+    std::vector< std::vector<double> > rad;
+    std::vector< std::vector<double> > cos_angle;
 
-   /*
-     Global parameters
-   */
+    std::vector< std::vector<double> > flux;
+    std::vector< std::vector<double> > rel_lambda;
+    std::vector< std::vector<double> > vdisp;
 
-   // Disk parameters
-   double xcd;
-   double x_imagecentre;
+    void calculate_image();
 
-   double ycd;
-   double y_imagecentre;
+    // Construct cube from maps
+    void calculate_shifted_arrays();
 
-   double gamma_pos;
+    void calculate_flux();
+    void add_disc_flux();
+    void add_blob_flux(std::vector< std::vector<double> >& components);
 
-   double Md;
-   double Md_min, Md_width;
+    void calculate_vdisp();
+    void calculate_rel_lambda();
+    void construct_cube();
+    void clear_cube();
+    void clear_flux_map();
 
-   double wxd;
-   double wxd_min, wxd_width;
+    /*
+      Global parameters
+    */
 
-   double vsys;
-   double gamma_vsys;
-   double vsys_min, vsys_width;
+    // Disk parameters
+    double xcd;
+    double x_imagecentre;
 
-   double vmax;
-   double vmax_min, vmax_width;
-		
-   double vslope;
-   double vslope_min, vslope_width;
+    double ycd;
+    double y_imagecentre;
 
-   double vgamma;
-   double vgamma_min, vgamma_width;
+    double gamma_pos;
 
-   double vbeta;
-   double vbeta_min, vbeta_width;
-  
-   int vdisp_order;
-   double vdisp0_min, vdisp0_width;
-   std::vector<double> vdisp_param;
+    double Md;
+    double Md_min, Md_width;
 
-   double gama_inc;
-   double inc, pa;
+    double wxd;
+    double wxd_min, wxd_width;
 
-   // Noise parameter
-   double sigma0;
-   double sigma0_min, sigma0_width;
+    double vsys;
+    double gamma_vsys;
+    double vsys_min, vsys_width;
 
-   double sigma1;
-   double sigma1_min, sigma1_width;
+    double vmax;
+    double vmax_min, vmax_width;
 
-   // perturb booleans
-   bool disk_perturb;
-   bool rot_perturb;
+    double vslope;
+    double vslope_min, vslope_width;
+
+    double vgamma;
+    double vgamma_min, vgamma_width;
+
+    double vbeta;
+    double vbeta_min, vbeta_width;
+
+    int vdisp_order;
+    double vdisp0_min, vdisp0_width;
+    std::vector<double> vdisp_param;
+
+    double gama_inc;
+    double inc, pa;
+
+    // Noise parameter
+    double sigma0;
+    double sigma0_min, sigma0_width;
+
+    double sigma1;
+    double sigma1_min, sigma1_width;
+
+    // perturb booleans
+    bool array_perturb;
+    bool vel_perturb;
+    bool vdisp_perturb;
+    bool disc_flux_perturb;
+    bool blob_perturb;
+    bool noise_perturb;
+
+    // bool disk_perturb;
+    // bool rot_perturb;
 
   public:
     MyModel();
