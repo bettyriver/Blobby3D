@@ -185,6 +185,17 @@ Conv::Conv()
   }
 }
 
+std::vector< std::vector< std::vector<double> > > Conv::apply(
+    std::vector< std::vector< std::vector<double> > >& preconvolved) {
+    /*
+      Calculate convolved cube given convolution method.
+    */
+    if (convolve == 0)
+      return brute_gaussian_blur(preconvolved);
+    else if (convolve == 1)
+      return fftw_moffat_blur(preconvolved);
+}
+
 std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
     std::vector< std::vector< std::vector<double> > >& preconvolved) {
   /*

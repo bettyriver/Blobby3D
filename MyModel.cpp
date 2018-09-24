@@ -15,6 +15,7 @@ using namespace DNest4;
 // TODO: Remove references to sigma1 throughout code.
 // TODO: Remove references to inc throughout code.
 // TODO: Resolve issue regarding 7 vs 6 blob parameters.
+// TODO: Make map and cube creation separate functions.
 
 MyModel::MyModel()
     :objects(
@@ -423,19 +424,19 @@ void MyModel::calculate_image() {
       // clear flux map
       for (int i=0; i<ni; i++)
         for (int j=0; j<nj; j++)
-	  flux[i][j] = 0.0;
+	        flux[i][j] = 0.0;
 
       // clear cube
       for (int i=0; i<ni; i++)
-	    for (int j=0; j<nj; j++)
-	      for (int r=0; r<nr; r++)
-		image[i][j][r] = 0.0;
+	      for (int j=0; j<nj; j++)
+	        for (int r=0; r<nr; r++)
+		        image[i][j][r] = 0.0;
     } else {
       // clear cube
       for (int i=0; i<ni; i++)
         for (int j=0; j<nj; j++)
-	  for (int r=0; r<nr; r++)
-	    image[i][j][r] = 0.0;
+          for (int r=0; r<nr; r++)
+            image[i][j][r] = 0.0;
 
        // only get added components
        components = objects.get_added();
@@ -663,7 +664,6 @@ void MyModel::calculate_image() {
     }
   }
 
-
   /*
     Create cube
   */
@@ -695,15 +695,7 @@ void MyModel::calculate_image() {
     }
   }
 
-  /*
-     Convolve Cube
-  */
-  // TODO: Move if statement to a function within convolve model
-  // that takes arguments: image, convolve.
-  if (convolve == 0)
-    convolved = conv.brute_gaussian_blur(image);
-  else if (convolve == 1)
-    convolved = conv.fftw_moffat_blur(image);
+ convolved = conv.apply(image);
 }
 
 double MyModel::log_likelihood() const {

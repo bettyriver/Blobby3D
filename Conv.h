@@ -13,7 +13,7 @@ class Conv {
  private:
   // convolve method
   int convolve;
-  
+
   // PSF
   std::vector<double> psf_amp;
   std::vector<double> psf_fwhm;
@@ -50,23 +50,26 @@ class Conv {
   // Convolved matrix
   std::vector< std::vector< std::vector<double> > > convolved;
 
+  /*
+    Convolution Methods
+  */
+  // brute force gaussian blur
+  std::vector< std::vector< std::vector<double> > > brute_gaussian_blur(
+      std::vector< std::vector< std::vector<double> > >& preconvolved);
+
+  // fftw moffat blur
+  std::vector< std::vector< std::vector<double> > > fftw_moffat_blur(
+      std::vector< std::vector< std::vector<double> > >& preconvolved);
+
   static Conv instance;
 
  public:
   // Constructor
   Conv();
 
-  // brute force gaussian blur
-  std::vector< std::vector< std::vector<double> > > 
-    brute_gaussian_blur(
-      std::vector< std::vector< std::vector<double> > >& 
-	preconvolved);
-  
-  // fftw moffat blur
-  std::vector< std::vector< std::vector<double> > > 
-    fftw_moffat_blur(
-      std::vector< std::vector< std::vector<double> > >& 
-	preconvolved);
+  // Apply convolution by implied method passed to class constructor.
+  std::vector< std::vector< std::vector<double> > > apply(
+      std::vector< std::vector< std::vector<double> > >& preconvolved);
 };
 
-#endif  // CONV_H_
+#endif  // BLOBBY3D_CONV_H_
