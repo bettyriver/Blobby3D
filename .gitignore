@@ -7,6 +7,12 @@ Blobby3D
 ####################
 Tests/
 
+# Results #
+####################
+*/sample.txt
+*/sample_info.txt
+*/levels.txt
+
 # Temporary Files #
 ###################
 *#
