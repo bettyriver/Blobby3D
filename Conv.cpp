@@ -32,7 +32,7 @@ Conv::Conv()
   for (size_t i=0; i<convolved.size(); i++) {
       convolved[i].resize(nj - 2*x_pad);
       for (size_t j=0; j<convolved[i].size(); j++) {
-	  convolved[i][j].resize(nr);
+        convolved[i][j].resize(nr);
       }
   }
 
@@ -71,8 +71,7 @@ Conv::Conv()
     for(size_t i=0; i<convolved_tmp_2d.size(); i++)
       convolved_tmp_2d[i].resize(nj - 2*y_pad);
 
-  }
-  else if (convolve == 1) {
+  } else if (convolve == 1) {
     /*
       Setup moffat convolve by fftw
     */
@@ -123,15 +122,15 @@ Conv::Conv()
     for (int s=1; s<=szk; s++) {
       for (int j=-s; j<s; j++) {
         tl += 4.0*kernel_tmp[max_midik - s][max_midjk + j];
-	}
+	    }
 
-	if (tl > 0.997) {
-	  szk = s;
-	  break;
-	}
+      if (tl > 0.997) {
+        szk = s;
+        break;
       }
+    }
 
-    // overwrite nik, njk using a smaller kernel
+    // Overwrite nik, njk using a smaller kernel
     nik = 2*szk + 1;
     njk = 2*szk + 1;
 
@@ -155,7 +154,7 @@ Conv::Conv()
     k = fftw_plan_dft_r2c_2d(Ni, Nj, kernelin, kernelout, FFTW_ESTIMATE);
     q = fftw_plan_dft_c2r_2d(Ni, Nj, conv, in2, FFTW_ESTIMATE);
 
-    // clear in arrays
+    // Clear in arrays
     for (int i=0; i<Ni*Nj; i++) {
       in[i] = 0.0;
       in2[i] = 0.0;
@@ -169,11 +168,8 @@ Conv::Conv()
       conv[i][0] = 0.0; conv[i][1] = 0.0;
     }
 
-    /*
-      Construct padded kernel
-    */
-    // zero pad
-    for(int i=0; i<Ni*(Nj/2+1); i++)
+    // Zero pad kernel
+    for (int i=0; i<Ni*(Nj/2+1); i++)
       kernelin[i] = 0.0;
 
     // add temporary kernel up to the required size
@@ -223,10 +219,6 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
   double tl_pre, tl_con;
   for (int r=0; r<nr; r++) {
     /*
-	    Clear convolved matrices.
-    */
-
-    /*
 	    Convolve slice for each Gaussian kernel
     */
     for (size_t k=0; k<psf_sigma.size(); k++) {
@@ -248,9 +240,7 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
 	      }
       }
 
-      /*
-        blur across rows for valid pixels
-      */
+      // blur across rows for valid pixels
       for (size_t h=0; h<valid.size(); h++) {
         i = valid[h][0];
         j = valid[h][1];
