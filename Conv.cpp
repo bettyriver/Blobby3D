@@ -57,7 +57,7 @@ Conv::Conv()
 	erf_max = std::erf((j + 0.5)*dx/(psf_sigma[k]*sqrt(2.0)));
 	kernel_x[k][j+szk_x] = 0.5*(erf_max - erf_min);
       }
-      
+
       szk_y = (int)ceil(5.0*psf_sigma_overdy[k]);
       kernel_y[k].assign(2*szk_y+1, 0.0);
       for (int i=-szk_y; i<=szk_y; i++) {
@@ -81,26 +81,26 @@ Conv::Conv()
 
     // Sampling
     int sample = 9;
-      
+
     // Max size of kernel
     // Forced to be odd
     int max_nik = 2*(ni - 2*y_pad) + 1;
     int max_njk = 2*(nj - 2*x_pad) + 1;
-      
+
     int max_midik = (max_nik - 1)/2;
     int max_midjk = (max_njk - 1)/2;
 
     // construct temporary moffat kernel
     std::vector< std::vector<double> > kernel_tmp;
-    kernel_tmp.assign(max_nik, std::vector<double>(max_njk)); 
-      
+    kernel_tmp.assign(max_nik, std::vector<double>(max_njk));
+
     double rsq;
     int os = (sample - 1)/2;
     double dxfs, dyfs;
     dxfs = dx/sample;
     dyfs = dy/sample;
     norm = dxfs*dyfs*invalphasq*(psf_beta - 1.0)/M_PI;
-  
+
     for (int i=0; i<max_nik; i++) {
       for (int j=0; j<max_njk; j++) {
         for (int is=-os; is<=os; is++) {
@@ -115,8 +115,8 @@ Conv::Conv()
 
     /*
       Determine required size of kernel
-      Sum up square kernel sum and as soon as > 0.997 
-      don't make kernel any larger. 
+      Sum up square kernel sum and as soon as > 0.997
+      don't make kernel any larger.
       0.997 is equivalent to 3-sigma, so seems reasonable.
     */
     int szk = min((max_nik - 1)/2, (max_njk - 1)/2);
@@ -125,7 +125,7 @@ Conv::Conv()
       for (int j=-s; j<s; j++) {
         tl += 4.0*kernel_tmp[max_midik - s][max_midjk + j];
 	}
-	  
+
 	if (tl > 0.997) {
 	  szk = s;
 	  break;
@@ -135,7 +135,7 @@ Conv::Conv()
     // overwrite nik, njk using a smaller kernel
     nik = 2*szk + 1;
     njk = 2*szk + 1;
-      
+
     midik = szk;
     midjk = szk;
 
@@ -155,7 +155,7 @@ Conv::Conv()
     p = fftw_plan_dft_r2c_2d(Ni, Nj, in, out, FFTW_ESTIMATE);
     k = fftw_plan_dft_r2c_2d(Ni, Nj, kernelin, kernelout, FFTW_ESTIMATE);
     q = fftw_plan_dft_c2r_2d(Ni, Nj, conv, in2, FFTW_ESTIMATE);
-      
+
     // clear in arrays
     for (int i=0; i<Ni*Nj; i++){
       in[i] = 0.0;
@@ -176,20 +176,19 @@ Conv::Conv()
     // zero pad
     for(int i=0; i<Ni*(Nj/2+1); i++)
       kernelin[i] = 0.0;
-      
+
     // add temporary kernel up to the required size
     for (int i=0; i<nik; i++) {
       for (int j=0; j<njk; j++) {
         kernelin[j + Nj*i] = kernel_tmp[(max_nik - nik)/2 + i][(max_njk - njk)/2 + j];
       }
     }
-      
+
     // transform moffat kernel
     fftw_execute(k);
     fftw_destroy_plan(k);
   }
 }
-
 
 std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
     std::vector< std::vector< std::vector<double> > >& preconvolved) {
@@ -198,13 +197,13 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
 
   /*
     Calculate convolved matrix
-  
+
     The below procedure uses a separable convolution,
     first convolving across the columns, then across rows.
 
     Only valid for 2d gaussian PSFs.
 
-    It performs the multiple gaussian convolution 
+    It performs the multiple gaussian convolution
     by convolving by each gaussian kernel in turn.
     This uses the distributive property of convolution.
   */
@@ -239,7 +238,7 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
 	  convolved_tmp_2d[i][j] = 0.0;
 	  norm = 0.0;
 	  for (int p=-szk_x; p<=szk_x; p++) {
-	    if ((x_pad + j + p >= 0) 
+	    if ((x_pad + j + p >= 0)
                 && (x_pad + j + p < convolved_tmp_2d[i].size())) {
 	      convolved_tmp_2d[i][j] += preconvolved[i][x_pad+j+p][r]*kernel_x[k][szk_x+p];
 	      norm += kernel_x[k][szk_x+p];
@@ -248,16 +247,16 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
 	}
       }
 
-      /* 
+      /*
         blur across rows for valid pixels
       */
       for (size_t h=0; h<valid.size(); h++) {
         i = valid[h][0];
 	j = valid[h][1];
-	      
+
 	norm = 0.0;
         for (int p=-szk_y; p<=szk_y; p++) {
-	  if ((y_pad + i + p >= 0) 
+	  if ((y_pad + i + p >= 0)
               && (y_pad + i + p < convolved_tmp_2d.size())) {
 	    convolved[i][j][r] += psf_amp[k]*convolved_tmp_2d[y_pad+i+p][j]*kernel_y[k][szk_y+p];
 	    norm += kernel_y[k][szk_y+p];
@@ -269,7 +268,6 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
 
   return convolved;
 }
-
 
 std::vector< std::vector< std::vector<double> > > Conv::fftw_moffat_blur(
     std::vector< std::vector< std::vector<double> > >& preconvolved) {
