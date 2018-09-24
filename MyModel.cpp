@@ -372,7 +372,7 @@ double MyModel::perturb(RNG& rng) {
   return logH;
 }
 
-void MyModel::calculate_image(){
+void MyModel::calculate_image() {
   // Get data
   const int model = Data::get_instance().get_model();
   const vector< vector<double> >& x = Data::get_instance().get_x_rays();
@@ -661,6 +661,7 @@ void MyModel::calculate_image(){
         }
       }
     }
+  }
 
   /*
     Create cube
@@ -697,7 +698,7 @@ void MyModel::calculate_image(){
      Convolve Cube
   */
   // TODO: Move if statement to a function within convolve model
-  // that takes arguments image, convolve.
+  // that takes arguments: image, convolve.
   if (convolve == 0)
     convolved = conv.brute_gaussian_blur(image);
   else if (convolve == 1)

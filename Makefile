@@ -2,9 +2,13 @@ CXX = g++
 CXXFLAGS = -std=c++11 -O3 -Wall -Wextra -pedantic -DNDEBUG
 LIBS = -ldnest4 -lpthread -lfftw3
 
-DNEST_PATH = /home/mvar0005
-BOOSTINC = /usr/include
+# For Artemis
+# DNEST_PATH = /home/mvar0005
+# BOOSTINC = /usr/include
 
+# For MacBook Air
+DNEST_PATH = /Users/mathewvaridel
+BOOSTINC = /usr/include
 
 default:
 	make noexamples -C $(DNEST_PATH)/DNest4/code

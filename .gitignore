@@ -3,6 +3,10 @@
 *.o
 Blobby3D
 
+# Tests #
+####################
+Tests/
+
 # Temporary Files #
 ###################
 *#
