@@ -1,9 +1,0 @@
-#!/bin/bash
-#PBS -P BGM
-#PBS -l select=1:ncpus=8:mem=4GB
-#PBS -l walltime=36:00:00
-#PBS -q defaultQ
-
-cd $PBS_O_WORKDIR
-export OMP_NUM_THREADS=8
-../Blobby3D -t 1 -f MODEL_OPTIONS
