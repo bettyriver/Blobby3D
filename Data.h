@@ -31,16 +31,16 @@ class Data
   double qlim_min;
   double sigma_min, sigma_max;
   double gama_inc;
-  
+
   // sampling
   double sample;
-  
+
   // Number of pixels
   int ni, nj;
-  
+
   // Number of wavelength bins
   int nr;
-  
+
   // Number of valid spaxels
   int nv;
 
@@ -52,7 +52,7 @@ class Data
 
   // Pixel widths
   double dx, dy;
-		
+
   // Wavelength bin widths
   double dr;
 
@@ -76,7 +76,7 @@ class Data
   double x_pad_dx, y_pad_dy;
   std::vector<double> psf_sigma_overdx;
   std::vector<double> psf_sigma_overdy;
-		
+
   // Analytical paramaters
   double sum_flux;
 
@@ -90,6 +90,10 @@ class Data
   double hp_step;
   double disc_step;
   double sigma_step;
+
+  // Geometric widths
+  double pixel_width;
+  double image_width;
 
   // Coordinates of pixel centers
   std::vector< std::vector<double> > x_rays;
@@ -125,7 +129,7 @@ class Data
   int get_ni() const { return ni; }
   int get_nj() const { return nj; }
   int get_nr() const { return nr; }
-  int get_nv() const { return nv; } 
+  int get_nv() const { return nv; }
   double get_x_min() const { return x_min; }
   double get_x_max() const { return x_max; }
   double get_y_min() const { return y_min; }
@@ -169,9 +173,12 @@ class Data
   double get_disc_step() const { return disc_step; }
   double get_sigma_step() const { return sigma_step; }
 
+  double get_pixel_width() const { return pixel_width; }
+  double get_image_width() const { return image_width; }
+
   std::vector<double> get_psf_sigma_overdx() const { return psf_sigma_overdx; }
   std::vector<double> get_psf_sigma_overdy() const { return psf_sigma_overdy; }
-  
+
   int get_sample() const { return sample; }
   double get_dxos() const { return dxos; }
   double get_dyos() const { return dyos; }

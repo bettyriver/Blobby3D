@@ -26,7 +26,7 @@ void Data::load(const char* moptions_file) {
     nfixed:
      Whether to fix number of blobs to nmax
     z: galaxy redshift
-    
+
   */
   // std::string metadata_file, cube_file, var_file;
   fstream fin(moptions_file, ios::in);
@@ -83,7 +83,7 @@ void Data::load(const char* moptions_file) {
 
   // PSF convolution method message
   for(size_t i=0; i<psf_fwhm.size(); i++)
-    psf_sigma.push_back(psf_fwhm[i]/sqrt(8.0*log(2.0))); 
+    psf_sigma.push_back(psf_fwhm[i]/sqrt(8.0*log(2.0)));
 
   // Print out convolution parameters
   if (convolve == 0) {
@@ -102,7 +102,7 @@ void Data::load(const char* moptions_file) {
     std::cout<<"PSF FWHM (ASEC): "<<psf_fwhm[0]<<std::endl;
     std::cout<<"PSF BETA: "<<psf_beta<<std::endl<<std::endl;
   }
-  
+
   // LSF convolution message
   // LSF in wavelength (needs to be redshift corrected)
   lsf_sigma = lsf_fwhm/sqrt(8.0*log(2.0));
@@ -124,11 +124,11 @@ void Data::load(const char* moptions_file) {
 
   // Model choice (only for testing)
   model = 0;
-  
+
   // Override blob parameters for disk model
   if (model == 1)
     nmax = 0;
-  
+
   if (model == 1)
     nfixed = true;
 
@@ -206,12 +206,12 @@ void Data::load(const char* moptions_file) {
         if (image[i][j][r] != 0.0) { tmp_im = 1.0; }
 	tmp_sig += var_cube[i][j][r];
 	}
-	  
+
 	// Add valid pixels to array
 	if ((tmp_im == 1.0) && (tmp_sig > 0.0)) {
 	  tmp_vec[0] = i; tmp_vec[1] = j;
 	  sum_flux += tmp_im;
-	      
+
 	  if (nv != 0)
 	    valid.push_back(tmp_vec);
 	  else
@@ -255,6 +255,12 @@ void Data::load(const char* moptions_file) {
   x_pad_dxos = x_pados*dxos;
   y_pad_dyos = y_pados*dyos;
 
+  // Calculate geometric widths
+  pixel_width = sqrt(dx*dy);
+  double x_width = x_max - x_min - 2.0*x_pad_dx;
+  double y_width = y_max - y_min - 2.0*y_pad_dy;
+  image_width = sqrt(x_width*y_width);
+
   // Compute (oversampled) x, y, r arrays
   compute_ray_grid();
 }
@@ -286,7 +292,7 @@ void Data::compute_ray_grid() {
     }
   }
 
-  r_rays.assign(nr, 0.0);	
+  r_rays.assign(nr, 0.0);
   for(size_t r=0; r<r_rays.size(); r++)
     r_rays[r] = r_min + (r + 0.5)*dr;
 }
