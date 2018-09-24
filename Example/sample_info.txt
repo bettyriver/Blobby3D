@@ -1,3 +1,0 @@
-# level assignment, log likelihood, tiebreaker, ID.
-0 -109853.383126 0.92080467748 0
-0 -8.02594531792e+18 0.0260688190169 0
