@@ -25,8 +25,7 @@ Conv::Conv()
     ,dx(Data::get_instance().get_dx())
     ,dy(Data::get_instance().get_dy())
     ,x_pad(Data::get_instance().get_x_pad())
-    ,y_pad(Data::get_instance().get_y_pad()
-    ) {
+    ,y_pad(Data::get_instance().get_y_pad()) {
 
   // Construct empty convolved matrix
   convolved.resize(ni - 2*y_pad);
@@ -192,21 +191,23 @@ Conv::Conv()
 
 std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
     std::vector< std::vector< std::vector<double> > >& preconvolved) {
-
-  const std::vector< std::vector<int> >& valid = Data::get_instance().get_valid();
-
   /*
-    Calculate convolved matrix
+    Calculate convolved matrix using a decomposition of concentric Gaussians.
 
-    The below procedure uses a separable convolution,
-    first convolving across the columns, then across rows.
+    The below procedure uses a separable convolution, first convolving across
+    the columns, then across rows. This approach is only valid for 2D Gaussian
+    PSFs.
 
-    Only valid for 2d gaussian PSFs.
+    It performs the multiple gaussian convolution by convolving by each
+    Gaussian kernel in turn. This uses the distributive property of
+    convolution.
 
-    It performs the multiple gaussian convolution
-    by convolving by each gaussian kernel in turn.
-    This uses the distributive property of convolution.
+    This procedure is currently preferred for Moffat convolution compared to
+    the fftw_moffat_blur function whenever the code is executed in parallel.
+    Reasoning is due to the FFTW3 implementation not being thread-safe at this
+    time.
   */
+  const std::vector< std::vector<int> >& valid = Data::get_instance().get_valid();
 
   // Clear convolved matrix
   int i, j;
@@ -221,13 +222,13 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
   int szk_x, szk_y;
   double tl_pre, tl_con;
   for (int r=0; r<nr; r++) {
-      /*
-	Clear convolved matrices.
-      */
+    /*
+	    Clear convolved matrices.
+    */
 
-      /*
-	Convolve slice for each Gaussian kernel
-      */
+    /*
+	    Convolve slice for each Gaussian kernel
+    */
     for (size_t k=0; k<psf_sigma.size(); k++) {
       szk_x = (int)ceil(5.0*psf_sigma[k]/dx);
       szk_y = (int)ceil(5.0*psf_sigma[k]/dy);
@@ -235,16 +236,16 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
       // blur across columns
       for (i=0; i<convolved_tmp_2d.size(); i++) {
         for (j=0; j<convolved_tmp_2d[i].size(); j++) {
-	  convolved_tmp_2d[i][j] = 0.0;
-	  norm = 0.0;
-	  for (int p=-szk_x; p<=szk_x; p++) {
-	    if ((x_pad + j + p >= 0)
+	        convolved_tmp_2d[i][j] = 0.0;
+          norm = 0.0;
+          for (int p=-szk_x; p<=szk_x; p++) {
+            if ((x_pad + j + p >= 0)
                 && (x_pad + j + p < convolved_tmp_2d[i].size())) {
-	      convolved_tmp_2d[i][j] += preconvolved[i][x_pad+j+p][r]*kernel_x[k][szk_x+p];
-	      norm += kernel_x[k][szk_x+p];
-	    }
-	  }
-	}
+              convolved_tmp_2d[i][j] += preconvolved[i][x_pad+j+p][r]*kernel_x[k][szk_x+p];
+              norm += kernel_x[k][szk_x+p];
+	          }
+	        }
+	      }
       }
 
       /*
@@ -252,16 +253,15 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
       */
       for (size_t h=0; h<valid.size(); h++) {
         i = valid[h][0];
-	j = valid[h][1];
-
-	norm = 0.0;
+        j = valid[h][1];
+        norm = 0.0;
         for (int p=-szk_y; p<=szk_y; p++) {
-	  if ((y_pad + i + p >= 0)
-              && (y_pad + i + p < convolved_tmp_2d.size())) {
-	    convolved[i][j][r] += psf_amp[k]*convolved_tmp_2d[y_pad+i+p][j]*kernel_y[k][szk_y+p];
-	    norm += kernel_y[k][szk_y+p];
-	  }
-	}
+          if ((y_pad + i + p >= 0)
+                    && (y_pad + i + p < convolved_tmp_2d.size())) {
+            convolved[i][j][r] += psf_amp[k]*convolved_tmp_2d[y_pad+i+p][j]*kernel_y[k][szk_y+p];
+            norm += kernel_y[k][szk_y+p];
+          }
+        }
       }
     }
   }
@@ -271,7 +271,12 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
 
 std::vector< std::vector< std::vector<double> > > Conv::fftw_moffat_blur(
     std::vector< std::vector< std::vector<double> > >& preconvolved) {
+  /*
+    Calculate convolved matrix using a Moffat profile.
 
+    This method uses a non-thread safe implementation of FFTW3. As such, the
+    brute_gaussian_blur method is usually preferred.
+  */
   for (int r=0; r<nr; r++) {
     // put wavelength slice vector into fftw double
     for (int i=0; i<ni; i++)
@@ -295,7 +300,7 @@ std::vector< std::vector< std::vector<double> > > Conv::fftw_moffat_blur(
     for (int i=0; i<ni-2*y_pad; i++) {
       for (int j=0; j<nj-2*x_pad; j++) {
         convolved[i][j][r] = in2[midjk + x_pad + j + Nj*(i + midik + y_pad)];
-	convolved[i][j][r] *= invnorm;
+	      convolved[i][j][r] *= invnorm;
       }
     }
   }
