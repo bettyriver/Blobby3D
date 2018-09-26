@@ -3,12 +3,16 @@
 *.o
 Blobby3D
 
-# Tests #
-####################
+# Ad Hoc Tests #
+################
 Tests/
 
+# Data #
+###########
+*.fits
+
 # Results #
-####################
+###########
 *sample.txt
 *sample_info.txt
 *sampler_state.txt
