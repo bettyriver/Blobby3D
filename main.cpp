@@ -5,8 +5,6 @@
 #include "Data.h"
 #include "MyModel.h"
 
-// using namespace DNest4;
-
 int main(int argc, char** argv) {
   // Get command line options
   DNest4::CommandLineOptions options(argc, argv);
