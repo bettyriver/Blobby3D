@@ -100,9 +100,6 @@ class MyModel {
     bool blob_perturb;
     bool noise_perturb;
 
-    // bool disk_perturb;
-    // bool rot_perturb;
-
   public:
     MyModel();
 

@@ -9,13 +9,13 @@
 #include "Conv.h"
 #include "Constants.h"
 
-using namespace std;
-using namespace DNest4;
-
 // TODO: Remove references to sigma1 throughout code.
+// Partial fix: not perturbing.
+
 // TODO: Remove references to inc throughout code.
+// Partial fix: not perturbing.
+
 // TODO: Resolve issue regarding 7 vs 6 blob parameters.
-// TODO: Make map and cube creation separate functions.
 
 /*
   Public
@@ -25,22 +25,18 @@ MyModel::MyModel()
       7, Data::get_instance().get_nmax(),
       Data::get_instance().get_nfixed(),
       MyConditionalPrior(
-        Data::get_instance().get_x_min(),
-        Data::get_instance().get_x_max(),
-        Data::get_instance().get_y_min(),
-        Data::get_instance().get_y_max(),
-        Data::get_instance().get_r_min(),
-        Data::get_instance().get_r_max(),
-        Data::get_instance().get_dx(),
-        Data::get_instance().get_dy(),
-        Data::get_instance().get_dr(),
-        Data::get_instance().get_x_pad_dx(),
-        Data::get_instance().get_y_pad_dy(),
         log(Data::get_instance().get_fluxmu_min()),
-        log(Data::get_instance().get_fluxmu_max())),
-      PriorType::log_uniform) {
-
-  // initialise arrays
+        log(Data::get_instance().get_fluxmu_max()),
+        Data::get_instance().get_lnfluxsd_min(),
+        Data::get_instance().get_lnfluxsd_max(),
+        Data::get_instance().get_pixel_width(), 30.0,
+        0.03, 30.0,
+        0.2
+        ),
+      DNest4::PriorType::log_uniform) {
+  /*
+    initialise arrays
+  */
   size_t ni = Data::get_instance().get_ni();
   size_t nj = Data::get_instance().get_nj();
   size_t nr = Data::get_instance().get_nr();
@@ -56,7 +52,7 @@ MyModel::MyModel()
     }
   }
 
-  // convolved cube
+  // Convolved cube
   convolved.resize(ni - 2*y_pad);
   for (size_t i=0; i<convolved.size(); ++i) {
     convolved[i].resize(nj - 2*x_pad);
@@ -83,7 +79,7 @@ MyModel::MyModel()
   vdisp.assign(ni, std::vector<double>(nj));
 }
 
-void MyModel::from_prior(RNG& rng) {
+void MyModel::from_prior(DNest4::RNG& rng) {
   // Get local variables from data
   const int model = Data::get_instance().get_model();
   const double x_min = Data::get_instance().get_x_min();
@@ -224,7 +220,7 @@ void MyModel::from_prior(RNG& rng) {
   calculate_image();
 }
 
-double MyModel::perturb(RNG& rng) {
+double MyModel::perturb(DNest4::RNG& rng) {
   const int model = Data::get_instance().get_model();
   const double x_min = Data::get_instance().get_x_min();
   const double x_max = Data::get_instance().get_x_max();
@@ -234,8 +230,6 @@ double MyModel::perturb(RNG& rng) {
   const double y_pad_dy = Data::get_instance().get_y_pad_dy();
   const double disc_step = Data::get_instance().get_disc_step();
   const double sigma_step = Data::get_instance().get_sigma_step();
-
-  const double gama_inc = Data::get_instance().get_gama_inc();
 
   DNest4::Cauchy cauchy_xc(x_imagecentre, gamma_pos);
   DNest4::Cauchy cauchy_yc(y_imagecentre, gamma_pos);
@@ -266,8 +260,7 @@ double MyModel::perturb(RNG& rng) {
         return logH = -1E300;
     } else if (rnd <= 0.8) {
       // Perturb disc parameters
-      // rot_perturb = true;
-      int which = rng.rand_int(11);
+      int which = rng.rand_int(10);
 
       switch (which) {
         case 0:
@@ -291,7 +284,7 @@ double MyModel::perturb(RNG& rng) {
         case 3:
           vmax = log(vmax);
           vmax += disc_step*log(vmax_width)*rng.randh();
-          vmax = mod(vmax - log(vmax_min), log(vmax_width));
+          vmax = DNest4::mod(vmax - log(vmax_min), log(vmax_width));
           vmax += log(vmax_min);
           vmax = exp(vmax);
           vel_perturb = true;
@@ -299,7 +292,7 @@ double MyModel::perturb(RNG& rng) {
         case 4:
           vslope = log(vslope);
           vslope += disc_step*log(vslope_width)*rng.randh();
-          vslope = mod(vslope - log(vslope_min), log(vslope_width));
+          vslope = DNest4::mod(vslope - log(vslope_min), log(vslope_width));
           vslope += log(vslope_min);
           vslope = exp(vslope);
           vel_perturb = true;
@@ -307,35 +300,29 @@ double MyModel::perturb(RNG& rng) {
         case 5:
           vgamma = log(vgamma);
           vgamma += disc_step*log(vgamma_width)*rng.randh();
-          vgamma = mod(vgamma - log(vgamma_min), log(vgamma_width));
+          vgamma = DNest4::mod(vgamma - log(vgamma_min), log(vgamma_width));
           vgamma += log(vgamma_min);
           vgamma = exp(vgamma);
           vel_perturb = true;
           break;
         case 6:
           vbeta += disc_step*vbeta_width*rng.randh();
-          vbeta = mod(vbeta - vbeta_min, vbeta_width);
+          vbeta = DNest4::mod(vbeta - vbeta_min, vbeta_width);
           vbeta += vbeta_min;
           vel_perturb = true;
           break;
         case 7:
           pa += disc_step*2.0*M_PI*rng.randh();
-          pa = mod(pa, 2*M_PI);
+          pa = DNest4::mod(pa, 2*M_PI);
           array_perturb = true;
           break;
         case 8:
-          // inc += disc_step*0.5*M_PI*rng.randh();
-          // inc = mod(inc, 0.5*M_PI);
-          inc = gama_inc;
-          array_perturb = true;
-          break;
-        case 9:
           vdisp_param[0] += disc_step*vdisp0_width*rng.randh();
-          vdisp_param[0] = mod(vdisp_param[0] - vdisp0_min, vdisp0_width);
+          vdisp_param[0] = DNest4::mod(vdisp_param[0] - vdisp0_min, vdisp0_width);
           vdisp_param[0] += vdisp0_min;
           vdisp_perturb = true;
           break;
-        case 10:
+        case 9:
           which = rng.rand_int(vdisp_order);
           logH += gaussian_vdisp.perturb(vdisp_param[which+1], rng);
           vdisp_perturb = true;
@@ -351,14 +338,14 @@ double MyModel::perturb(RNG& rng) {
         case 0:
           Md = log(Md);
           Md += disc_step*log(Md_width)*rng.randh();
-          Md = mod(Md - log(Md_min), log(Md_width));
+          Md = DNest4::mod(Md - log(Md_min), log(Md_width));
           Md += log(Md_min);
           Md = exp(Md);
           break;
         case 1:
           wxd = log(wxd);
           wxd += disc_step*log(wxd_width)*rng.randh();
-          wxd = mod(wxd - log(wxd_min), log(wxd_width)) + log(wxd_min);
+          wxd = DNest4::mod(wxd - log(wxd_min), log(wxd_width)) + log(wxd_min);
           wxd = exp(wxd);
           break;
       }
@@ -373,19 +360,20 @@ double MyModel::perturb(RNG& rng) {
     calculate_image();
 
   } else {
-    int which = rng.rand_int(2);
+    int which = rng.rand_int(1);
     switch (which) {
       case 0:
         sigma0 = log(sigma0);
         sigma0 += sigma_step*log(sigma0_width)*rng.randh();
-        sigma0 = mod(sigma0 - log(sigma0_min), log(sigma0_width));
+        sigma0 = DNest4::mod(sigma0 - log(sigma0_min), log(sigma0_width));
         sigma0 += log(sigma0_min);
         sigma0 = exp(sigma0);
         break;
       case 1:
+        // Currently redundant
         sigma1 = log(sigma1);
         sigma1 += sigma_step*log(sigma1_width)*rng.randh();
-        sigma1 = mod(sigma1 - log(sigma1_min), log(sigma1_width));
+        sigma1 = DNest4::mod(sigma1 - log(sigma1_min), log(sigma1_width));
         sigma1 += log(sigma1_min);
         sigma1 = exp(sigma1);
         break;
@@ -492,7 +480,7 @@ void MyModel::print(std::ostream& out) const {
   const int x_pad = Data::get_instance().get_x_pad();
   const int y_pad = Data::get_instance().get_y_pad();
 
-  out<<setprecision(6);
+  out<<std::setprecision(6);
 
   // Save deconvolved image
   for(size_t i=y_pad; i<image.size()-y_pad; i++)
@@ -527,8 +515,8 @@ void MyModel::print(std::ostream& out) const {
   out<<sigma1<<' ';
 }
 
-string MyModel::description() const {
-  return string("objects");
+std::string MyModel::description() const {
+  return std::string("objects");
 }
 
 /*
@@ -582,8 +570,8 @@ void MyModel::calculate_shifted_arrays() {
   /*
     Calculate arrays shifted by disk parameters.
   */
-  const vector< vector<double> >& x = Data::get_instance().get_x_rays();
-  const vector< vector<double> >& y = Data::get_instance().get_y_rays();
+  const std::vector< std::vector<double> >& x = Data::get_instance().get_x_rays();
+  const std::vector< std::vector<double> >& y = Data::get_instance().get_y_rays();
 
   double sin_pa = sin(pa);
   double cos_pa = cos(pa);
