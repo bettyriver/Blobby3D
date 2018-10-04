@@ -3,11 +3,7 @@
 #include <iostream>
 #include <cmath>
 
-#include "DNest4/code/DNest4.h"
 #include "Data.h"
-
-using namespace std;
-using namespace DNest4;
 
 Conv Conv::instance;
 
@@ -25,7 +21,8 @@ Conv::Conv()
     ,dx(Data::get_instance().get_dx())
     ,dy(Data::get_instance().get_dy())
     ,x_pad(Data::get_instance().get_x_pad())
-    ,y_pad(Data::get_instance().get_y_pad()) {
+    ,y_pad(Data::get_instance().get_y_pad())
+    ,sigma_cutoff(5.0) {
 
   // Construct empty convolved matrix
   convolved.resize(ni - 2*y_pad);
@@ -49,7 +46,7 @@ Conv::Conv()
     double erf_min, erf_max;
     int szk_x, szk_y;
     for (size_t k=0; k<psf_sigma.size(); k++) {
-      szk_x = (int)ceil(5.0*psf_sigma_overdx[k]);
+      szk_x = (int)std::ceil(sigma_cutoff*psf_sigma_overdx[k]);
       kernel_x[k].assign(2*szk_x+1, 0.0);
       for (int j=-szk_x; j<=szk_x; j++) {
         erf_min = std::erf((j - 0.5)*dx/(psf_sigma[k]*sqrt(2.0)));
@@ -57,7 +54,7 @@ Conv::Conv()
         kernel_x[k][j+szk_x] = 0.5*(erf_max - erf_min);
       }
 
-      szk_y = (int)ceil(5.0*psf_sigma_overdy[k]);
+      szk_y = (int)std::ceil(sigma_cutoff*psf_sigma_overdy[k]);
       kernel_y[k].assign(2*szk_y+1, 0.0);
       for (int i=-szk_y; i<=szk_y; i++) {
         erf_min = std::erf((i - 0.5)*dy/(psf_sigma[k]*sqrt(2.0)));
@@ -117,7 +114,7 @@ Conv::Conv()
       don't make kernel any larger.
       0.997 is equivalent to 3-sigma, so seems reasonable.
     */
-    int szk = min((max_nik - 1)/2, (max_njk - 1)/2);
+    int szk = std::min((max_nik - 1)/2, (max_njk - 1)/2);
     double tl = kernel_tmp[max_midik][max_midjk];
     for (int s=1; s<=szk; s++) {
       for (int j=-s; j<s; j++) {
@@ -194,6 +191,8 @@ std::vector< std::vector< std::vector<double> > > Conv::apply(
       return brute_gaussian_blur(preconvolved);
     else if (convolve == 1)
       return fftw_moffat_blur(preconvolved);
+    else
+      std::cerr<<"# ERROR: Undefined convolve procedure."<<std::endl;
 }
 
 std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
@@ -216,51 +215,47 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
   */
   const std::vector< std::vector<int> >& valid = Data::get_instance().get_valid();
 
-  // Clear convolved matrix
   int i, j;
+  int szk_x, szk_y;
+
+  // Clear convolved matrix
   for (size_t h=0; h<valid.size(); h++) {
     i = valid[h][0];
     j = valid[h][1];
-    for (int r=0; r<nr; r++)
+    for (size_t r=0; r<convolved[i][j].size(); r++)
       convolved[i][j][r] = 0.0;
   }
 
-  double norm;
-  int szk_x, szk_y;
-  double tl_pre, tl_con;
+  // double norm;
   for (int r=0; r<nr; r++) {
     /*
 	    Convolve slice for each Gaussian kernel
     */
     for (size_t k=0; k<psf_sigma.size(); k++) {
-      szk_x = (int)ceil(5.0*psf_sigma[k]/dx);
-      szk_y = (int)ceil(5.0*psf_sigma[k]/dy);
+      szk_x = (int)std::ceil(sigma_cutoff*psf_sigma[k]/dx);
+      szk_y = (int)std::ceil(sigma_cutoff*psf_sigma[k]/dy);
 
-      // blur across columns
+      // Blur across columns.
       for (i=0; i<convolved_tmp_2d.size(); i++) {
         for (j=0; j<convolved_tmp_2d[i].size(); j++) {
 	        convolved_tmp_2d[i][j] = 0.0;
-          norm = 0.0;
           for (int p=-szk_x; p<=szk_x; p++) {
             if ((x_pad + j + p >= 0)
                 && (x_pad + j + p < convolved_tmp_2d[i].size())) {
               convolved_tmp_2d[i][j] += preconvolved[i][x_pad+j+p][r]*kernel_x[k][szk_x+p];
-              norm += kernel_x[k][szk_x+p];
 	          }
 	        }
 	      }
       }
 
-      // blur across rows for valid pixels
+      // Blur across rows for valid pixels.
       for (size_t h=0; h<valid.size(); h++) {
         i = valid[h][0];
         j = valid[h][1];
-        norm = 0.0;
         for (int p=-szk_y; p<=szk_y; p++) {
           if ((y_pad + i + p >= 0)
               && (y_pad + i + p < convolved_tmp_2d.size())) {
             convolved[i][j][r] += psf_amp[k]*convolved_tmp_2d[y_pad+i+p][j]*kernel_y[k][szk_y+p];
-            norm += kernel_y[k][szk_y+p];
           }
         }
       }

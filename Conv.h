@@ -4,8 +4,6 @@
 #include <vector>
 #include <fftw3.h>
 
-#include "Data.h"
-
 /*
   Class for convolving by the PSF
 */
@@ -22,8 +20,8 @@ class Conv {
   std::vector<double> psf_sigma_overdx, psf_sigma_overdy;
   int ni, nj, nr;
   double dx, dy;
-  double sigma_cutoff;
   int x_pad, y_pad;
+  double sigma_cutoff;
 
   // vectors for separable kernel
   std::vector< std::vector<double> > kernel_x;
