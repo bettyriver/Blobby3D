@@ -8,9 +8,6 @@ class Data
 {
  private:
 
-  // constants
-  double C, HA, N2UPP, N2LOW, INFTY;
-
   // files
   std::string metadata_file;
   std::string cube_file;
@@ -20,7 +17,6 @@ class Data
   int model;
   int nmax;
   bool nfixed;
-  double prior_inc;
   int convolve;
   double vsys_gamma, vsys_max;
   double vmax_min, vmax_max;
@@ -118,10 +114,6 @@ class Data
   void load(const char* moptions_file);
 
   // Getters
-  double get_C() const { return C; }
-  double get_HA() const { return HA; }
-  double get_N2UPP() const { return N2UPP; }
-  double get_N2LOW() const { return N2LOW; }
   int get_model() const { return model; }
   int get_nmax() const { return nmax; }
   bool get_nfixed() const { return nfixed; }
