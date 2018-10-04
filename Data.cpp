@@ -7,8 +7,6 @@
 
 #include "Constants.h"
 
-using namespace std;
-
 Data Data::instance;
 
 Data::Data() {}
@@ -29,9 +27,9 @@ void Data::load(const char* moptions_file) {
 
   */
   // std::string metadata_file, cube_file, var_file;
-  fstream fin(moptions_file, ios::in);
+  std::fstream fin(moptions_file, std::ios::in);
   if (!fin)
-    cerr<<"# ERROR: couldn't open file "<<moptions_file<<"."<<endl;
+    std::cerr<<"# ERROR: couldn't open file "<<moptions_file<<"."<<std::endl;
 
   while (fin.peek() == '#')
     fin.ignore(1000000, '\n');
@@ -143,9 +141,9 @@ void Data::load(const char* moptions_file) {
   /*
    * First, read in the metadata
   */
-  fin.open(metadata_file, ios::in);
+  fin.open(metadata_file, std::ios::in);
   if (!fin)
-    cerr<<"# ERROR: couldn't open file "<<metadata_file<<"."<<endl;
+    std::cerr<<"# ERROR: couldn't open file "<<metadata_file<<"."<<std::endl;
   fin >> ni >> nj;
   fin >> nr;
   fin >> x_min >> x_max >> y_min >> y_max;
@@ -154,8 +152,7 @@ void Data::load(const char* moptions_file) {
 
   // Make sure maximum > minimum
   if (x_max <= x_min || y_max <= y_min)
-    cerr<<"# ERROR: strange input in "<<metadata_file<<"."<<endl;
-
+    std::cerr<<"# ERROR: strange input in "<<metadata_file<<"."<<std::endl;
 
   // Loading data comment
   std::cout<<"\nLoading data:\n";
@@ -163,9 +160,9 @@ void Data::load(const char* moptions_file) {
   /*
    * Now, load the image
   */
-  fin.open(cube_file, ios::in);
+  fin.open(cube_file, std::ios::in);
   if (!fin)
-    cerr<<"# ERROR: couldn't open file "<<cube_file<<"."<<endl;
+    std::cerr<<"# ERROR: couldn't open file "<<cube_file<<"."<<std::endl;
   image = arr_3d();
   for (size_t i=0; i<image.size(); i++)
     for (size_t j=0; j<image[i].size(); j++)
@@ -177,9 +174,9 @@ void Data::load(const char* moptions_file) {
   /*
    * Load the sigma map
    */
-  fin.open(var_file, ios::in);
+  fin.open(var_file, std::ios::in);
   if (!fin)
-    cerr<<"# ERROR: couldn't open file "<<var_file<<"."<<endl;
+    std::cerr<<"# ERROR: couldn't open file "<<var_file<<"."<<std::endl;
   // Variance cube from data input
   var_cube = arr_3d();
   for (size_t i=0; i<var_cube.size(); i++)
@@ -193,32 +190,32 @@ void Data::load(const char* moptions_file) {
    * Determine the valid data pixels
     Considered valid if sigma > 0.0 and there is at least 1 non-zero value.
    */
-  valid.assign(1, vector<int>(2));
+  valid.assign(1, std::vector<int>(2));
   double tmp_im, tmp_sig;
-  vector<int> tmp_vec(2);
+  std::vector<int> tmp_vec(2);
   nv = 0;
   sum_flux = 0.0;
-  for (int i=0; i<image.size(); i++) {
-    for(int j=0; j<image[i].size(); j++) {
+  for (size_t i=0; i<image.size(); i++) {
+    for(size_t j=0; j<image[i].size(); j++) {
       tmp_im = 0.;
       tmp_sig = 0.;
-      for (int r=0; r<image[i][j].size(); r++) {
+      for (size_t r=0; r<image[i][j].size(); r++) {
         if (image[i][j][r] != 0.0) { tmp_im = 1.0; }
-	tmp_sig += var_cube[i][j][r];
-	}
+	        tmp_sig += var_cube[i][j][r];
+	    }
 
-	// Add valid pixels to array
-	if ((tmp_im == 1.0) && (tmp_sig > 0.0)) {
-	  tmp_vec[0] = i; tmp_vec[1] = j;
-	  sum_flux += tmp_im;
+      // Add valid pixels to array
+      if ((tmp_im == 1.0) && (tmp_sig > 0.0)) {
+        tmp_vec[0] = i; tmp_vec[1] = j;
+        sum_flux += tmp_im;
 
-	  if (nv != 0)
-	    valid.push_back(tmp_vec);
-	  else
-	    valid[0] = tmp_vec;
+        if (nv != 0)
+          valid.push_back(tmp_vec);
+        else
+          valid[0] = tmp_vec;
 
-	  nv += 1;
-	}
+        nv += 1;
+      }
     }
   }
   std::cout<<"Valid pixels determined...\n\n";
@@ -270,9 +267,9 @@ std::vector< std::vector< std::vector<double> > > Data::arr_3d() {
   std::vector< std::vector< std::vector<double> > > arr;
 
   arr.resize(ni);
-  for (size_t i=0; i<ni; i++) {
+  for (int i=0; i<ni; i++) {
     arr[i].resize(nj);
-    for(size_t j=0; j<nj; j++) {
+    for(int j=0; j<nj; j++) {
       arr[i][j].resize(nr);
     }
   }
@@ -282,8 +279,8 @@ std::vector< std::vector< std::vector<double> > > Data::arr_3d() {
 
 void Data::compute_ray_grid() {
   // Make vectors of the correct size
-  x_rays.assign(ni, vector<double>(nj));
-  y_rays.assign(ni, vector<double>(nj));
+  x_rays.assign(ni, std::vector<double>(nj));
+  y_rays.assign(ni, std::vector<double>(nj));
 
   for (size_t i=0; i<x_rays.size(); i++) {
     for (size_t j=0; j<x_rays[i].size(); j++) {
