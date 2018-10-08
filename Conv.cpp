@@ -7,6 +7,9 @@
 
 Conv Conv::instance;
 
+/*
+  Public
+*/
 Conv::Conv()
     :convolve(Data::get_instance().get_convolve())
     ,psf_amp(Data::get_instance().get_psf_amp())
@@ -77,15 +80,14 @@ Conv::Conv()
     // Sampling
     int sample = 9;
 
-    // Max size of kernel
-    // Forced to be odd
+    // Max size of kernel. Forced to be odd,
     int max_nik = 2*(ni - 2*y_pad) + 1;
     int max_njk = 2*(nj - 2*x_pad) + 1;
 
     int max_midik = (max_nik - 1)/2;
     int max_midjk = (max_njk - 1)/2;
 
-    // construct temporary moffat kernel
+    // Construct temporary moffat kernel
     std::vector< std::vector<double> > kernel_tmp;
     kernel_tmp.assign(max_nik, std::vector<double>(max_njk));
 
@@ -109,10 +111,8 @@ Conv::Conv()
     }
 
     /*
-      Determine required size of kernel
-      Sum up square kernel sum and as soon as > 0.997
-      don't make kernel any larger.
-      0.997 is equivalent to 3-sigma, so seems reasonable.
+      Determine required size of kernel such that sum > 0.997 -- equivalent to
+      3-sigma for a Gaussian, so seems reasonable.
     */
     int szk = std::min((max_nik - 1)/2, (max_njk - 1)/2);
     double tl = kernel_tmp[max_midik][max_midjk];
@@ -195,6 +195,9 @@ std::vector< std::vector< std::vector<double> > > Conv::apply(
       std::cerr<<"# ERROR: Undefined convolve procedure."<<std::endl;
 }
 
+/*
+  Private
+*/
 std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
     std::vector< std::vector< std::vector<double> > >& preconvolved) {
   /*
