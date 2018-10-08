@@ -6,6 +6,9 @@
 #include "DNest4/code/DNest4.h"
 #include "Data.h"
 
+/*
+  Public
+*/
 MyConditionalPrior::MyConditionalPrior(
   double fluxlim_min, double fluxlim_max,
   double flux_std_min, double flux_std_max,

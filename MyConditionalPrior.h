@@ -34,10 +34,10 @@ class MyConditionalPrior:public DNest4::ConditionalPrior {
   // Loguniform with changing limits for W
   double radiusmax;
 
-  // Exponential for wd
+  // Exponential for rc
   double wd;
 
-  // Triangular with changing lower limit
+  // Triangular with changing lower limit for q
   double q_min;
 
   double perturb_hyperparameters(DNest4::RNG& rng);
