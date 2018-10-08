@@ -31,7 +31,8 @@ MyModel::MyModel()
         Data::get_instance().get_lnfluxsd_max(),
         Data::get_instance().get_pixel_width(), 30.0,
         0.03, 30.0,
-        0.2
+        0.2,
+        Data::get_instance().get_hp_step()
         ),
       DNest4::PriorType::log_uniform) {
   /*

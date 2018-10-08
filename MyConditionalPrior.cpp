@@ -11,7 +11,8 @@ MyConditionalPrior::MyConditionalPrior(
   double flux_std_min, double flux_std_max,
   double radiuslim_min, double radiuslim_max,
   double wd_min, double wd_max,
-  double qlim_min
+  double qlim_min,
+  double hp_step
   ) :fluxlim_min(fluxlim_min)
     ,fluxlim_max(fluxlim_max)
     ,flux_std_min(flux_std_min)
@@ -21,6 +22,7 @@ MyConditionalPrior::MyConditionalPrior(
     ,wd_min(wd_min)
     ,wd_max(wd_max)
     ,qlim_min(qlim_min)
+    ,hp_step(hp_step)
     ,fluxlim_width(fluxlim_max - fluxlim_min)
     ,flux_std_width(flux_std_max/flux_std_min)
     ,radiuslim_width(radiuslim_max/radiuslim_min)
@@ -41,8 +43,6 @@ void MyConditionalPrior::from_prior(DNest4::RNG& rng) {
 }
 
 double MyConditionalPrior::perturb_hyperparameters(DNest4::RNG& rng) {
-  const double hp_step = Data::get_instance().get_hp_step();
-
   double logH = 0.0;
   int which = rng.rand_int(5);
 

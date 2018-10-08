@@ -15,6 +15,7 @@ class MyConditionalPrior:public DNest4::ConditionalPrior {
   double radiuslim_min, radiuslim_max;
   double wd_min, wd_max;
   double qlim_min;
+  double hp_step;
 
   //  Corresponding widths
   double fluxlim_width;
@@ -47,7 +48,8 @@ class MyConditionalPrior:public DNest4::ConditionalPrior {
     double flux_std_min, double flux_std_max,
     double radiuslim_min, double radiuslim_max,
     double wd_min, double wd_max,
-    double qlim_min
+    double qlim_min,
+    double hp_step
     );
 
    void from_prior(DNest4::RNG& rng);
