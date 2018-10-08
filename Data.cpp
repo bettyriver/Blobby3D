@@ -71,6 +71,12 @@ void Data::load(const char* moptions_file) {
   fin>>gama_inc; fin.ignore(10000000, '\n');
   fin.close();
 
+  // Other parameters
+  // TODO: Read in these parameters from file
+  radiuslim_max = 30.0;
+  wd_min = 0.03;
+  wd_max = 30.0;
+
   // Print out parameters
   std::cout << "Input Metadata file: "<< metadata_file << std::endl;
   std::cout << "Input Cube file: "<< cube_file << std::endl;

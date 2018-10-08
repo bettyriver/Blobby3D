@@ -28,6 +28,11 @@ class Data
   double sigma_min, sigma_max;
   double gama_inc;
 
+  // Hard-coded parameters
+  // TODO: Read in parameters from file
+  double radiuslim_max;
+  double wd_min, wd_max;
+
   // sampling
   double sample;
 
@@ -155,6 +160,9 @@ class Data
   double get_sigma_min() const { return sigma_min; }
   double get_sigma_max() const { return sigma_max; }
   double get_gama_inc() const { return gama_inc; }
+  double get_radiuslim_max() const { return radiuslim_max; }
+  double get_wd_min() const { return wd_min; }
+  double get_wd_max() const { return wd_max; }
   int get_x_pad() const { return x_pad; }
   int get_y_pad() const { return y_pad; }
   double get_x_pad_dx() const { return x_pad_dx; }

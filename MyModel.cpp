@@ -29,9 +29,11 @@ MyModel::MyModel()
         log(Data::get_instance().get_fluxmu_max()),
         Data::get_instance().get_lnfluxsd_min(),
         Data::get_instance().get_lnfluxsd_max(),
-        Data::get_instance().get_pixel_width(), 30.0,
-        0.03, 30.0,
-        0.2,
+        Data::get_instance().get_pixel_width(),
+        Data::get_instance().get_radiuslim_max(),
+        Data::get_instance().get_wd_min(),
+        Data::get_instance().get_wd_max(),
+        Data::get_instance().get_qlim_min(),
         Data::get_instance().get_hp_step()
         ),
       DNest4::PriorType::log_uniform) {
