@@ -15,21 +15,28 @@ class MyConditionalPrior:public DNest4::ConditionalPrior {
   double radiuslim_min, radiuslim_max;
   double wd_min, wd_max;
   double qlim_min;
-  double hp_step;
 
-  //  Corresponding widths
-  double fluxlim_width;
-  double flux_std_width;
-  double radiuslim_width;
-  double wd_width;
-  double qlim_width;
+  // Hyperprior distributions
+  DNest4::Uniform hyperprior_fluxmu;
+  DNest4::LogUniform hyperprior_fluxstd;
+  DNest4::LogUniform hyperprior_radiusmax;
+  DNest4::LogUniform hyperprior_wd;
+  DNest4::Uniform hyperprior_qmin;
+
+  // Prior distributions
+  DNest4::Exponential prior_rc;
+  DNest4::Uniform prior_theta;
+  DNest4::Gaussian prior_logflux;
+  DNest4::Uniform prior_width;
+  // Require DNest4:Triangle for prior_q
+  DNest4::Uniform prior_phi;
 
   /*
     Hyperparameters
   */
   // Lognormal for flux
   double flux_mu;
-  double flux_std, flux_var;
+  double flux_std;
 
   // Loguniform with changing limits for W
   double radiusmax;
@@ -48,8 +55,7 @@ class MyConditionalPrior:public DNest4::ConditionalPrior {
     double flux_std_min, double flux_std_max,
     double radiuslim_min, double radiuslim_max,
     double wd_min, double wd_max,
-    double qlim_min,
-    double hp_step
+    double qlim_min
     );
 
    void from_prior(DNest4::RNG& rng);

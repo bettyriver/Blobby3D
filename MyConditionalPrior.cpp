@@ -1,10 +1,13 @@
 #include "MyConditionalPrior.h"
 
 #include <cmath>
-#include "boost/math/special_functions/erf.hpp"
 
 #include "DNest4/code/DNest4.h"
 #include "Data.h"
+
+// TODO: DNest4 requires Triangle distribution
+// TODO: DNest4 requires LogGaussian distribution
+// TODO: Once above are performed just use a for-loop in from/to uniform
 
 /*
   Public
@@ -14,8 +17,7 @@ MyConditionalPrior::MyConditionalPrior(
   double flux_std_min, double flux_std_max,
   double radiuslim_min, double radiuslim_max,
   double wd_min, double wd_max,
-  double qlim_min,
-  double hp_step
+  double qlim_min
   ) :fluxlim_min(fluxlim_min)
     ,fluxlim_max(fluxlim_max)
     ,flux_std_min(flux_std_min)
@@ -24,63 +26,53 @@ MyConditionalPrior::MyConditionalPrior(
     ,radiuslim_max(radiuslim_max)
     ,wd_min(wd_min)
     ,wd_max(wd_max)
-    ,qlim_min(qlim_min)
-    ,hp_step(hp_step)
-    ,fluxlim_width(fluxlim_max - fluxlim_min)
-    ,flux_std_width(flux_std_max/flux_std_min)
-    ,radiuslim_width(radiuslim_max/radiuslim_min)
-    ,wd_width(wd_max/wd_min)
-    ,qlim_width(1.0 - qlim_min) {}
+    ,qlim_min(qlim_min) {
+  // Hyperprior distributions
+  hyperprior_fluxmu = DNest4::Uniform(fluxlim_min, fluxlim_max);
+  hyperprior_fluxstd = DNest4::LogUniform(flux_std_min, flux_std_max);
+  hyperprior_radiusmax = DNest4::LogUniform(radiuslim_min, radiuslim_max);
+  hyperprior_wd = DNest4::LogUniform(wd_min, wd_max);
+  hyperprior_qmin = DNest4::Uniform(qlim_min, 1.0);
+}
 
 void MyConditionalPrior::from_prior(DNest4::RNG& rng) {
-  wd = exp(log(wd_min) + rng.rand()*log(wd_width));
+  // Hyperparameters
+  wd = hyperprior_wd.generate(rng);
+  flux_mu = hyperprior_fluxmu.generate(rng);
+  flux_std = hyperprior_fluxstd.generate(rng);
+  radiusmax = hyperprior_radiusmax.generate(rng);
+  q_min = hyperprior_qmin.generate(rng);
 
-  flux_mu = fluxlim_min + fluxlim_width*rng.rand();
-
-  flux_std = exp(log(flux_std_min) + log(flux_std_width)*rng.rand());
-  flux_var = pow(flux_std, 2);
-
-  radiusmax = exp(log(radiuslim_min) + log(radiuslim_width)*rng.rand());
-
-  q_min = qlim_min + qlim_width*rng.rand();
+  // Prior Distributions
+  prior_rc = DNest4::Exponential(wd);
+  prior_theta = DNest4::Uniform(0.0, 2.0*M_PI);
+  prior_logflux = DNest4::Gaussian(flux_mu, flux_std);
+  prior_width = DNest4::Uniform(radiuslim_min, radiusmax);
+  prior_phi = DNest4::Uniform(0.0, M_PI);
 }
 
 double MyConditionalPrior::perturb_hyperparameters(DNest4::RNG& rng) {
   double logH = 0.0;
   int which = rng.rand_int(5);
-
   switch (which) {
     case 0:
-      wd = log(wd);
-      wd += hp_step*log(wd_width)*rng.randh();
-      wd = DNest4::mod(wd - log(wd_min), log(wd_width));
-      wd += log(wd_min);
-      wd = exp(wd);
+      logH += hyperprior_wd.perturb(wd, rng);
+      prior_rc = DNest4::Exponential(wd);
       break;
     case 1:
-      flux_mu += hp_step*fluxlim_width*rng.randh();
-      flux_mu = DNest4::mod(flux_mu - fluxlim_min, fluxlim_width);
-      flux_mu += fluxlim_min;
+      logH += hyperprior_fluxmu.perturb(flux_mu, rng);
+      prior_logflux = DNest4::Gaussian(flux_mu, flux_std);
       break;
     case 2:
-      flux_std = log(flux_std);
-      flux_std += hp_step*log(flux_std_width)*rng.randh();
-      flux_std = DNest4::mod(flux_std - log(flux_std_min), log(flux_std_width));
-      flux_std += log(flux_std_min);
-      flux_std = exp(flux_std);
-      flux_var = pow(flux_std, 2);
+      logH += hyperprior_fluxstd.perturb(flux_std, rng);
+      prior_logflux = DNest4::Gaussian(flux_mu, flux_std);
       break;
     case 3:
-      radiusmax = log(radiusmax);
-      radiusmax += hp_step*log(radiuslim_width)*rng.randh();
-      radiusmax = DNest4::mod(radiusmax - log(radiuslim_min), log(radiuslim_width));
-      radiusmax += log(radiuslim_min);
-      radiusmax = exp(radiusmax);
+      logH += hyperprior_radiusmax.perturb(radiusmax, rng);
+      prior_width = DNest4::Uniform(radiuslim_min, radiusmax);
       break;
     case 4:
-      q_min += hp_step*qlim_width*rng.randh();
-      q_min = DNest4::mod(q_min - qlim_min, qlim_width);
-      q_min += qlim_min;
+      logH += hyperprior_qmin.perturb(q_min, rng);
       break;
     }
 
@@ -100,14 +92,13 @@ double MyConditionalPrior::log_pdf(const std::vector<double>& vec) const {
   double logp = 0.0;
 
   // Exponential for radius
-  logp += -log(wd) - vec[0]/wd;
+  logp += prior_rc.log_pdf(vec[0]);
 
   // Lognormal for flux
-  logp += -log(vec[2]*sqrt(2.0*M_PI*flux_var));
-  logp += -0.5*pow(log(vec[2]) - flux_mu, 2)/flux_var;
+  logp += prior_logflux.log_pdf(log(vec[2]));
 
   // Uniform for width with changing boundaries
-  logp += -log(radiusmax - radiuslim_min);
+  logp += prior_width.log_pdf(vec[3]);
 
   // Triangular distribution for q
   logp += 2.0*(vec[4] - q_min)/pow(1.0 - q_min, 2);
@@ -116,24 +107,25 @@ double MyConditionalPrior::log_pdf(const std::vector<double>& vec) const {
 }
 
 void MyConditionalPrior::from_uniform(std::vector<double>& vec) const {
-  vec[0] = -wd*log(1.0 - vec[0]);
-  vec[1] = 2.0*M_PI*vec[1];
-  vec[2] = exp(sqrt(2.0*flux_var)*boost::math::erf_inv((2.0*vec[2] - 1.0)*(1.0 - 1E-15)) + flux_mu);
-  vec[3] = radiuslim_min + (radiusmax - radiuslim_min)*vec[3];
+  vec[0] = prior_rc.cdf_inverse(vec[0]);
+  vec[1] = prior_theta.cdf_inverse(vec[1]);
+  vec[2] = exp(prior_logflux.cdf_inverse(vec[2]));
+  vec[3] = prior_width.cdf_inverse(vec[3]);
   vec[4] = (1.0 - q_min)*sqrt(vec[4]) + q_min;
-  vec[5] = M_PI*vec[5];
+  vec[5] = prior_phi.cdf_inverse(vec[5]);
 }
 
 void MyConditionalPrior::to_uniform(std::vector<double>& vec) const {
-  vec[0] = 1.0 - exp(-vec[0]/wd);
-  vec[1] = 0.5*vec[1]/M_PI;
-  vec[2] = 0.5 + 0.5*erf((log(vec[2]) - flux_mu)/sqrt(2.0*flux_var));
-  vec[3] = (vec[3] - radiuslim_min)/(radiusmax - radiuslim_min);
+  vec[0] = prior_rc.cdf(vec[0]);
+  vec[1] = prior_theta.cdf(vec[1]);
+  vec[2] = prior_logflux.cdf(log(vec[2]));
+  vec[3] = prior_width.cdf(vec[3]);
   vec[4] = pow(vec[4] - q_min, 2)/pow(1.0 - q_min, 2);
-  vec[5] = vec[5]/M_PI;
+  vec[5] = prior_phi.cdf(vec[5]);
 }
 
 void MyConditionalPrior::print(std::ostream& out) const {
+  // Print hyperparameters
   out<<wd<<' '
      <<exp(flux_mu)<<' '<<flux_std<<' '
      <<radiuslim_min<<' '<<radiusmax<<' '
