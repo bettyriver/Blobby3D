@@ -12,9 +12,6 @@
 // TODO: Remove references to sigma1 throughout code.
 // Partial fix: not perturbing.
 
-// TODO: Remove references to inc throughout code.
-// Partial fix: not perturbing.
-
 // TODO: Resolve issue regarding 7 vs 6 blob parameters.
 
 /*
@@ -33,19 +30,27 @@ MyModel::MyModel()
         Data::get_instance().get_radiuslim_max(),
         Data::get_instance().get_wd_min(),
         Data::get_instance().get_wd_max(),
-        Data::get_instance().get_qlim_min(),
-        Data::get_instance().get_hp_step()
+        Data::get_instance().get_qlim_min()
         ),
-      DNest4::PriorType::log_uniform) {
+      DNest4::PriorType::log_uniform
+      ) {
+  const size_t ni = Data::get_instance().get_ni();
+  const size_t nj = Data::get_instance().get_nj();
+  const size_t nr = Data::get_instance().get_nr();
+  const size_t x_pad = Data::get_instance().get_x_pad();
+  const size_t y_pad = Data::get_instance().get_y_pad();
+  const double x_min = Data::get_instance().get_x_min();
+  const double x_max = Data::get_instance().get_x_max();
+  const double y_min = Data::get_instance().get_y_min();
+  const double y_max = Data::get_instance().get_y_max();
+  const double x_pad_dx = Data::get_instance().get_x_pad_dx();
+  const double y_pad_dy = Data::get_instance().get_y_pad_dy();
+
+  model = Data::get_instance().get_model();
+
   /*
     initialise arrays
   */
-  size_t ni = Data::get_instance().get_ni();
-  size_t nj = Data::get_instance().get_nj();
-  size_t nr = Data::get_instance().get_nr();
-  size_t x_pad = Data::get_instance().get_x_pad();
-  size_t y_pad = Data::get_instance().get_y_pad();
-
   // model cube
   image.resize(ni);
   for (size_t i=0; i<ni; ++i) {
@@ -80,104 +85,117 @@ MyModel::MyModel()
 
   // velocity dispersion
   vdisp.assign(ni, std::vector<double>(nj));
+
+  /*
+    Prior parameters
+  */
+  // Inclination
+  inc = Data::get_instance().get_gama_inc();
+
+  // x_c, y_c
+  x_imagecentre = (x_max + x_min)/2.0;
+  y_imagecentre = (y_max + y_min)/2.0;
+  gamma_pos = 0.1*Data::get_instance().get_image_width();
+
+  // Systemic velocity
+  gamma_vsys = Data::get_instance().get_vsys_gamma();
+  vsys_max = Data::get_instance().get_vsys_max();
+
+  // v_c
+  vmax_min = Data::get_instance().get_vmax_min();
+  vmax_max = Data::get_instance().get_vmax_max();
+
+  // Velocity turnover radius
+  vslope_min = 0.03;
+  vslope_max = 30.0;
+
+  // Velocity shape parameter : gamma
+  vgamma_min = 1.0;
+  vgamma_max = 100.0;
+
+  // Velocity shape parameter : beta
+  vbeta_min = -0.75;
+  vbeta_max = 0.75;
+
+  // Velocity dispersion :
+  vdisp_order = 1;
+  vdisp_param.assign(vdisp_order + 1, 0.0);
+
+  vdisp0_min = log(1.0);
+  vdisp0_max = log(200.0);
+
+  // Constant Noise
+  sigma0_min = Data::get_instance().get_sigma_min();
+  sigma0_max = Data::get_instance().get_sigma_max();
+
+  // Shot Noise
+  sigma1_min = 1E-12;
+  sigma1_max = 1E0;
+
+  // Disk parameters : Required for models with disc component (1 or 2)
+  if (model != 0) {
+    Md_min = 1E-3;
+    Md_max = 1E3;
+
+    wxd_min = 0.3;
+    wxd_max = 30.0;
+  }
+
+  // Prior distributions
+  prior_pa = DNest4::Uniform(0.0, 2.0*M_PI);
+
+  prior_xc = DNest4::TruncatedCauchy(
+    x_imagecentre, gamma_pos,
+    x_min + x_pad_dx, x_max - x_pad_dx
+    );
+  prior_yc = DNest4::TruncatedCauchy(
+    y_imagecentre, gamma_pos,
+    y_min + y_pad_dy, y_max - y_pad_dy
+    );
+
+  prior_vsys = DNest4::TruncatedCauchy(
+    0.0, gamma_vsys,
+    -vsys_max, vsys_max
+    );
+  prior_vmax = DNest4::LogUniform(vmax_min, vmax_max);
+  prior_vslope = DNest4::LogUniform(vslope_min, vslope_max);
+  prior_vgamma = DNest4::LogUniform(vgamma_min, vgamma_max);
+  prior_vbeta = DNest4::Uniform(vbeta_min, vbeta_max);
+
+  prior_vdisp0 = DNest4::Uniform(vdisp0_min, vdisp0_max);
+  prior_vdisp = DNest4::Gaussian(0.0, 0.2);
+
+  prior_sigma0 = DNest4::LogUniform(sigma0_min, sigma0_max);
+  prior_sigma1 = DNest4::LogUniform(sigma1_min, sigma1_max);
+
+  if (model != 0) {
+    prior_Md = DNest4::LogUniform(Md_min, Md_max);
+    prior_wxd = DNest4::LogUniform(wxd_min, wxd_max);
+  }
+
 }
 
 void MyModel::from_prior(DNest4::RNG& rng) {
-  // Get local variables from data
-  const int model = Data::get_instance().get_model();
-  const double x_min = Data::get_instance().get_x_min();
-  const double x_max = Data::get_instance().get_x_max();
-  const double y_min = Data::get_instance().get_y_min();
-  const double y_max = Data::get_instance().get_y_max();
-  const double x_pad_dx = Data::get_instance().get_x_pad_dx();
-  const double y_pad_dy = Data::get_instance().get_y_pad_dy();
-  const double sum_flux = Data::get_instance().get_sum_flux();
-  const double vsys_max = Data::get_instance().get_vsys_max();
-  const double gama_inc = Data::get_instance().get_gama_inc();
-  const double image_width = Data::get_instance().get_image_width();
-
-  /*
-    Limits: global parameters
-  */
-  // Error
-  sigma0_min = Data::get_instance().get_sigma_min();
-  sigma0_width = Data::get_instance().get_sigma_max()/sigma0_min;
-
-  sigma1_min = 1E-12;
-  sigma1_width = 1E0/sigma1_min;
-
-  // Position
-  gamma_pos = 0.1*image_width;
-
-  // Velocity
-  gamma_vsys = Data::get_instance().get_vsys_gamma();
-
-  vmax_min = Data::get_instance().get_vmax_min();
-  vmax_width = Data::get_instance().get_vmax_max()/vmax_min;
-
-  vslope_min = 0.03;
-  vslope_width = 30.0/vslope_min;
-
-  vgamma_min = 1.0;
-  vgamma_width = 100.0/vgamma_min;
-
-  vbeta_min = -0.75;
-  vbeta_width = 1.5;
-
-  vdisp0_min = log(1.0);
-  vdisp0_width = log(200.0/1.0);
-
-  /*
-    Limits: disk parameters
-  */
-  if (model != 0) {
-      Md_min = 1E-2*sum_flux;
-      Md_width = 10.0*sum_flux/Md_min;
-    }
-
   /*
     Initialise: global parameters
   */
-
-  // Initialise: Error
-  sigma0 = exp(log(sigma0_min) + log(sigma0_width)*rng.rand());
-  sigma1 = exp(log(sigma1_min) + log(sigma1_width)*rng.rand());
-
   // Initialise: Position
-  x_imagecentre = (x_max + x_min)/2.0;
-  DNest4::Cauchy cauchy_xc(x_imagecentre, gamma_pos);
-  do {
-    xcd = cauchy_xc.generate(rng);
-  } while ((xcd < x_min + x_pad_dx) || (xcd > x_max - x_pad_dx));
+  xcd = prior_xc.generate(rng);
+  ycd = prior_yc.generate(rng);
 
-  y_imagecentre = (y_max + y_min)/2.0;
-  DNest4::Cauchy cauchy_yc(y_imagecentre, gamma_pos);
-  do {
-    ycd = cauchy_yc.generate(rng);
-  } while ((ycd < y_min + y_pad_dy) || (ycd > y_max - y_pad_dy));
-
-  pa = 2.0*M_PI*rng.rand();
-  // inc = 0.5*M_PI*rng.rand();
-  inc = gama_inc;
-
-  wxd_min = 0.3;
-  wxd_width = 30.0/wxd_min;
+  pa = prior_pa.generate(rng);
 
   /*
-    Initialise: Velocity
+    Initialise: Velocity profile parameters
   */
-  DNest4::Cauchy cauchy_vsys(0.0, gamma_vsys);
-  do {
-    vsys = cauchy_vsys.generate(rng);
-  } while ((vsys < -vsys_max) || (vsys >  vsys_max));
-
-  vmax = exp(log(vmax_min) + log(vmax_width)*rng.rand());
-  vslope = exp(log(vslope_min) + log(vslope_width)*rng.rand());
-  vgamma = exp(log(vgamma_min) + log(vgamma_width)*rng.rand());
-  vbeta = vbeta_min + vbeta_width*rng.rand();
+  vsys = prior_vsys.generate(rng);
+  vmax = prior_vmax.generate(rng);
+  vslope = prior_vslope.generate(rng);
+  vgamma = prior_vgamma.generate(rng);
+  vbeta = prior_vbeta.generate(rng);
 
   /*
-    Initialise: blobs
+    Initialise: Blobs
   */
   if (model == 0) {
     do {
@@ -188,27 +206,26 @@ void MyModel::from_prior(DNest4::RNG& rng) {
   }
 
   /*
-    Initialise: disk
+    Initialise: Disc
   */
   if ((model == 1) || (model == 2)) {
-    Md = exp(log(Md_min) + log(Md_width)*rng.rand());
-    wxd = exp(log(wxd_min) + log(wxd_width)*rng.rand());
+    Md = prior_Md.generate(rng);
+    wxd = prior_wxd.generate(rng);
   } else {
     Md = 0.0;
     wxd = 0.0;
   }
 
-  // Dispersion
-  vdisp_order = 1;
-  DNest4::Gaussian gaussian_vdisp(0.0, 0.2);
-  vdisp_param.assign(vdisp_order+1, 0.0);
-  vdisp_param[0] = vdisp0_min + vdisp0_width*rng.rand();
-  for(int v=1; v<vdisp_order+1; v++)
-      vdisp_param[v] = gaussian_vdisp.generate(rng);
+  // Initialise: Dispersion
+  vdisp_param[0] = prior_vdisp0.generate(rng);
+  for (int v=1; v<vdisp_order+1; v++)
+      vdisp_param[v] = prior_vdisp.generate(rng);
 
-  /*
-    Calculate image
-  */
+  // Initialise: Noise
+  sigma0 = prior_sigma0.generate(rng);
+  sigma1 = prior_sigma1.generate(rng);
+
+  // Calculate image based on initial values
   array_perturb = true;
   vel_perturb = true;
   vdisp_perturb = true;
@@ -224,21 +241,6 @@ void MyModel::from_prior(DNest4::RNG& rng) {
 }
 
 double MyModel::perturb(DNest4::RNG& rng) {
-  const int model = Data::get_instance().get_model();
-  const double x_min = Data::get_instance().get_x_min();
-  const double x_max = Data::get_instance().get_x_max();
-  const double y_min = Data::get_instance().get_y_min();
-  const double y_max = Data::get_instance().get_y_max();
-  const double x_pad_dx = Data::get_instance().get_x_pad_dx();
-  const double y_pad_dy = Data::get_instance().get_y_pad_dy();
-  const double disc_step = Data::get_instance().get_disc_step();
-  const double sigma_step = Data::get_instance().get_sigma_step();
-
-  DNest4::Cauchy cauchy_xc(x_imagecentre, gamma_pos);
-  DNest4::Cauchy cauchy_yc(y_imagecentre, gamma_pos);
-  DNest4::Cauchy cauchy_vsys(0.0, gamma_vsys);
-  DNest4::Gaussian gaussian_vdisp(0.0, 0.2);
-
   double logH = 0.0;
   double rnd = rng.rand();
 
@@ -261,124 +263,85 @@ double MyModel::perturb(DNest4::RNG& rng) {
       logH += objects.perturb(rng);
       if ((model == 0) & (objects.get_components().size() == 0))
         return logH = -1E300;
+
     } else if (rnd <= 0.8) {
       // Perturb disc parameters
       int which = rng.rand_int(10);
 
       switch (which) {
         case 0:
-          logH += cauchy_xc.perturb(xcd, rng);
-          if ((xcd < x_min + x_pad_dx) || (xcd > x_max - x_pad_dx))
-            return logH = -1E300;
+          logH += prior_xc.perturb(xcd, rng);
           array_perturb = true;
           break;
         case 1:
-          logH += cauchy_yc.perturb(ycd, rng);
-          if((ycd < y_min + y_pad_dy) || (ycd > y_max - y_pad_dy))
-            return logH = -1E300;
+          logH += prior_yc.perturb(ycd, rng);
           array_perturb = true;
           break;
         case 2:
-          logH += cauchy_vsys.perturb(vsys, rng);
-          if((vsys < -5.0*gamma_vsys) || (vsys >  5.0*gamma_vsys))
-            return logH = -1E300;
-          vel_perturb = true;
+          logH += prior_vdisp0.perturb(vdisp_param[0], rng);
+          vdisp_perturb = true;
           break;
         case 3:
-          vmax = log(vmax);
-          vmax += disc_step*log(vmax_width)*rng.randh();
-          vmax = DNest4::mod(vmax - log(vmax_min), log(vmax_width));
-          vmax += log(vmax_min);
-          vmax = exp(vmax);
+          logH += prior_vsys.perturb(vsys, rng);
           vel_perturb = true;
           break;
         case 4:
-          vslope = log(vslope);
-          vslope += disc_step*log(vslope_width)*rng.randh();
-          vslope = DNest4::mod(vslope - log(vslope_min), log(vslope_width));
-          vslope += log(vslope_min);
-          vslope = exp(vslope);
+          logH += prior_vmax.perturb(vmax, rng);
           vel_perturb = true;
           break;
         case 5:
-          vgamma = log(vgamma);
-          vgamma += disc_step*log(vgamma_width)*rng.randh();
-          vgamma = DNest4::mod(vgamma - log(vgamma_min), log(vgamma_width));
-          vgamma += log(vgamma_min);
-          vgamma = exp(vgamma);
+          logH += prior_vslope.perturb(vslope, rng);
           vel_perturb = true;
           break;
         case 6:
-          vbeta += disc_step*vbeta_width*rng.randh();
-          vbeta = DNest4::mod(vbeta - vbeta_min, vbeta_width);
-          vbeta += vbeta_min;
+          logH += prior_vgamma.perturb(vgamma, rng);
           vel_perturb = true;
           break;
         case 7:
-          pa += disc_step*2.0*M_PI*rng.randh();
-          pa = DNest4::mod(pa, 2*M_PI);
-          array_perturb = true;
+          logH += prior_vbeta.perturb(vbeta, rng);
+          vel_perturb = true;
           break;
         case 8:
-          vdisp_param[0] += disc_step*vdisp0_width*rng.randh();
-          vdisp_param[0] = DNest4::mod(vdisp_param[0] - vdisp0_min, vdisp0_width);
-          vdisp_param[0] += vdisp0_min;
-          vdisp_perturb = true;
+          logH += prior_pa.perturb(pa, rng);
+          array_perturb = true;
           break;
         case 9:
           which = rng.rand_int(vdisp_order);
-          logH += gaussian_vdisp.perturb(vdisp_param[which+1], rng);
+          logH += prior_vdisp.perturb(vdisp_param[which+1], rng);
           vdisp_perturb = true;
           break;
       }
     } else {
       // Perturb disc flux parameters
-      // disk_perturb = true;
       disc_flux_perturb = true;
-
       int which = rng.rand_int(2);
-      switch(which){
+      switch (which) {
         case 0:
-          Md = log(Md);
-          Md += disc_step*log(Md_width)*rng.randh();
-          Md = DNest4::mod(Md - log(Md_min), log(Md_width));
-          Md += log(Md_min);
-          Md = exp(Md);
+          logH += prior_Md.perturb(Md, rng);
           break;
         case 1:
-          wxd = log(wxd);
-          wxd += disc_step*log(wxd_width)*rng.randh();
-          wxd = DNest4::mod(wxd - log(wxd_min), log(wxd_width)) + log(wxd_min);
-          wxd = exp(wxd);
+          logH += prior_wxd.perturb(wxd, rng);
           break;
       }
     }
 
     // Pre-rejection trick
-    if(rng.rand() >= exp(logH))
-      return -1E300;
-    else
+    if (log(rng.rand()) < logH) {
       logH = 0.0;
-
-    calculate_image();
+      calculate_image();
+    } else {
+      logH = -1E300;
+    }
 
   } else {
     int which = rng.rand_int(1);
     switch (which) {
       case 0:
-        sigma0 = log(sigma0);
-        sigma0 += sigma_step*log(sigma0_width)*rng.randh();
-        sigma0 = DNest4::mod(sigma0 - log(sigma0_min), log(sigma0_width));
-        sigma0 += log(sigma0_min);
-        sigma0 = exp(sigma0);
+        logH += prior_sigma0.perturb(sigma0, rng);
         break;
       case 1:
         // Currently redundant
-        sigma1 = log(sigma1);
-        sigma1 += sigma_step*log(sigma1_width)*rng.randh();
-        sigma1 = DNest4::mod(sigma1 - log(sigma1_min), log(sigma1_width));
-        sigma1 += log(sigma1_min);
-        sigma1 = exp(sigma1);
+        logH += prior_sigma1.perturb(sigma1, rng);
         break;
     }
   }
@@ -386,73 +349,13 @@ double MyModel::perturb(DNest4::RNG& rng) {
   return logH;
 }
 
-void MyModel::calculate_image() {
-  /*
-    Calculate image as a function of model parameters.
-  */
-  const int model = Data::get_instance().get_model();
-
-  bool update;  // Determine if adding blobs
-  std::vector< std::vector<double> > components;
-
-  // Calculate position arrays
-  if (array_perturb)
-    calculate_shifted_arrays();
-
-  // Calculate relative lambda array
-  if (vel_perturb || array_perturb)
-    calculate_rel_lambda();
-
-  // Calculate velocity dispersion array
-  if (vdisp_perturb || array_perturb)
-    calculate_vdisp();
-
-  //  Calculate flux map
-  switch (model) {
-    case 0:
-      // Blobs only model
-      update = objects.get_removed().size() == 0;
-      if (array_perturb || !update) {
-        clear_flux_map();
-        components = objects.get_components();
-
-      } else {
-        components = objects.get_added();
-      }
-      add_blob_flux(components);
-      break;
-    case 1:
-      // Disc only model
-      update = false;
-      clear_flux_map();
-      if (disc_flux_perturb || array_perturb)
-        add_disc_flux();
-      break;
-    case 2:
-      // Disc + blobs model
-      update = objects.get_removed().size() == 0;
-      if (disc_flux_perturb || array_perturb || !update) {
-        clear_flux_map();
-        components = objects.get_components();
-        add_disc_flux();
-
-      } else {
-        components = objects.get_added();
-      }
-      add_blob_flux(components);
-      break;
-  }
-
-  construct_cube();
-
-  convolved = conv.apply(image);
-}
-
 double MyModel::log_likelihood() const {
-  const int model = Data::get_instance().get_model();
-  const std::vector< std::vector< std::vector<double> > >& data = Data::get_instance().get_image();
-  const std::vector< std::vector< std::vector<double> > >& var_cube = Data::get_instance().get_var_cube();
-  const std::vector< std::vector<int> >& valid = Data::get_instance().get_valid();
+  const std::vector< std::vector< std::vector<double> > >&
+    data = Data::get_instance().get_image();
+  const std::vector< std::vector< std::vector<double> > >&
+    var_cube = Data::get_instance().get_var_cube();
+  const std::vector< std::vector<int> >&
+    valid = Data::get_instance().get_valid();
 
   // If no blobs return prob = 0
   if ((model == 0) && (objects.get_components().size() == 0))
@@ -525,6 +428,66 @@ std::string MyModel::description() const {
 /*
   Private
 */
+void MyModel::calculate_image() {
+  /*
+    Calculate image as a function of model parameters.
+  */
+  bool update;  // Determine if adding blobs
+  std::vector< std::vector<double> > components;
+
+  // Calculate position arrays
+  if (array_perturb)
+    calculate_shifted_arrays();
+
+  // Calculate relative lambda array
+  if (vel_perturb || array_perturb)
+    calculate_rel_lambda();
+
+  // Calculate velocity dispersion array
+  if (vdisp_perturb || array_perturb)
+    calculate_vdisp();
+
+  //  Calculate flux map
+  switch (model) {
+    case 0:
+      // Blobs only model
+      update = objects.get_removed().size() == 0;
+      if (array_perturb || !update) {
+        clear_flux_map();
+        components = objects.get_components();
+
+      } else {
+        components = objects.get_added();
+      }
+      add_blob_flux(components);
+      break;
+    case 1:
+      // Disc only model
+      update = false;
+      clear_flux_map();
+      if (disc_flux_perturb || array_perturb)
+        add_disc_flux();
+      break;
+    case 2:
+      // Disc + blobs model
+      update = objects.get_removed().size() == 0;
+      if (disc_flux_perturb || array_perturb || !update) {
+        clear_flux_map();
+        components = objects.get_components();
+        add_disc_flux();
+
+      } else {
+        components = objects.get_added();
+      }
+      add_blob_flux(components);
+      break;
+  }
+
+  construct_cube();
+
+  convolved = conv.apply(image);
+}
+
 void MyModel::construct_cube() {
   /*
     Create cube from maps.
@@ -573,8 +536,10 @@ void MyModel::calculate_shifted_arrays() {
   /*
     Calculate arrays shifted by disk parameters.
   */
-  const std::vector< std::vector<double> >& x = Data::get_instance().get_x_rays();
-  const std::vector< std::vector<double> >& y = Data::get_instance().get_y_rays();
+  const std::vector< std::vector<double> >&
+    x = Data::get_instance().get_x_rays();
+  const std::vector< std::vector<double> >&
+    y = Data::get_instance().get_y_rays();
 
   double sin_pa = sin(pa);
   double cos_pa = cos(pa);
@@ -628,7 +593,8 @@ void MyModel::add_blob_flux(std::vector< std::vector<double> >& components) {
   */
   const double dx = Data::get_instance().get_dx();
   const double dy = Data::get_instance().get_dy();
-  const double sigma_cutoffsq = pow(Data::get_instance().get_sigma_cutoff(), 2);
+  const double sigma_cutoffsq = pow(
+    Data::get_instance().get_sigma_cutoff(), 2);
   const double pixel_width = Data::get_instance().get_pixel_width();
 
   double sin_pa = sin(pa);
@@ -715,8 +681,7 @@ void MyModel::add_blob_flux(std::vector< std::vector<double> >& components) {
             yyd_rot *= invcos_inc;
 
             /*
-              Get distance wrt centre of blob in
-              rotated/inc disk coordinates.
+              Get distance wrt centre of blob in rotated/inc disk coordinates.
             */
             // Shift
             xb_shft = xxd_rot - xc;
@@ -743,9 +708,9 @@ void MyModel::add_blob_flux(std::vector< std::vector<double> >& components) {
 
 void MyModel::calculate_rel_lambda() {
   /*
-    Calculate rel_lambda map.
+    Calculate relative lambda shift map.
   */
- double sin_inc = sin(inc);
+  double sin_inc = sin(inc);
 
   for (size_t i=0; i<rel_lambda.size(); i++) {
     for (size_t j=0; j<rel_lambda[i].size(); j++) {
@@ -754,7 +719,8 @@ void MyModel::calculate_rel_lambda() {
         rel_lambda[i][j] = 0.0;
       } else {
         rel_lambda[i][j] = vmax*pow(1.0 + vslope/rad[i][j], vbeta);
-        rel_lambda[i][j] /= pow(1.0 + pow(vslope/rad[i][j], vgamma), 1.0/vgamma);
+        rel_lambda[i][j] /= pow(
+          1.0 + pow(vslope/rad[i][j], vgamma), 1.0/vgamma);
         rel_lambda[i][j] *= sin_inc*cos_angle[i][j];
       }
       rel_lambda[i][j] += vsys;

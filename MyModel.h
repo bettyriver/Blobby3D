@@ -6,14 +6,32 @@
 #include "DNest4/code/DNest4.h"
 #include "MyConditionalPrior.h"
 #include "Conv.h"
+#include "Data.h"
 
 class MyModel {
   private:
-    Conv conv; // setup convolution kernels
     DNest4::RJObject<MyConditionalPrior> objects;
 
+    // TODO: Find elegant way to initialise constructor in MyModel.cpp
+    Conv conv = Conv(
+      Data::get_instance().get_convolve(),
+      Data::get_instance().get_psf_amp(),
+      Data::get_instance().get_psf_fwhm(),
+      Data::get_instance().get_psf_beta(),
+      Data::get_instance().get_psf_sigma(),
+      Data::get_instance().get_psf_sigma_overdx(),
+      Data::get_instance().get_psf_sigma_overdy(),
+      Data::get_instance().get_ni(),
+      Data::get_instance().get_nj(),
+      Data::get_instance().get_nr(),
+      Data::get_instance().get_dx(),
+      Data::get_instance().get_dy(),
+      Data::get_instance().get_x_pad(),
+      Data::get_instance().get_y_pad()
+      ); // setup convolution kernels
+
     /*
-       Arrays
+      Arrays
     */
     std::vector< std::vector< std::vector<double> > > image;
     std::vector< std::vector< std::vector<double> > > imageos;
@@ -44,10 +62,10 @@ class MyModel {
     void clear_flux_map();
 
     /*
-      Global parameters
+      Parameters
     */
+    int model;
 
-    // Disk parameters
     double xcd;
     double x_imagecentre;
 
@@ -57,42 +75,61 @@ class MyModel {
     double gamma_pos;
 
     double Md;
-    double Md_min, Md_width;
+    double Md_min, Md_max;
 
     double wxd;
-    double wxd_min, wxd_width;
+    double wxd_min, wxd_max;
 
     double vsys;
     double gamma_vsys;
-    double vsys_min, vsys_width;
+    double vsys_max;
 
     double vmax;
-    double vmax_min, vmax_width;
+    double vmax_min, vmax_max;
 
     double vslope;
-    double vslope_min, vslope_width;
+    double vslope_min, vslope_max;
 
     double vgamma;
-    double vgamma_min, vgamma_width;
+    double vgamma_min, vgamma_max;
 
     double vbeta;
-    double vbeta_min, vbeta_width;
+    double vbeta_min, vbeta_max;
 
     int vdisp_order;
-    double vdisp0_min, vdisp0_width;
     std::vector<double> vdisp_param;
+    double vdisp0_min, vdisp0_max;
 
     double gama_inc;
     double inc, pa;
 
-    // Noise parameter
     double sigma0;
-    double sigma0_min, sigma0_width;
+    double sigma0_min, sigma0_max;
 
     double sigma1;
-    double sigma1_min, sigma1_width;
+    double sigma1_min, sigma1_max;
 
-    // perturb booleans
+    // Prior distributions
+    DNest4::Uniform prior_pa;
+    DNest4::TruncatedCauchy prior_xc;
+    DNest4::TruncatedCauchy prior_yc;
+
+    DNest4::TruncatedCauchy prior_vsys;
+    DNest4::LogUniform prior_vmax;
+    DNest4::LogUniform prior_vslope;
+    DNest4::LogUniform prior_vgamma;
+    DNest4::Uniform prior_vbeta;
+
+    DNest4::Uniform prior_vdisp0;
+    DNest4::Gaussian prior_vdisp;
+
+    DNest4::LogUniform prior_sigma0;
+    DNest4::LogUniform prior_sigma1;
+
+    DNest4::LogUniform prior_Md;
+    DNest4::LogUniform prior_wxd;
+
+    // Perturb booleans
     bool array_perturb;
     bool vel_perturb;
     bool vdisp_perturb;
@@ -103,20 +140,20 @@ class MyModel {
   public:
     MyModel();
 
-   // Generate the point from the prior
-   void from_prior(DNest4::RNG& rng);
+    // Generate the point from the prior
+    void from_prior(DNest4::RNG& rng);
 
-   // Metropolis-Hastings proposals
-   double perturb(DNest4::RNG& rng);
+    // Metropolis-Hastings proposals
+    double perturb(DNest4::RNG& rng);
 
-   // Likelihood function
-   double log_likelihood() const;
+    // Likelihood function
+    double log_likelihood() const;
 
-   // Print to stream
-   void print(std::ostream& out) const;
+    // Print to stream
+    void print(std::ostream& out) const;
 
-   // Return string with column information
-   std::string description() const;
+    // Return string with column information
+    std::string description() const;
 };
 
 #endif  // BLOBBY3D_MyModel_H_
