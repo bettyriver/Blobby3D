@@ -140,11 +140,6 @@ void Data::load(const char* moptions_file) {
   // Spatial sampling of cube
   sample = 1;
 
-  // step size
-  hp_step = 1.0;
-  disc_step = 1.0;
-  sigma_step = 1.0;
-
   // Read in the metadata
   fin.open(metadata_file, std::ios::in);
   if (!fin)

@@ -84,11 +84,6 @@ class Data
   double nios, njos;
   double x_pad_dxos, y_pad_dyos;
 
-  // step size
-  double hp_step;
-  double disc_step;
-  double sigma_step;
-
   // Geometric widths
   double pixel_width;
   double image_width;
@@ -166,10 +161,6 @@ class Data
   int get_y_pad() const { return y_pad; }
   double get_x_pad_dx() const { return x_pad_dx; }
   double get_y_pad_dy() const { return y_pad_dy; }
-
-  double get_hp_step() const { return hp_step; }
-  double get_disc_step() const { return disc_step; }
-  double get_sigma_step() const { return sigma_step; }
 
   double get_pixel_width() const { return pixel_width; }
   double get_image_width() const { return image_width; }
