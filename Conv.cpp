@@ -5,26 +5,40 @@
 
 #include "Data.h"
 
-Conv Conv::instance;
+// Conv Conv::instance;
 
 /*
   Public
 */
-Conv::Conv()
-    :convolve(Data::get_instance().get_convolve())
-    ,psf_amp(Data::get_instance().get_psf_amp())
-    ,psf_fwhm(Data::get_instance().get_psf_fwhm())
-    ,psf_beta(Data::get_instance().get_psf_beta())
-    ,psf_sigma(Data::get_instance().get_psf_sigma())
-    ,psf_sigma_overdx(Data::get_instance().get_psf_sigma_overdx())
-    ,psf_sigma_overdy(Data::get_instance().get_psf_sigma_overdy())
-    ,ni(Data::get_instance().get_ni())
-    ,nj(Data::get_instance().get_nj())
-    ,nr(Data::get_instance().get_nr())
-    ,dx(Data::get_instance().get_dx())
-    ,dy(Data::get_instance().get_dy())
-    ,x_pad(Data::get_instance().get_x_pad())
-    ,y_pad(Data::get_instance().get_y_pad())
+Conv::Conv(
+  int convolve,
+  std::vector<double> psf_amp,
+  std::vector<double> psf_fwhm,
+  double psf_beta,
+  std::vector<double> psf_sigma,
+  std::vector<double> psf_sigma_overdx,
+  std::vector<double> psf_sigma_overdy,
+  int ni,
+  int nj,
+  int nr,
+  double dx,
+  double dy,
+  double x_pad,
+  double y_pad
+  ) :convolve(convolve)
+    ,psf_amp(psf_amp)
+    ,psf_fwhm(psf_fwhm)
+    ,psf_beta(psf_beta)
+    ,psf_sigma(psf_sigma)
+    ,psf_sigma_overdx(psf_sigma_overdx)
+    ,psf_sigma_overdy(psf_sigma_overdy)
+    ,ni(ni)
+    ,nj(nj)
+    ,nr(nr)
+    ,dx(dx)
+    ,dy(dy)
+    ,x_pad(x_pad)
+    ,y_pad(y_pad)
     ,sigma_cutoff(5.0) {
 
   // Construct empty convolved matrix
@@ -201,7 +215,7 @@ std::vector< std::vector< std::vector<double> > > Conv::apply(
 std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
     std::vector< std::vector< std::vector<double> > >& preconvolved) {
   /*
-    Calculate convolved matrix using a decomposition of concentric Gaussians.
+    Calculate cube convolved by a decomposition of concentric Gaussians.
 
     The below procedure uses a separable convolution, first convolving across
     the columns, then across rows. This approach is only valid for 2D Gaussian
@@ -216,7 +230,8 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
     Reasoning is due to the FFTW3 implementation not being thread-safe at this
     time.
   */
-  const std::vector< std::vector<int> >& valid = Data::get_instance().get_valid();
+  const std::vector< std::vector<int> >&
+    valid = Data::get_instance().get_valid();
 
   int i, j;
   int szk_x, szk_y;
@@ -271,7 +286,7 @@ std::vector< std::vector< std::vector<double> > > Conv::brute_gaussian_blur(
 std::vector< std::vector< std::vector<double> > > Conv::fftw_moffat_blur(
     std::vector< std::vector< std::vector<double> > >& preconvolved) {
   /*
-    Calculate convolved matrix using a Moffat profile.
+    Calculate cube convolved by a Moffat profile.
 
     This method uses a non-thread safe implementation of FFTW3. As such, the
     brute_gaussian_blur method is usually preferred.

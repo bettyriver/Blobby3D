@@ -12,7 +12,7 @@ class Conv {
   // convolve method
   int convolve;
 
-  // PSF
+  // PSF parameters
   std::vector<double> psf_amp;
   std::vector<double> psf_fwhm;
   double psf_beta;
@@ -33,16 +33,11 @@ class Conv {
 
   // fftw pointers/plans
   fftw_complex *out, *kernelout, *conv;
-  // fftw_complex *out_all;
-  // fftw_complex *kernelout_all;
-  // fftw_complex *conv_all;
   fftw_plan p, q, k;
-  // fftw_plan p_all, q_all, k_all;
   double* in;
   double* in2;
-  // double* in_all;
   int Ni, Nj;
-  int nik, njk; // size of kernel
+  int nik, njk;
   int midik, midjk;
 
   // Convolved matrix
@@ -59,11 +54,26 @@ class Conv {
   std::vector< std::vector< std::vector<double> > > fftw_moffat_blur(
       std::vector< std::vector< std::vector<double> > >& preconvolved);
 
-  static Conv instance;
+  // Constructor
+  // static Conv instance;
 
  public:
-  // Constructor
-  Conv();
+  Conv(
+    int convolve,
+    std::vector<double> psf_amp,
+    std::vector<double> psf_fwhm,
+    double psf_beta,
+    std::vector<double> psf_sigma,
+    std::vector<double> psf_sigma_overdx,
+    std::vector<double> psf_sigma_overdy,
+    int ni,
+    int nj,
+    int nr,
+    double dx,
+    double dy,
+    double x_pad,
+    double y_pad
+    );
 
   // Apply convolution by implied method passed to class constructor.
   std::vector< std::vector< std::vector<double> > > apply(
