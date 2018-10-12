@@ -78,9 +78,6 @@ class Data
   std::vector<double> psf_sigma_overdx;
   std::vector<double> psf_sigma_overdy;
 
-  // Analytical paramaters
-  double sum_flux;
-
   // Spatial oversampling
   double dxos, dyos;
   double x_pados, y_pados;
@@ -169,7 +166,6 @@ class Data
   int get_y_pad() const { return y_pad; }
   double get_x_pad_dx() const { return x_pad_dx; }
   double get_y_pad_dy() const { return y_pad_dy; }
-  double get_sum_flux() const {return sum_flux; }
 
   double get_hp_step() const { return hp_step; }
   double get_disc_step() const { return disc_step; }
@@ -190,7 +186,6 @@ class Data
   double get_y_pados() const { return y_pados; }
   double get_x_pad_dxos() const { return x_pad_dxos; }
   double get_y_pad_dyos() const { return y_pad_dyos; }
-
 
   const std::vector< std::vector<double> >& get_x_rays() const
   { return x_rays; }

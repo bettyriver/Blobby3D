@@ -176,7 +176,6 @@ void Data::load(const char* moptions_file) {
   double tmp_im, tmp_sig;
   std::vector<int> tmp_vec(2);
   nv = 0;
-  sum_flux = 0.0;
   for (size_t i=0; i<image.size(); i++) {
     for(size_t j=0; j<image[i].size(); j++) {
       tmp_im = 0.0;
@@ -189,7 +188,6 @@ void Data::load(const char* moptions_file) {
       // Add valid pixels to array
       if ((tmp_im == 1.0) && (tmp_sig > 0.0)) {
         tmp_vec[0] = i; tmp_vec[1] = j;
-        sum_flux += tmp_im;
 
         if (nv != 0)
           valid.push_back(tmp_vec);
