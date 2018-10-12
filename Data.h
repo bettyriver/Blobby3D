@@ -112,6 +112,8 @@ class Data
 
   // Private functions
   std::vector< std::vector< std::vector<double> > > arr_3d();
+  std::vector< std::vector< std::vector<double> > >
+    read_cube(std::string filepath);
   void compute_ray_grid();
 
  public:

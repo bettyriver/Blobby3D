@@ -37,7 +37,7 @@ void Data::load(const char* moptions_file) {
   fin>>metadata_file; fin.ignore(1000000, '\n');
   fin>>cube_file; fin.ignore(1000000, '\n');
   fin>>var_file; fin.ignore(1000000, '\n');
-  fin>>convolve; fin.ignore(1000000, '\n'); // Gaussian=0, Moffat(FFTW)=1
+  fin>>convolve; fin.ignore(1000000, '\n'); // Gaussian=0, Moffat=1
 
   // Read in AMPs (multiple for multi-gauss fit)
   double tmp_amp;
@@ -55,7 +55,8 @@ void Data::load(const char* moptions_file) {
   }
   fin.ignore(1000000, '\n');
 
-  fin>>psf_beta; fin.ignore(1000000, '\n'); // Beta parameter if using moffat
+  // Read in other parameters
+  fin>>psf_beta; fin.ignore(1000000, '\n');
   fin>>lsf_fwhm; fin.ignore(1000000, '\n');
   fin>>nmax; fin.ignore(1000000, '\n');
   fin>>nfixed; fin.ignore(1000000, '\n');
@@ -144,9 +145,7 @@ void Data::load(const char* moptions_file) {
   disc_step = 1.0;
   sigma_step = 1.0;
 
-  /*
-   * First, read in the metadata
-  */
+  // Read in the metadata
   fin.open(metadata_file, std::ios::in);
   if (!fin)
     std::cerr<<"# ERROR: couldn't open file "<<metadata_file<<"."<<std::endl;
@@ -163,37 +162,14 @@ void Data::load(const char* moptions_file) {
   // Loading data comment
   std::cout<<"\nLoading data:\n";
 
-  /*
-   * Now, load the image
-  */
-  fin.open(cube_file, std::ios::in);
-  if (!fin)
-    std::cerr<<"# ERROR: couldn't open file "<<cube_file<<"."<<std::endl;
-  image = arr_3d();
-  for (size_t i=0; i<image.size(); i++)
-    for (size_t j=0; j<image[i].size(); j++)
-      for (size_t r=0; r<image[i][j].size(); r++)
-	fin >> image[i][j][r];
-  fin.close();
+  image = read_cube(cube_file);
   std::cout<<"Image Loaded...\n";
 
-  /*
-   * Load the sigma map
-   */
-  fin.open(var_file, std::ios::in);
-  if (!fin)
-    std::cerr<<"# ERROR: couldn't open file "<<var_file<<"."<<std::endl;
-  // Variance cube from data input
-  var_cube = arr_3d();
-  for (size_t i=0; i<var_cube.size(); i++)
-    for (size_t j=0; j<var_cube[i].size(); j++)
-      for (size_t r=0; r<var_cube[i][j].size(); r++)
-	fin >> var_cube[i][j][r];
-  fin.close();
+  var_cube = read_cube(var_file);
   std::cout<<"Variance Loaded...\n";
 
   /*
-   * Determine the valid data pixels
+    Determine the valid data pixels
     Considered valid if sigma > 0.0 and there is at least 1 non-zero value.
    */
   valid.assign(1, std::vector<int>(2));
@@ -203,8 +179,8 @@ void Data::load(const char* moptions_file) {
   sum_flux = 0.0;
   for (size_t i=0; i<image.size(); i++) {
     for(size_t j=0; j<image[i].size(); j++) {
-      tmp_im = 0.;
-      tmp_sig = 0.;
+      tmp_im = 0.0;
+      tmp_sig = 0.0;
       for (size_t r=0; r<image[i][j].size(); r++) {
         if (image[i][j][r] != 0.0) { tmp_im = 1.0; }
 	        tmp_sig += var_cube[i][j][r];
@@ -268,10 +244,9 @@ void Data::load(const char* moptions_file) {
   compute_ray_grid();
 }
 
-// Create desired size array
 std::vector< std::vector< std::vector<double> > > Data::arr_3d() {
   std::vector< std::vector< std::vector<double> > > arr;
-
+  // Create desired size array
   arr.resize(ni);
   for (int i=0; i<ni; i++) {
     arr[i].resize(nj);
@@ -283,6 +258,24 @@ std::vector< std::vector< std::vector<double> > > Data::arr_3d() {
   return arr;
 }
 
+std::vector< std::vector< std::vector<double> > >
+  Data::read_cube (std::string filepath) {
+  // Read data file
+  std::vector< std::vector< std::vector<double> > > cube = arr_3d();
+  std::fstream fin(filepath, std::ios::in);
+
+  if (!fin)
+    std::cerr<<"# ERROR: couldn't open file "<<filepath<<"."<<std::endl;
+
+  for (size_t i=0; i<cube.size(); i++)
+    for (size_t j=0; j<cube[i].size(); j++)
+      for (size_t r=0; r<cube[i][j].size(); r++)
+	      fin >> cube[i][j][r];
+  fin.close();
+
+  return cube;
+}
+
 void Data::compute_ray_grid() {
   // Make vectors of the correct size
   x_rays.assign(ni, std::vector<double>(nj));
@@ -291,7 +284,7 @@ void Data::compute_ray_grid() {
   for (size_t i=0; i<x_rays.size(); i++) {
     for (size_t j=0; j<x_rays[i].size(); j++) {
       x_rays[i][j] = x_min + (j + 0.5)*dx;
-      y_rays[i][j] = y_max - (i + 0.5)*dy;
+      y_rays[i][j] = y_min + (i + 0.5)*dy; // Assuming origin=lower
     }
   }
 
