@@ -7,17 +7,16 @@ Blobby3D
 ################
 Tests/
 
-# Data #
-########
+# Data/Results #
+################
 *.fits
-
-# Results #
-###########
+*.par
 *sample.txt
 *sample_info.txt
 *sampler_state.txt
 *levels.txt
 *.pdf
+*.npy
 
 # Temporary Files #
 ###################
