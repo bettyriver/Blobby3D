@@ -1,10 +1,10 @@
-#ifndef BLOBBY3D_MYCONDITIONALPRIOR_H_
-#define BLOBBY3D_MYCONDITIONALPRIOR_H_
+#ifndef BLOBBY3D_BLOBCONDITIONALPRIOR_H_
+#define BLOBBY3D_BLOBCONDITIONALPRIOR_H_
 
 #include "DNest4/code/DNest4.h"
 
 // Hyperparameters setting interim prior for galaxy properties
-class MyConditionalPrior:public DNest4::ConditionalPrior {
+class BlobConditionalPrior:public DNest4::ConditionalPrior {
  private:
   /*
     Hyperparameter priors
@@ -50,7 +50,7 @@ class MyConditionalPrior:public DNest4::ConditionalPrior {
   double perturb_hyperparameters(DNest4::RNG& rng);
 
  public:
-   MyConditionalPrior(
+   BlobConditionalPrior(
     double fluxlim_min, double fluxlim_max,
     double flux_std_min, double flux_std_max,
     double radiuslim_min, double radiuslim_max,

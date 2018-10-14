@@ -1,16 +1,16 @@
-#ifndef BLOBBY3D_DiscModel_H_
-#define BLOBBY3D_DiscModel_H_
+#ifndef BLOBBY3D_DISCMODEL_H_
+#define BLOBBY3D_DISCMODEL_H_
 
 #include <vector>
 
 #include "DNest4/code/DNest4.h"
-#include "MyConditionalPrior.h"
+#include "BlobConditionalPrior.h"
 #include "Conv.h"
 #include "Data.h"
 
 class DiscModel {
   private:
-    DNest4::RJObject<MyConditionalPrior> blobs;
+    DNest4::RJObject<BlobConditionalPrior> blobs;
 
     // TODO: Find elegant way to initialise constructor in DiscModel.cpp
     Conv conv = Conv(
@@ -156,5 +156,5 @@ class DiscModel {
     std::string description() const;
 };
 
-#endif  // BLOBBY3D_DiscModel_H_
+#endif  // BLOBBY3D_DISCMODEL_H_
 

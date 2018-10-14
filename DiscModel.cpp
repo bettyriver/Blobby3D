@@ -19,7 +19,7 @@ DiscModel::DiscModel()
     :blobs(
       6, Data::get_instance().get_nmax(),
       Data::get_instance().get_nfixed(),
-      MyConditionalPrior(
+      BlobConditionalPrior(
         log(Data::get_instance().get_fluxmu_min()),
         log(Data::get_instance().get_fluxmu_max()),
         Data::get_instance().get_lnfluxsd_min(),
