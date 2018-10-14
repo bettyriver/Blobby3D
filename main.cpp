@@ -1,11 +1,14 @@
 #include <iostream>
+#include <ctime>
 
 #include "DNest4/code/DNest4.h"
 
 #include "Data.h"
-#include "MyModel.h"
+#include "DiscModel.h"
 
 int main(int argc, char** argv) {
+  clock_t begin = clock();
+
   // Get command line options
   DNest4::CommandLineOptions options(argc, argv);
 
@@ -26,8 +29,12 @@ int main(int argc, char** argv) {
   Data::get_instance().load(moptions_file);
 
   // Setup and run sampler
-  DNest4::Sampler<MyModel> sampler = DNest4::setup<MyModel>(options);
+  DNest4::Sampler<DiscModel> sampler = DNest4::setup<DiscModel>(options);
   sampler.run();
+
+  clock_t end = clock();
+  double elapsed_secs = double(end - begin)/CLOCKS_PER_SEC;
+  std::cout<<"TIME: "<<elapsed_secs<<std::endl;
 
   return 0;
 }

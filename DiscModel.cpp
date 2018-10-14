@@ -1,4 +1,4 @@
-#include "MyModel.h"
+#include "DiscModel.h"
 
 #include <cmath>
 
@@ -15,7 +15,7 @@
 /*
   Public
 */
-MyModel::MyModel()
+DiscModel::DiscModel()
     :blobs(
       6, Data::get_instance().get_nmax(),
       Data::get_instance().get_nfixed(),
@@ -173,7 +173,7 @@ MyModel::MyModel()
 
 }
 
-void MyModel::from_prior(DNest4::RNG& rng) {
+void DiscModel::from_prior(DNest4::RNG& rng) {
   /*
     Initialise: global parameters
   */
@@ -238,7 +238,7 @@ void MyModel::from_prior(DNest4::RNG& rng) {
   calculate_image();
 }
 
-double MyModel::perturb(DNest4::RNG& rng) {
+double DiscModel::perturb(DNest4::RNG& rng) {
   double logH = 0.0;
   double rnd = rng.rand();
 
@@ -347,7 +347,7 @@ double MyModel::perturb(DNest4::RNG& rng) {
   return logH;
 }
 
-double MyModel::log_likelihood() const {
+double DiscModel::log_likelihood() const {
   const std::vector< std::vector< std::vector<double> > >&
     data = Data::get_instance().get_image();
   const std::vector< std::vector< std::vector<double> > >&
@@ -380,7 +380,7 @@ double MyModel::log_likelihood() const {
   return logL;
 }
 
-void MyModel::print(std::ostream& out) const {
+void DiscModel::print(std::ostream& out) const {
   const int x_pad = Data::get_instance().get_x_pad();
   const int y_pad = Data::get_instance().get_y_pad();
 
@@ -419,14 +419,14 @@ void MyModel::print(std::ostream& out) const {
   out<<sigma1<<' ';
 }
 
-std::string MyModel::description() const {
+std::string DiscModel::description() const {
   return std::string("blobs");
 }
 
 /*
   Private
 */
-void MyModel::calculate_image() {
+void DiscModel::calculate_image() {
   /*
     Calculate image as a function of model parameters.
   */
@@ -486,7 +486,7 @@ void MyModel::calculate_image() {
   convolved = conv.apply(image);
 }
 
-void MyModel::construct_cube() {
+void DiscModel::construct_cube() {
   /*
     Create cube from maps.
   */
@@ -530,7 +530,7 @@ void MyModel::construct_cube() {
   }
 }
 
-void MyModel::calculate_shifted_arrays() {
+void DiscModel::calculate_shifted_arrays() {
   /*
     Calculate arrays shifted by disk parameters.
   */
@@ -570,7 +570,7 @@ void MyModel::calculate_shifted_arrays() {
   }
 }
 
-void MyModel::add_disc_flux() {
+void DiscModel::add_disc_flux() {
   /*
     Add disc flux component to flux map.
   */
@@ -585,7 +585,7 @@ void MyModel::add_disc_flux() {
       flux[i][j] += amp*LookupExp::evaluate(rad[i][j]*invwxd);
 }
 
-void MyModel::add_blob_flux(std::vector< std::vector<double> >& components) {
+void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
   /*
     Calculate flux map.
   */
@@ -702,7 +702,7 @@ void MyModel::add_blob_flux(std::vector< std::vector<double> >& components) {
   }
 }
 
-void MyModel::calculate_rel_lambda() {
+void DiscModel::calculate_rel_lambda() {
   /*
     Calculate relative lambda (ie. relative velocity) shift map.
   */
@@ -726,7 +726,7 @@ void MyModel::calculate_rel_lambda() {
   }
 }
 
-void MyModel::calculate_vdisp() {
+void DiscModel::calculate_vdisp() {
   /*
     Calculate velocity dispersion map.
   */
@@ -740,7 +740,7 @@ void MyModel::calculate_vdisp() {
   }
 }
 
-void MyModel::clear_flux_map() {
+void DiscModel::clear_flux_map() {
   for (size_t i=0; i<image.size(); i++)
     for (size_t j=0; j<image[i].size(); j++)
       flux[i][j] = 0.0;

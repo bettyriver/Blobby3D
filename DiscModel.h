@@ -1,5 +1,5 @@
-#ifndef BLOBBY3D_MyModel_H_
-#define BLOBBY3D_MyModel_H_
+#ifndef BLOBBY3D_DiscModel_H_
+#define BLOBBY3D_DiscModel_H_
 
 #include <vector>
 
@@ -8,11 +8,11 @@
 #include "Conv.h"
 #include "Data.h"
 
-class MyModel {
+class DiscModel {
   private:
     DNest4::RJObject<MyConditionalPrior> blobs;
 
-    // TODO: Find elegant way to initialise constructor in MyModel.cpp
+    // TODO: Find elegant way to initialise constructor in DiscModel.cpp
     Conv conv = Conv(
       Data::get_instance().get_convolve(),
       Data::get_instance().get_psf_amp(),
@@ -138,7 +138,7 @@ class MyModel {
     bool noise_perturb;
 
   public:
-    MyModel();
+    DiscModel();
 
     // Generate the point from the prior
     void from_prior(DNest4::RNG& rng);
@@ -156,5 +156,5 @@ class MyModel {
     std::string description() const;
 };
 
-#endif  // BLOBBY3D_MyModel_H_
+#endif  // BLOBBY3D_DiscModel_H_
 
