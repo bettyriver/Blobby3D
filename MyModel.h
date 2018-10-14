@@ -10,7 +10,7 @@
 
 class MyModel {
   private:
-    DNest4::RJObject<MyConditionalPrior> objects;
+    DNest4::RJObject<MyConditionalPrior> blobs;
 
     // TODO: Find elegant way to initialise constructor in MyModel.cpp
     Conv conv = Conv(

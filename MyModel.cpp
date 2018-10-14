@@ -16,7 +16,7 @@
   Public
 */
 MyModel::MyModel()
-    :objects(
+    :blobs(
       6, Data::get_instance().get_nmax(),
       Data::get_instance().get_nfixed(),
       MyConditionalPrior(
@@ -197,10 +197,10 @@ void MyModel::from_prior(DNest4::RNG& rng) {
   */
   if (model == 0) {
     do {
-      objects.from_prior(rng);
-    } while (objects.get_components().size() == 0);
+      blobs.from_prior(rng);
+    } while (blobs.get_components().size() == 0);
   } else if (model == 2) {
-    objects.from_prior(rng);
+    blobs.from_prior(rng);
   }
 
   /*
@@ -247,8 +247,8 @@ double MyModel::perturb(DNest4::RNG& rng) {
   vdisp_perturb = false;
   disc_flux_perturb = false;
 
-  if (rnd <= 0.9) {
-    // skip disk perturb for model 0
+  if (rnd < 0.9) {
+    // skip disc perturb for model 0
     if (model == 0)
       rnd = 0.8*rng.rand();
     else if (model == 1)
@@ -256,13 +256,13 @@ double MyModel::perturb(DNest4::RNG& rng) {
     else
       rnd = rng.rand();
 
-    if (rnd <= 0.7) {
+    if (rnd < 0.7) {
       // Perturb blob parameters
-      logH += objects.perturb(rng);
-      if ((model == 0) & (objects.get_components().size() == 0))
+      logH += blobs.perturb(rng);
+      if ((model == 0) & (blobs.get_components().size() == 0))
         return logH = -1E300;
 
-    } else if (rnd <= 0.8) {
+    } else if (rnd < 0.8) {
       // Perturb disc parameters
       int which = rng.rand_int(10);
 
@@ -356,7 +356,7 @@ double MyModel::log_likelihood() const {
     valid = Data::get_instance().get_valid();
 
   // If no blobs return prob = 0
-  if ((model == 0) && (objects.get_components().size() == 0))
+  if ((model == 0) && (blobs.get_components().size() == 0))
     return -1E300;
 
   long double logL = 0.0;
@@ -399,7 +399,7 @@ void MyModel::print(std::ostream& out) const {
         out << convolved[i][j][r] << ' ';
 
   // Save components
-  objects.print(out); out<<' ';
+  blobs.print(out); out<<' ';
 
   // Save global variables
   out<<xcd<<' ';
@@ -420,7 +420,7 @@ void MyModel::print(std::ostream& out) const {
 }
 
 std::string MyModel::description() const {
-  return std::string("objects");
+  return std::string("blobs");
 }
 
 /*
@@ -449,13 +449,13 @@ void MyModel::calculate_image() {
   switch (model) {
     case 0:
       // Blobs only model
-      update = objects.get_removed().size() == 0;
+      update = blobs.get_removed().size() == 0;
       if (array_perturb || !update) {
         clear_flux_map();
-        components = objects.get_components();
+        components = blobs.get_components();
 
       } else {
-        components = objects.get_added();
+        components = blobs.get_added();
       }
       add_blob_flux(components);
       break;
@@ -468,14 +468,14 @@ void MyModel::calculate_image() {
       break;
     case 2:
       // Disc + blobs model
-      update = objects.get_removed().size() == 0;
+      update = blobs.get_removed().size() == 0;
       if (disc_flux_perturb || array_perturb || !update) {
         clear_flux_map();
-        components = objects.get_components();
+        components = blobs.get_components();
         add_disc_flux();
 
       } else {
-        components = objects.get_added();
+        components = blobs.get_added();
       }
       add_blob_flux(components);
       break;
@@ -631,13 +631,11 @@ void MyModel::add_blob_flux(std::vector< std::vector<double> >& components) {
     q = components[k][4];
     phi = components[k][5];
 
-    // xc, yc in disk plane
+    // xc, yc in disc plane
     xc = rc*cos(thetac);
     yc = rc*sin(thetac);
 
-    /*
-      Component manipulations
-    */
+    // Component manipulations
     wxsq = wx*wx;
     qsq = q*q;
     sqrtq = sqrt(q);
@@ -706,7 +704,7 @@ void MyModel::add_blob_flux(std::vector< std::vector<double> >& components) {
 
 void MyModel::calculate_rel_lambda() {
   /*
-    Calculate relative lambda shift map.
+    Calculate relative lambda (ie. relative velocity) shift map.
   */
   double sin_inc = sin(inc);
 
