@@ -12,14 +12,12 @@
 // TODO: Remove references to sigma1 throughout code.
 // Partial fix: not perturbing.
 
-// TODO: Resolve issue regarding 7 vs 6 blob parameters.
-
 /*
   Public
 */
 MyModel::MyModel()
     :objects(
-      7, Data::get_instance().get_nmax(),
+      6, Data::get_instance().get_nmax(),
       Data::get_instance().get_nfixed(),
       MyConditionalPrior(
         log(Data::get_instance().get_fluxmu_min()),
