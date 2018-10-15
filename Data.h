@@ -1,8 +1,10 @@
 #ifndef BLOBBY3D_DATA_H_
 #define BLOBBY3D_DATA_H_
 
+#include <cmath>
 #include <vector>
 #include <string>
+
 
 class Data
 {
@@ -14,48 +16,49 @@ class Data
   std::string var_file;
 
   // model parameters
-  int model;
-  int nmax;
-  bool nfixed;
-  int convolve;
-  double vsys_gamma;
-  double vsys_max;
-  double vmax_min;
-  double vmax_max;
-  double fluxmu_min;
-  double fluxmu_max;
-  double lnfluxsd_min;
-  double lnfluxsd_max;
-  double vdispmu_min;
-  double vdispmu_max;
-  double lnvdispsd_min;
-  double lnvdispsd_max;
-  double qlim_min;
-  double sigma_min;
-  double sigma_max;
+  int model = 0;
+  int nmax = 300;
+  bool nfixed = false;
+  int convolve = 0;
+  double vsys_gamma = 30.0;
+  double vsys_max = 150.0;
+  double vmax_min = 40.0;
+  double vmax_max = 400.0;
+  double fluxmu_min = 1e-3;
+  double fluxmu_max = 1e3;
+  double lnfluxsd_min = 0.03;
+  double lnfluxsd_max = 3.0;
+  double vdispmu_min = 1.0;
+  double vdispmu_max = 200.0;
+  double lnvdispsd_min = 0.01;
+  double lnvdispsd_max = 1.0;
+  double qlim_min = 0.2;
+  double sigma_min = 1e-12;
+  double sigma_max = 1e12;
   double gama_inc;
 
   // Hard-coded parameters
   // TODO: Read in parameters from file
-  double radiuslim_max;
-  double wd_min;
-  double wd_max;
-  double vslope_min;
-  double vslope_max;
-  double vgamma_min;
-  double vgamma_max;
-  double vbeta_min;
-  double vbeta_max;
+  double radiuslim_max = 30.0;
+  double wd_min = 0.03;
+  double wd_max = 30.0;
+  double vslope_min = 0.03;
+  double vslope_max = 30.0;
+  double vgamma_min = 1.0;
+  double vgamma_max = 100.0;
+  double vbeta_min = -0.75;
+  double vbeta_max = 0.75;
   int vdisp_order = 1;
-  double vdisp0_min;
-  double vdisp0_max;
-  double sigma1_min;
-  double sigma1_max;
-  double Md_min;
-  double Md_max;
-  double wxd_min;
-  double wxd_max;
-  double gamma_pos;
+  double vdisp0_min = log(1.0);
+  double vdisp0_max = log(200.0);
+  double vdispn_sigma = 0.2;
+  double sigma1_min = 1E-12;
+  double sigma1_max = 1E0;
+  double Md_min = 1E-3;
+  double Md_max = 1E3;
+  double wxd_min = 0.3;
+  double wxd_max = 30.0;
+  double gamma_pos = 2.0;
 
   // sampling
   double sample;
@@ -118,11 +121,9 @@ class Data
   std::vector< std::vector<double> > y_rays;
   std::vector<double> r_rays;
 
-  // The pixels
-  std::vector< std::vector< std::vector<double> > > image;
-
-  // Sigma map
-  std::vector< std::vector< std::vector<double> > > var_cube;
+  // Data
+  std::vector< std::vector< std::vector<double> > > data;
+  std::vector< std::vector< std::vector<double> > > var;
 
   // Valid spaxels
   std::vector< std::vector<int> > valid;
@@ -191,6 +192,7 @@ class Data
   int get_vdisp_order() { return vdisp_order; }
   double get_vdisp0_min() { return vdisp0_min; }
   double get_vdisp0_max() { return vdisp0_max; }
+  double get_vdispn_sigma() { return vdispn_sigma; }
   double get_sigma1_min() { return sigma1_min; }
   double get_sigma1_max() { return sigma1_max; }
   double get_Md_min() { return Md_min; }
@@ -228,10 +230,10 @@ class Data
   { return y_rays; }
   const std::vector<double>& get_r_rays() const
   { return r_rays; }
-  const std::vector< std::vector< std::vector<double> > >& get_image() const
-  { return image; }
-  const std::vector< std::vector< std::vector<double> > >& get_var_cube() const
-  { return var_cube; }
+  const std::vector< std::vector< std::vector<double> > >& get_data() const
+  { return data; }
+  const std::vector< std::vector< std::vector<double> > >& get_var() const
+  { return var; }
   const std::vector< std::vector<int> >& get_valid() const
   { return valid; }
 

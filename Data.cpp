@@ -74,6 +74,7 @@ void Data::load(const char* moptions_file) {
 
   // Other parameters
   // TODO: Read in these parameters from file
+  /*
   radiuslim_max = 30.0;
   wd_min = 0.03;
   wd_max = 30.0;
@@ -86,12 +87,14 @@ void Data::load(const char* moptions_file) {
   vdisp_order = 1;
   vdisp0_min = log(1.0);
   vdisp0_max = log(200.0);
+  vdispn_sigma = 0.2;
   sigma1_min = 1E-12;
   sigma1_max = 1E0;
   Md_min = 1E-3;
   Md_max = 1E3;
   wxd_min = 0.3;
   wxd_max = 30.0;
+  */
 
   // Print out parameters
   std::cout << "Input Metadata file: "<< metadata_file << std::endl;
@@ -190,10 +193,10 @@ void Data::load(const char* moptions_file) {
   // Loading data comment
   std::cout<<"\nLoading data:\n";
 
-  image = read_cube(cube_file);
+  data = read_cube(cube_file);
   std::cout<<"Image Loaded...\n";
 
-  var_cube = read_cube(var_file);
+  var = read_cube(var_file);
   std::cout<<"Variance Loaded...\n";
 
   /*
@@ -204,13 +207,13 @@ void Data::load(const char* moptions_file) {
   double tmp_im, tmp_sig;
   std::vector<int> tmp_vec(2);
   nv = 0;
-  for (size_t i=0; i<image.size(); i++) {
-    for(size_t j=0; j<image[i].size(); j++) {
+  for (size_t i=0; i<data.size(); i++) {
+    for(size_t j=0; j<data[i].size(); j++) {
       tmp_im = 0.0;
       tmp_sig = 0.0;
-      for (size_t r=0; r<image[i][j].size(); r++) {
-        if (image[i][j][r] != 0.0) { tmp_im = 1.0; }
-	        tmp_sig += var_cube[i][j][r];
+      for (size_t r=0; r<data[i][j].size(); r++) {
+        if (data[i][j][r] != 0.0) { tmp_im = 1.0; }
+	        tmp_sig += var[i][j][r];
 	    }
 
       // Add valid pixels to array
@@ -270,12 +273,19 @@ void Data::load(const char* moptions_file) {
   double y_width = y_max - y_min - 2.0*y_pad_dy;
   image_width = sqrt(x_width*y_width);
 
-  // Move to readable from file
+  // TODO: Make this a constant readable from file
   gamma_pos = 0.1*image_width;
 
   // Compute (oversampled) x, y, r arrays
   compute_ray_grid();
 }
+
+void Data::read_moptions() {
+
+
+
+}
+
 
 std::vector< std::vector< std::vector<double> > > Data::arr_3d() {
   std::vector< std::vector< std::vector<double> > > arr;

@@ -32,7 +32,7 @@ class DiscModel {
     /*
       Arrays
     */
-    std::vector< std::vector< std::vector<double> > > image;
+    std::vector< std::vector< std::vector<double> > > preconvolved;
     std::vector< std::vector< std::vector<double> > > imageos;
     std::vector< std::vector< std::vector<double> > > convolved;
 
@@ -45,7 +45,7 @@ class DiscModel {
     std::vector< std::vector<double> > rel_lambda;
     std::vector< std::vector<double> > vdisp;
 
-    void calculate_image();
+    void calculate_cube();
 
     // Construct cube from maps
     void calculate_shifted_arrays();
@@ -66,47 +66,24 @@ class DiscModel {
     int model;
 
     double xcd;
-    double x_imagecentre;
-
     double ycd;
-    double y_imagecentre;
-
-    double gamma_pos;
-
-    double Md;
-    double Md_min, Md_max;
-
-    double wxd;
-    double wxd_min, wxd_max;
-
-    double vsys;
-    double gamma_vsys;
-    double vsys_max;
-
-    double vmax;
-    double vmax_min, vmax_max;
-
-    double vslope;
-    double vslope_min, vslope_max;
-
-    double vgamma;
-    double vgamma_min, vgamma_max;
-
-    double vbeta;
-    double vbeta_min, vbeta_max;
-
-    int vdisp_order;
-    std::vector<double> vdisp_param;
-    double vdisp0_min, vdisp0_max;
-
     double gama_inc;
     double inc, pa;
 
-    double sigma0;
-    double sigma0_min, sigma0_max;
+    double vsys;
+    double vmax;
+    double vslope;
+    double vgamma;
+    double vbeta;
 
+    int vdisp_order;
+    std::vector<double> vdisp_param;
+
+    double Md;
+    double wxd;
+
+    double sigma0;
     double sigma1;
-    double sigma1_min, sigma1_max;
 
     // Prior distributions
     DNest4::Uniform prior_pa;
@@ -128,7 +105,7 @@ class DiscModel {
     DNest4::LogUniform prior_Md;
     DNest4::LogUniform prior_wxd;
 
-    // Perturb booleans
+    // Perturb flags
     bool array_perturb;
     bool vel_perturb;
     bool vdisp_perturb;

@@ -49,11 +49,11 @@ DiscModel::DiscModel()
     initialise arrays
   */
   // model cube
-  image.resize(ni);
+  preconvolved.resize(ni);
   for (size_t i=0; i<ni; ++i) {
-    image[i].resize(nj);
+    preconvolved[i].resize(nj);
     for (size_t j=0; j<nj; ++j) {
-      image[i][j].resize(nr);
+      preconvolved[i][j].resize(nr);
     }
   }
 
@@ -80,90 +80,64 @@ DiscModel::DiscModel()
   vdisp.assign(ni, std::vector<double>(nj));
 
   /*
-    Prior parameters
+    Prior distributions
   */
   // Inclination
   inc = Data::get_instance().get_gama_inc();
-
-  // x_c, y_c
-  x_imagecentre = Data::get_instance().get_x_imcentre();
-  y_imagecentre = Data::get_instance().get_y_imcentre();
-  gamma_pos = Data::get_instance().get_gamma_pos();
-
-  // Systemic velocity
-  gamma_vsys = Data::get_instance().get_vsys_gamma();
-  vsys_max = Data::get_instance().get_vsys_max();
-
-  // v_c
-  vmax_min = Data::get_instance().get_vmax_min();
-  vmax_max = Data::get_instance().get_vmax_max();
-
-  // Velocity turnover radius
-  vslope_min = Data::get_instance().get_vslope_min();
-  vslope_max = Data::get_instance().get_vslope_max();
-
-  // Velocity shape parameter : gamma
-  vgamma_min = Data::get_instance().get_vgamma_min();
-  vgamma_max = Data::get_instance().get_vgamma_max();
-
-  // Velocity shape parameter : beta
-  vbeta_min = Data::get_instance().get_vbeta_min();
-  vbeta_max = Data::get_instance().get_vbeta_max();
-
-  // Velocity dispersion :
-  vdisp_order = Data::get_instance().get_vdisp_order();
-  vdisp_param.assign(vdisp_order + 1, 0.0);
-
-  vdisp0_min = Data::get_instance().get_vdisp0_min();
-  vdisp0_max = Data::get_instance().get_vdisp0_max();
-
-  // Constant Noise
-  sigma0_min = Data::get_instance().get_sigma_min();
-  sigma0_max = Data::get_instance().get_sigma_max();
-
-  // Shot Noise
-  sigma1_min = Data::get_instance().get_sigma1_min();
-  sigma1_max = Data::get_instance().get_sigma1_max();
-
-  // Disk parameters : Required for models with disc component (1 or 2)
-  if (model != 0) {
-    Md_min = Data::get_instance().get_Md_min();
-    Md_max = Data::get_instance().get_Md_max();
-
-    wxd_min = Data::get_instance().get_wxd_min();
-    wxd_max = Data::get_instance().get_wxd_max();
-  }
-
-  // Prior distributions
   prior_pa = DNest4::Uniform(0.0, 2.0*M_PI);
-
   prior_xc = DNest4::TruncatedCauchy(
-    x_imagecentre, gamma_pos,
+    Data::get_instance().get_x_imcentre(),
+    Data::get_instance().get_gamma_pos(),
     x_min + x_pad_dx, x_max - x_pad_dx
     );
   prior_yc = DNest4::TruncatedCauchy(
-    y_imagecentre, gamma_pos,
+    Data::get_instance().get_y_imcentre(),
+    Data::get_instance().get_gamma_pos(),
     y_min + y_pad_dy, y_max - y_pad_dy
     );
 
   prior_vsys = DNest4::TruncatedCauchy(
-    0.0, gamma_vsys,
-    -vsys_max, vsys_max
+    0.0,
+    Data::get_instance().get_vsys_gamma(),
+    -Data::get_instance().get_vsys_max(),
+    Data::get_instance().get_vsys_max()
     );
-  prior_vmax = DNest4::LogUniform(vmax_min, vmax_max);
-  prior_vslope = DNest4::LogUniform(vslope_min, vslope_max);
-  prior_vgamma = DNest4::LogUniform(vgamma_min, vgamma_max);
-  prior_vbeta = DNest4::Uniform(vbeta_min, vbeta_max);
+  prior_vmax = DNest4::LogUniform(
+    Data::get_instance().get_vmax_min(),
+    Data::get_instance().get_vmax_max());
+  prior_vslope = DNest4::LogUniform(
+    Data::get_instance().get_vslope_min(),
+    Data::get_instance().get_vslope_max());
+  prior_vgamma = DNest4::LogUniform(
+    Data::get_instance().get_vgamma_min(),
+    Data::get_instance().get_vgamma_max());
+  prior_vbeta = DNest4::Uniform(
+    Data::get_instance().get_vbeta_min(),
+    Data::get_instance().get_vbeta_max());
 
-  prior_vdisp0 = DNest4::Uniform(vdisp0_min, vdisp0_max);
-  prior_vdisp = DNest4::Gaussian(0.0, 0.2);
+  vdisp_order = Data::get_instance().get_vdisp_order();
+  vdisp_param.assign(vdisp_order + 1, 0.0);
+  prior_vdisp0 = DNest4::Uniform(
+    Data::get_instance().get_vdisp0_min(),
+    Data::get_instance().get_vdisp0_max());
+  prior_vdisp = DNest4::Gaussian(
+    0.0,
+    Data::get_instance().get_vdispn_sigma());
 
-  prior_sigma0 = DNest4::LogUniform(sigma0_min, sigma0_max);
-  prior_sigma1 = DNest4::LogUniform(sigma1_min, sigma1_max);
+  prior_sigma0 = DNest4::LogUniform(
+    Data::get_instance().get_sigma_min(),
+    Data::get_instance().get_sigma_max());
+  prior_sigma1 = DNest4::LogUniform(
+    Data::get_instance().get_sigma1_min(),
+    Data::get_instance().get_sigma1_max());
 
   if (model != 0) {
-    prior_Md = DNest4::LogUniform(Md_min, Md_max);
-    prior_wxd = DNest4::LogUniform(wxd_min, wxd_max);
+    prior_Md = DNest4::LogUniform(
+      Data::get_instance().get_Md_min(),
+      Data::get_instance().get_Md_max());
+    prior_wxd = DNest4::LogUniform(
+      Data::get_instance().get_wxd_min(),
+      Data::get_instance().get_wxd_max());
   }
 }
 
@@ -217,7 +191,7 @@ void DiscModel::from_prior(DNest4::RNG& rng) {
   sigma0 = prior_sigma0.generate(rng);
   sigma1 = prior_sigma1.generate(rng);
 
-  // Calculate image based on initial values
+  // Calculate cubes based on initial values
   array_perturb = true;
   vel_perturb = true;
   vdisp_perturb = true;
@@ -343,9 +317,9 @@ double DiscModel::perturb(DNest4::RNG& rng) {
 
 double DiscModel::log_likelihood() const {
   const std::vector< std::vector< std::vector<double> > >&
-    data = Data::get_instance().get_image();
+    data = Data::get_instance().get_data();
   const std::vector< std::vector< std::vector<double> > >&
-    var_cube = Data::get_instance().get_var_cube();
+    var_cube = Data::get_instance().get_var();
   const std::vector< std::vector<int> >&
     valid = Data::get_instance().get_valid();
 
@@ -354,6 +328,7 @@ double DiscModel::log_likelihood() const {
   if ((model == 0) && (blobs.get_components().size() == 0)) {
     // If no blobs return prob = 0
     logL = -1E300;
+
   } else {
     double var;
     int i, j;
@@ -380,17 +355,21 @@ void DiscModel::print(std::ostream& out) const {
   const int x_pad = Data::get_instance().get_x_pad();
   const int y_pad = Data::get_instance().get_y_pad();
 
+  const bool save_maps = false;
+  const bool save_preconvolved = true;
+  const bool save_convolved = true;
+
   out<<std::setprecision(6);
 
   // Save maps
-  bool save_maps = false;
+
   if (save_maps) {
     for (size_t i=0; i<flux.size(); i++)
       for (size_t j=0; j<flux[i].size(); j++)
         out << flux[i][j] << ' ';
 
     for (size_t i=0; i<rel_lambda.size(); i++)
-      for (size_t j=0; j<rel_lambda.size(); j++)
+      for (size_t j=0; j<rel_lambda[i].size(); j++)
         out << rel_lambda[i][j] << ' ';
 
     for (size_t i=0; i<vdisp.size(); i++)
@@ -398,17 +377,21 @@ void DiscModel::print(std::ostream& out) const {
         out << vdisp[i][j] << ' ';
   }
 
-  // Save deconvolved image
-  for(size_t i=y_pad; i<image.size()-y_pad; i++)
-      for(size_t j=x_pad; j<image[i].size()-x_pad; j++)
-        for(size_t r=0; r<image[i][j].size(); r++)
-            out << image[i][j][r] << ' ';
+  // Save preconvolved cube
+  if (save_preconvolved) {
+    for(size_t i=y_pad; i<preconvolved.size()-y_pad; i++)
+        for(size_t j=x_pad; j<preconvolved[i].size()-x_pad; j++)
+          for(size_t r=0; r<preconvolved[i][j].size(); r++)
+              out << preconvolved[i][j][r] << ' ';
+  }
 
-  // Save convolved image
-  for(size_t i=0; i<convolved.size(); i++)
-    for(size_t j=0; j<convolved[i].size(); j++)
-      for(size_t r=0; r<convolved[i][j].size(); r++)
-        out << convolved[i][j][r] << ' ';
+  // Save convolved cube
+  if (save_convolved) {
+    for(size_t i=0; i<convolved.size(); i++)
+      for(size_t j=0; j<convolved[i].size(); j++)
+        for(size_t r=0; r<convolved[i][j].size(); r++)
+          out << convolved[i][j][r] << ' ';
+  }
 
   // Save components
   blobs.print(out); out<<' ';
@@ -440,7 +423,7 @@ std::string DiscModel::description() const {
 */
 void DiscModel::calculate_cube() {
   /*
-    Calculate image as a function of model parameters.
+    Calculate cube as a function of model parameters.
   */
   bool update;  // Determine if adding blobs
   std::vector< std::vector<double> > components;
@@ -495,7 +478,7 @@ void DiscModel::calculate_cube() {
 
   construct_cube();
 
-  convolved = conv.apply(image);
+  convolved = conv.apply(preconvolved);
 }
 
 void DiscModel::construct_cube() {
@@ -511,8 +494,8 @@ void DiscModel::construct_cube() {
   double wlsq, invtwo_wlsq;
   double ha_cdf_min, ha_cdf_max;
 
-  for (size_t i=0; i<image.size(); i++) {
-    for (size_t j=0; j<image[i].size(); j++)  {
+  for (size_t i=0; i<preconvolved.size(); i++) {
+    for (size_t j=0; j<preconvolved[i].size(); j++)  {
       if (flux[i][j] > 0.0)  {
         // Calculate mean lambda for lines
         lambda = constants::HA*rel_lambda[i][j];
@@ -522,20 +505,20 @@ void DiscModel::construct_cube() {
         wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
         invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
 
-        // Calculate image for 1st wavelength bin
+        // Calculate flux for 1st wavelength bin
         ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
         ha_cdf_max = LookupErf::evaluate((wave[0] + 0.5*dr - lambda)*invtwo_wlsq);
-        image[i][j][0] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
+        preconvolved[i][j][0] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
 
         // Loop through remaining bins
         for (size_t r=1; r<wave.size(); r++) {
           ha_cdf_min = ha_cdf_max;
           ha_cdf_max = LookupErf::evaluate((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
-          image[i][j][r] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
+          preconvolved[i][j][r] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
         }
       } else {
         for (size_t r=0; r<wave.size(); r++)
-          image[i][j][r] = 0.0;
+          preconvolved[i][j][r] = 0.0;
       }
 
     }
@@ -557,8 +540,8 @@ void DiscModel::calculate_shifted_arrays() {
 
   double xx_rot, yy_rot;
 
-  for (size_t i=0; i<image.size(); i++) {
-    for (size_t j=0; j<image[i].size(); j++) {
+  for (size_t i=0; i<preconvolved.size(); i++) {
+    for (size_t j=0; j<preconvolved[i].size(); j++) {
       // Shift
       x_shft[i][j] = x[i][j] - xcd;
       y_shft[i][j] = y[i][j] - ycd;
@@ -669,8 +652,8 @@ void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
 
     // Flux normalised sum
     amp = dxfs*dyfs*M/(2.0*M_PI*wxsq*cos_inc);
-    for (size_t i=0; i<image.size(); i++) {
-      for (size_t j=0; j<image[i].size(); j++) {
+    for (size_t i=0; i<flux.size(); i++) {
+      for (size_t j=0; j<flux[i].size(); j++) {
         amps = 0.0;
         for (int is=-si; is<=si; is++) {
           for (int js=-si; js<=si; js++) {
@@ -753,7 +736,7 @@ void DiscModel::calculate_vdisp() {
 }
 
 void DiscModel::clear_flux_map() {
-  for (size_t i=0; i<image.size(); i++)
-    for (size_t j=0; j<image[i].size(); j++)
+  for (size_t i=0; i<flux.size(); i++)
+    for (size_t j=0; j<flux[i].size(); j++)
       flux[i][j] = 0.0;
 }
