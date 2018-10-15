@@ -387,7 +387,7 @@ void DiscModel::print(std::ostream& out) const {
   out<<std::setprecision(6);
 
   // Save maps
-  bool save_maps = false
+  bool save_maps = false;
   if (save_maps) {
     for (size_t i=0; i<flux.size(); i++)
       for (size_t j=0; j<flux[i].size(); j++)
