@@ -1,4 +1,4 @@
-# Blobby3d
+# Blobby3D
 
 Blobby3D is designed to perform bayesian inference for gas kinematics on the H-alpha/N2 complex for IFU galaxy observations. It is robust even for galaxies that have clumpy H2 regions.
 
@@ -13,37 +13,19 @@ Blobby3D is dependent on the following:
 C++11
 [DNest4](https://github.com/eggplantbren/DNest4)
 [FFTW3](http://www.fftw.org)
-[Python 2.7](https://www.python.org) with [Cython](http://cython.org) package (for postprocessing)
+[Python 3](https://www.python.org) (for postprocessing)
 
-[FFTW3](http://www.fftw.org) and [Boost](http://www.boost.org) will typically be available on scientific machines/clusters, so you will often either have them or can get them relatively easily by contacting your system administrator.
+[FFTW3](http://www.fftw.org) will typically be available on scientific machines/clusters, so you will often either have them or can get them relatively easily by contacting your system administrator.
 
-[DNest4](https://github.com/eggplantbreen/DNest4) is a bespoke nested sampling algorithm written by Brendon Brewer, and will need to be cloned from github in the usual manner. It is only available for Unix like machines.
+[DNest4](https://github.com/eggplantbren/DNest4) is a bespoke nested sampling algorithm written by Brendon Brewer, and will need to be cloned from github in the usual manner. It is only available for Unix like machines.
 
 ### Installing
 
-Once you have downloaded/installed [FFTW3](www.fftw.org) and [Boost](www.boost.org), I would suggest setting up DNest4 and Blobby3D within the same directory. So, go to the root directory where you would like to install the packages, and create a directory:
+To install Blobby3D you need to clone this repository. Then go to the cloned repository directory and make using:
 
-mkdir Blobby3D
-cd Blobby3D
+make DNEST4_PATH=/path/to/DNest4
 
-#### Installing DNest4
-
-Then install DNest4 using the available instructions:
-
-git clone https://github.com/eggplantbren/DNest4
-cd DNest4/code
-make
-cd ../python
-python setup.py install
-
-#### Installing Blobby3D
-
-Then download/install Blobby3D:
-
-cd ../..
-git clone https://github.com/SpaceOdyssey/Blobby3D
-cd Blobby3D
-make
+Where /path/to/DNest4 is the root directory for DNest4 on your machine.
 
 ### Running Blobby3D on Examples
 
@@ -55,7 +37,7 @@ Navigate to one of the subfolders. The code can be run as an executable from wit
 
 You may want to setup a terminal alias such that you can run the executable from anywhere on your machine. The -t 1 parameter sets the number of threads -- I recommend using multiple threads. The -f MODEL_OPTIONS tells the model to use the input hyperparameters/parameters required to defined the priors. Note the the DNest4 parameters are defined in the OPTIONS file.
 
-There will be 3 output files created as the executable runs:
+There will be 3 output files created as Blobby3D runs:
 
 sample_info.txt
 sample.txt
