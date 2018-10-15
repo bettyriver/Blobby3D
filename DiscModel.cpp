@@ -71,17 +71,13 @@ DiscModel::DiscModel()
   x_shft.assign(ni, std::vector<double>(nj));
   y_shft.assign(ni, std::vector<double>(nj));
 
-  // Radius and angle arrays
+  // Radius and cos(angle) maps
   rad.assign(ni, std::vector<double>(nj));
   cos_angle.assign(ni, std::vector<double>(nj));
 
-  // Flux profile
+  // Moment maps
   flux.assign(ni, std::vector<double>(nj));
-
-  // relative lambda for velocity
   rel_lambda.assign(ni, std::vector<double>(nj));
-
-  // velocity dispersion
   vdisp.assign(ni, std::vector<double>(nj));
 
   /*
@@ -91,9 +87,11 @@ DiscModel::DiscModel()
   inc = Data::get_instance().get_gama_inc();
 
   // x_c, y_c
-  x_imagecentre = (x_max + x_min)/2.0;
-  y_imagecentre = (y_max + y_min)/2.0;
-  gamma_pos = 0.1*Data::get_instance().get_image_width();
+  x_imagecentre = Data::get_instance().get_x_imcentre();
+  y_imagecentre = Data::get_instance().get_y_imcentre();
+  gamma_pos = Data::get_instance().get_gamma_pos();
+
+  0.1*Data::get_instance().get_image_width();
 
   // Systemic velocity
   gamma_vsys = Data::get_instance().get_vsys_gamma();
@@ -104,39 +102,39 @@ DiscModel::DiscModel()
   vmax_max = Data::get_instance().get_vmax_max();
 
   // Velocity turnover radius
-  vslope_min = 0.03;
-  vslope_max = 30.0;
+  vslope_min = Data::get_instance().get_vslope_min();
+  vslope_max = Data::get_instance().get_vslope_max();
 
   // Velocity shape parameter : gamma
-  vgamma_min = 1.0;
-  vgamma_max = 100.0;
+  vgamma_min = Data::get_instance().get_vgamma_min();
+  vgamma_max = Data::get_instance().get_vgamma_max();
 
   // Velocity shape parameter : beta
-  vbeta_min = -0.75;
-  vbeta_max = 0.75;
+  vbeta_min = Data::get_instance().get_vbeta_min();
+  vbeta_max = Data::get_instance().get_vbeta_max();
 
   // Velocity dispersion :
-  vdisp_order = 1;
+  vdisp_order = Data::get_instance().get_vdisp_order();
   vdisp_param.assign(vdisp_order + 1, 0.0);
 
-  vdisp0_min = log(1.0);
-  vdisp0_max = log(200.0);
+  vdisp0_min = Data::get_instance().get_vdisp0_min();
+  vdisp0_max = Data::get_instance().get_vdisp0_max();
 
   // Constant Noise
   sigma0_min = Data::get_instance().get_sigma_min();
   sigma0_max = Data::get_instance().get_sigma_max();
 
   // Shot Noise
-  sigma1_min = 1E-12;
-  sigma1_max = 1E0;
+  sigma1_min = Data::get_instance().get_sigma1_min();
+  sigma1_max = Data::get_instance().get_sigma1_max();
 
   // Disk parameters : Required for models with disc component (1 or 2)
   if (model != 0) {
-    Md_min = 1E-3;
-    Md_max = 1E3;
+    Md_min = Data::get_instance().get_Md_min();
+    Md_max = Data::get_instance().get_Md_max();
 
-    wxd_min = 0.3;
-    wxd_max = 30.0;
+    wxd_min = Data::get_instance().get_wxd_min();
+    wxd_max = Data::get_instance().get_wxd_max();
   }
 
   // Prior distributions
@@ -355,24 +353,26 @@ double DiscModel::log_likelihood() const {
   const std::vector< std::vector<int> >&
     valid = Data::get_instance().get_valid();
 
-  // If no blobs return prob = 0
-  if ((model == 0) && (blobs.get_components().size() == 0))
-    return -1E300;
-
   long double logL = 0.0;
-  double sigma0sq = sigma0*sigma0;
 
-  double var;
-  int i, j;
+  if ((model == 0) && (blobs.get_components().size() == 0)) {
+    // If no blobs return prob = 0
+    logL = -1E300;
+  } else {
+    double var;
+    int i, j;
 
-  for (size_t h=0; h<valid.size(); h++) {
-    i = valid[h][0];
-    j = valid[h][1];
-    for (size_t r=0; r<data[i][j].size(); r++) {
-      if ((data[i][j][r] != 0.0) && (var_cube[i][j][r] != 0.0)) {
-        var = var_cube[i][j][r] + sigma0sq;
-        logL += -0.5*log(2.0*M_PI*var);
-        logL += -0.5*pow(data[i][j][r] - convolved[i][j][r], 2)/var;
+    double sigma0sq = sigma0*sigma0;
+
+    for (size_t h=0; h<valid.size(); h++) {
+      i = valid[h][0];
+      j = valid[h][1];
+      for (size_t r=0; r<data[i][j].size(); r++) {
+        if (var_cube[i][j][r] != 0.0) {
+          var = var_cube[i][j][r] + sigma0sq;
+          logL += -0.5*log(2.0*M_PI*var);
+          logL += -0.5*pow(data[i][j][r] - convolved[i][j][r], 2)/var;
+        }
       }
     }
   }
@@ -385,6 +385,22 @@ void DiscModel::print(std::ostream& out) const {
   const int y_pad = Data::get_instance().get_y_pad();
 
   out<<std::setprecision(6);
+
+  // Save maps
+  bool save_maps = false
+  if (save_maps) {
+    for (size_t i=0; i<flux.size(); i++)
+      for (size_t j=0; j<flux[i].size(); j++)
+        out << flux[i][j] << ' ';
+
+    for (size_t i=0; i<rel_lambda.size(); i++)
+      for (size_t j=0; j<rel_lambda.size(); j++)
+        out << image[i][j] << ' ';
+
+    for (size_t i=0; i<vdisp.size(); i++)
+      for (size_t j=0; j<vdisp[i].size(); j++)
+        out << image[i][j] << ' ';
+  }
 
   // Save deconvolved image
   for(size_t i=y_pad; i<image.size()-y_pad; i++)

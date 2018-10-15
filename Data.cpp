@@ -77,6 +77,21 @@ void Data::load(const char* moptions_file) {
   radiuslim_max = 30.0;
   wd_min = 0.03;
   wd_max = 30.0;
+  vslope_min = 0.03;
+  vslope_max = 30.0;
+  vgamma_min = 1.0;
+  vgamma_max = 100.0;
+  vbeta_min = -0.75;
+  vbeta_max = 0.75;
+  vdisp_order = 1;
+  vdisp0_min = log(1.0);
+  vdisp0_max = log(200.0);
+  sigma1_min = 1E-12;
+  sigma1_max = 1E0;
+  Md_min = 1E-3;
+  Md_max = 1E3;
+  wxd_min = 0.3;
+  wxd_max = 30.0;
 
   // Print out parameters
   std::cout << "Input Metadata file: "<< metadata_file << std::endl;
@@ -115,16 +130,34 @@ void Data::load(const char* moptions_file) {
   std::cout<<"LSF FWHM (ANG): "<<lsf_fwhm<<std::endl;
 
   // Print out remaining parameters
-  std::cout<<"Nmax blobs: "<<nmax<<std::endl;
-  std::cout<<"N fixed to Nmax: "<<nfixed<<std::endl;
-  std::cout<<"VSYSgamma, VSYSmax: "<<vsys_gamma<<", "<<vsys_max<<std::endl;
-  std::cout<<"VMAXmin, VMAXmax: "<<vmax_min<<", "<<vmax_max<<std::endl;
-  std::cout<<"FLUXMUmin, FLUXMUmax: "<<fluxmu_min<<", "<<fluxmu_max<<std::endl;
-  std::cout<<"LNFLUXSDmin, LNFLUXSDmax: "<<lnfluxsd_min<<", "<<lnfluxsd_max<<std::endl;
-  std::cout<<"VDISPMUmin, VDISPMUmax: "<<vdispmu_min<<", "<<vdispmu_max<<std::endl;
-  std::cout<<"LNVDISPSDmin, LNVDISPSDmax: "<<lnvdispsd_min<<", "<<lnvdispsd_max<<std::endl;
+  std::cout
+    <<"Nmax blobs: "
+    <<nmax<<std::endl;
+  std::cout
+    <<"N fixed to Nmax: "
+    <<nfixed<<std::endl;
+  std::cout
+    <<"VSYSgamma, VSYSmax: "
+    <<vsys_gamma<<", "<<vsys_max<<std::endl;
+  std::cout
+    <<"VMAXmin, VMAXmax: "
+    <<vmax_min<<", "<<vmax_max<<std::endl;
+  std::cout
+    <<"FLUXMUmin, FLUXMUmax: "
+    <<fluxmu_min<<", "<<fluxmu_max<<std::endl;
+  std::cout
+    <<"LNFLUXSDmin, LNFLUXSDmax: "
+    <<lnfluxsd_min<<", "<<lnfluxsd_max<<std::endl;
+  std::cout
+    <<"VDISPMUmin, VDISPMUmax: "
+    <<vdispmu_min<<", "<<vdispmu_max<<std::endl;
+  std::cout
+    <<"LNVDISPSDmin, LNVDISPSDmax: "
+    <<lnvdispsd_min<<", "<<lnvdispsd_max<<std::endl;
   std::cout<<"QLIMmin: "<<qlim_min<<std::endl;
-  std::cout<<"SIGMAmin, SIGMAmax: "<<sigma_min<<", "<<sigma_max<<std::endl;
+  std::cout
+    <<"SIGMAmin, SIGMAmax: "
+    <<sigma_min<<", "<<sigma_max<<std::endl;
   std::cout<<"GAMA INC: "<<gama_inc<<std::endl;
 
   // Model choice (only for testing)
@@ -217,6 +250,10 @@ void Data::load(const char* moptions_file) {
   y_min -= y_pad_dy;
   y_max += y_pad_dy;
 
+  // Image centres
+  x_imcentre = (x_min + x_max)/2.0;
+  y_imcentre = (y_min + y_max)/2.0;
+
   // Compute spatially oversampled parameters
   dxos = dx/sample;
   dyos = dy/sample;
@@ -232,6 +269,9 @@ void Data::load(const char* moptions_file) {
   double x_width = x_max - x_min - 2.0*x_pad_dx;
   double y_width = y_max - y_min - 2.0*y_pad_dy;
   image_width = sqrt(x_width*y_width);
+
+  // Move to readable from file
+  gamma_pos = 0.1*image_width;
 
   // Compute (oversampled) x, y, r arrays
   compute_ray_grid();

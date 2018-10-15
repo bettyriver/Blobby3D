@@ -29,7 +29,6 @@ class DiscModel {
       Data::get_instance().get_x_pad(),
       Data::get_instance().get_y_pad()
       ); // setup convolution kernels
-
     /*
       Arrays
     */
