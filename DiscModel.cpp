@@ -31,7 +31,8 @@ DiscModel::DiscModel()
         Data::get_instance().get_qlim_min()
         ),
       DNest4::PriorType::log_uniform
-      ) {
+      ),
+      model(Data::get_instance().get_model()) {
   const size_t ni = Data::get_instance().get_ni();
   const size_t nj = Data::get_instance().get_nj();
   const size_t nr = Data::get_instance().get_nr();
@@ -43,8 +44,6 @@ DiscModel::DiscModel()
   const double y_max = Data::get_instance().get_y_max();
   const double x_pad_dx = Data::get_instance().get_x_pad_dx();
   const double y_pad_dy = Data::get_instance().get_y_pad_dy();
-
-  model = Data::get_instance().get_model();
 
   /*
     initialise arrays
@@ -90,8 +89,6 @@ DiscModel::DiscModel()
   x_imagecentre = Data::get_instance().get_x_imcentre();
   y_imagecentre = Data::get_instance().get_y_imcentre();
   gamma_pos = Data::get_instance().get_gamma_pos();
-
-  0.1*Data::get_instance().get_image_width();
 
   // Systemic velocity
   gamma_vsys = Data::get_instance().get_vsys_gamma();
@@ -168,7 +165,6 @@ DiscModel::DiscModel()
     prior_Md = DNest4::LogUniform(Md_min, Md_max);
     prior_wxd = DNest4::LogUniform(wxd_min, wxd_max);
   }
-
 }
 
 void DiscModel::from_prior(DNest4::RNG& rng) {
@@ -233,7 +229,7 @@ void DiscModel::from_prior(DNest4::RNG& rng) {
   else
     disc_flux_perturb = true;
 
-  calculate_image();
+  calculate_cube();
 }
 
 double DiscModel::perturb(DNest4::RNG& rng) {
@@ -324,7 +320,7 @@ double DiscModel::perturb(DNest4::RNG& rng) {
     // Pre-rejection trick
     if (log(rng.rand()) < logH) {
       logH = 0.0;
-      calculate_image();
+      calculate_cube();
     } else {
       logH = -1E300;
     }
@@ -395,11 +391,11 @@ void DiscModel::print(std::ostream& out) const {
 
     for (size_t i=0; i<rel_lambda.size(); i++)
       for (size_t j=0; j<rel_lambda.size(); j++)
-        out << image[i][j] << ' ';
+        out << rel_lambda[i][j] << ' ';
 
     for (size_t i=0; i<vdisp.size(); i++)
       for (size_t j=0; j<vdisp[i].size(); j++)
-        out << image[i][j] << ' ';
+        out << vdisp[i][j] << ' ';
   }
 
   // Save deconvolved image
@@ -442,7 +438,7 @@ std::string DiscModel::description() const {
 /*
   Private
 */
-void DiscModel::calculate_image() {
+void DiscModel::calculate_cube() {
   /*
     Calculate image as a function of model parameters.
   */
