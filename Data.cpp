@@ -2,8 +2,10 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <cmath>
 #include <limits>
+#include <algorithm>
 
 #include "Constants.h"
 
@@ -26,7 +28,8 @@ void Data::load(const char* moptions_file) {
     z: galaxy redshift
 
   */
-  // std::string metadata_file, cube_file, var_file;
+
+
   std::fstream fin(moptions_file, std::ios::in);
   if (!fin)
     std::cerr<<"# ERROR: couldn't open file "<<moptions_file<<"."<<std::endl;
@@ -34,72 +37,169 @@ void Data::load(const char* moptions_file) {
   while (fin.peek() == '#')
     fin.ignore(1000000, '\n');
 
-  fin>>metadata_file; fin.ignore(1000000, '\n');
-  fin>>cube_file; fin.ignore(1000000, '\n');
-  fin>>var_file; fin.ignore(1000000, '\n');
-  fin>>convolve; fin.ignore(1000000, '\n'); // Gaussian=0, Moffat=1
+  std::string line;
+  std::string name;
+  std::string tmp_str;
+  double tmp_double;
+  bool lsf_fwhm_flag = false;
+  bool psf_amp_flag = false;
+  bool psf_fwhm_flag = false;
+  bool psf_beta_flag = false;
+  bool inc_flag = false;
+  while (std::getline(fin, line)) {
+    std::istringstream lin(line);
+    lin >> name;
+    std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 
-  // Read in AMPs (multiple for multi-gauss fit)
-  double tmp_amp;
-  while (fin.peek() != '#') {
-      fin>>tmp_amp;
-      psf_amp.push_back(tmp_amp);
+    if (line.empty()) {
+      continue;
+    } else if (name[0] == '#') {
+      continue;
+    } else if (name == "METADATA_FILE") {
+        lin >> metadata_file;
+    } else if (name == "DATA_FILE") {
+      lin >> data_file;
+    } else if (name == "VAR_FILE") {
+      lin >> var_file;
+    } else if (name == "CONVOLVE_METHOD") {
+      lin >> convolve;
+    } else if (name == "PSFWEIGHT") {
+      while (lin >> tmp_double)
+        psf_amp.push_back(tmp_double);
+      psf_amp_flag = true;
+    } else if (name == "PSFFWHM") {
+      while (lin >> tmp_double)
+        psf_fwhm.push_back(tmp_double);
+      psf_fwhm_flag = true;
+    } else if (name == "PSFBETA") {
+      lin >> psf_beta;
+      psf_beta_flag = true;
+    } else if (name == "LSFFWHM") {
+      lin >> lsf_fwhm;
+      lsf_fwhm_flag = true;
+    } else if (name == "NMAX") {
+      lin >> nmax;
+    } else if (name == "NFIXED") {
+      lin >> tmp_str;
+      if (tmp_str == "FALSE")
+        nfixed = false;
+      else if (tmp_str == "TRUE")
+        nfixed = true;
+      else
+        std::cerr<<"# ERROR: couldn't determined N_FIXED."<<std::endl;
+    } else if (name == "VSYS_MAX") {
+      lin >> vsys_max;
+    } else if (name == "VSYS_GAMMA") {
+      lin >> vsys_gamma;
+    } else if (name == "VC_MIN") {
+      lin >> vmax_min;
+    } else if (name == "VC_MAX") {
+      lin >> vmax_max;
+    } else if (name == "MEANFLUX_MIN") {
+      lin >> fluxmu_min;
+    } else if (name == "MEANFLUX_MAX") {
+      lin >> fluxmu_max;
+    } else if (name == "LOGSIGMAFLUX_MIN") {
+      lin >> lnfluxsd_min;
+    } else if (name == "LOGSIGMAFLUX_MAX") {
+      lin >> lnfluxsd_max;
+    } else if (name == "SIGMAV0_MIN") {
+      lin >> vdisp0_min;
+    } else if (name == "SIGMAV0_MAX") {
+      lin >> vdisp0_max;
+    } else if (name == "QLIM_MIN") {
+      lin >> qlim_min;
+    } else if (name == "INC") {
+      lin >> inc;
+      inc_flag = true;
+    } else if (name == "SIGMA0_MIN") {
+      lin >> sigma_min;
+    } else if (name == "SIGMA0_MAX") {
+      lin >> sigma_max;
+    } else if (name == "RADIUSLIM_MIN") {
+      lin >> radiuslim_min; // Not passed to ConditionalPrior yet
+    } else if (name == "RADIUSLIM_MAX") {
+      lin >> radiuslim_max;
+    } else if (name == "WD_MIN") {
+      lin >> wd_min;
+    } else if (name == "WD_MAX") {
+      lin >> wd_max;
+    } else if (name == "VSLOPE_MIN") {
+      lin >> vslope_min;
+    } else if (name == "VSLOPE_MAX") {
+      lin >> vslope_max;
+    } else if (name == "VGAMMA_MIN") {
+      lin >> vgamma_min;
+    } else if (name == "VGAMMA_MAX") {
+      lin >> vgamma_max;
+    } else if (name == "VBETA_MIN") {
+      lin >> vbeta_max;
+    } else if (name == "VBETA_MAX") {
+      lin >> vbeta_max;
+    } else if (name == "VDISP_ORDER") {
+      lin >> vdisp_order;
+    } else if (name == "LOGVDISP0_MIN") {
+      lin >> vdisp0_min;
+    } else if (name == "LOGVDISP0_MAX") {
+      lin >> vdisp0_max;
+    } else if (name == "VDISPN_SIGMA") {
+      lin >> vdispn_sigma;
+    } else if (name == "SIGMA1_MIN") {
+      lin >> sigma1_min;
+    } else if (name == "SIGMA1_MAX") {
+      lin >> sigma1_max;
+    } else if (name == "MD_MIN") {
+      lin >> Md_min;
+    } else if (name == "MD_MAX") {
+      lin >> Md_max;
+    } else if (name == "WXD_MIN") {
+      lin >> wxd_min;
+    } else if (name == "WXD_MAX") {
+      lin >> wxd_max;
+    } else if (name == "CENTRE_GAMMA") {
+      lin >> gamma_pos;
+    } else {
+      std::cerr
+        <<"Couldn't determine input parameter assignment for keyword: "
+        <<name<<"."
+        <<std::endl;
+        exit(0);
+    }
   }
-  fin.ignore(1000000, '\n');
-
-  // Read in FWHMs (multiple for multi-gauss conv)
-  double tmp_fwhm;
-  while (fin.peek() != '#') {
-    fin>>tmp_fwhm;
-    psf_fwhm.push_back(tmp_fwhm);
-  }
-  fin.ignore(1000000, '\n');
-
-  // Read in other parameters
-  fin>>psf_beta; fin.ignore(1000000, '\n');
-  fin>>lsf_fwhm; fin.ignore(1000000, '\n');
-  fin>>nmax; fin.ignore(1000000, '\n');
-  fin>>nfixed; fin.ignore(1000000, '\n');
-  fin>>vsys_gamma; fin>>vsys_max; fin.ignore(1000000, '\n');
-  fin>>vmax_min; fin>>vmax_max; fin.ignore(1000000, '\n');
-  fin>>fluxmu_min; fin>>fluxmu_max; fin.ignore(1000000, '\n');
-  fin>>lnfluxsd_min; fin>>lnfluxsd_max; fin.ignore(1000000, '\n');
-  fin>>vdispmu_min; fin>>vdispmu_max; fin.ignore(1000000, '\n');
-  fin>>lnvdispsd_min; fin>>lnvdispsd_max; fin.ignore(1000000, '\n');
-  fin>>qlim_min; fin.ignore(1000000, '\n');
-  fin>>sigma_min; fin>>sigma_max; fin.ignore(10000000, '\n');
-  fin>>sigma_pad; fin.ignore(10000000, '\n');
-  fin>>gama_inc; fin.ignore(10000000, '\n');
   fin.close();
 
-  // Other parameters
-  // TODO: Read in these parameters from file
-  /*
-  radiuslim_max = 30.0;
-  wd_min = 0.03;
-  wd_max = 30.0;
-  vslope_min = 0.03;
-  vslope_max = 30.0;
-  vgamma_min = 1.0;
-  vgamma_max = 100.0;
-  vbeta_min = -0.75;
-  vbeta_max = 0.75;
-  vdisp_order = 1;
-  vdisp0_min = log(1.0);
-  vdisp0_max = log(200.0);
-  vdispn_sigma = 0.2;
-  sigma1_min = 1E-12;
-  sigma1_max = 1E0;
-  Md_min = 1E-3;
-  Md_max = 1E3;
-  wxd_min = 0.3;
-  wxd_max = 30.0;
-  */
+  // Check required parameters are provided
+  if (!lsf_fwhm_flag) {
+    std::cerr<<"Required keyword (LSFFWHM) not provided."<<std::endl;
+    exit(0);
+  }
+
+  if (convolve == 0) {
+    if (!psf_amp_flag) {
+      std::cerr<<"Required keyword (PSFWEIGHT) not provided."<<std::endl;
+      exit(0);
+    }
+
+    if (!psf_fwhm_flag) {
+      std::cerr<<"Required keyword (PSFFWHM) not provided."<<std::endl;
+      exit(0);
+    }
+  } else if (convolve == 1) {
+    if (!psf_beta_flag) {
+      std::cerr<<"Required keyword (PSFBETA) not provided."<<std::endl;
+      exit(0);
+    }
+  }
+
+  if (!inc_flag) {
+    std::cerr<<"INC not provided."<<std::endl;
+    exit(0);
+  }
 
   // Print out parameters
-  std::cout << "Input Metadata file: "<< metadata_file << std::endl;
-  std::cout << "Input Cube file: "<< cube_file << std::endl;
-  std::cout << "Input Variance Cube file: "<< var_file << std::endl;
+  std::cout<<"Input Metadata file: "<<metadata_file<<std::endl;
+  std::cout<<"Input Cube file: "<<data_file<<std::endl;
+  std::cout<<"Input Variance Cube file: "<<var_file<<std::endl;
 
   // sigma cutoff parameter for blobs
   sigma_cutoff = 5.0;
@@ -161,7 +261,7 @@ void Data::load(const char* moptions_file) {
   std::cout
     <<"SIGMAmin, SIGMAmax: "
     <<sigma_min<<", "<<sigma_max<<std::endl;
-  std::cout<<"GAMA INC: "<<gama_inc<<std::endl;
+  std::cout<<"INC: "<<inc<<std::endl;
 
   // Model choice (only for testing)
   model = 0;
@@ -193,7 +293,7 @@ void Data::load(const char* moptions_file) {
   // Loading data comment
   std::cout<<"\nLoading data:\n";
 
-  data = read_cube(cube_file);
+  data = read_cube(data_file);
   std::cout<<"Image Loaded...\n";
 
   var = read_cube(var_file);
@@ -279,13 +379,6 @@ void Data::load(const char* moptions_file) {
   // Compute (oversampled) x, y, r arrays
   compute_ray_grid();
 }
-
-void Data::read_moptions() {
-
-
-
-}
-
 
 std::vector< std::vector< std::vector<double> > > Data::arr_3d() {
   std::vector< std::vector< std::vector<double> > > arr;

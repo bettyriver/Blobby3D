@@ -11,9 +11,9 @@ class Data
  private:
 
   // files
-  std::string metadata_file;
-  std::string cube_file;
-  std::string var_file;
+  std::string metadata_file = "metadata.txt";
+  std::string data_file = "data.txt";
+  std::string var_file = "levels.txt";
 
   // model parameters
   int model = 0;
@@ -35,10 +35,8 @@ class Data
   double qlim_min = 0.2;
   double sigma_min = 1e-12;
   double sigma_max = 1e12;
-  double gama_inc;
-
-  // Hard-coded parameters
-  // TODO: Read in parameters from file
+  double inc;
+  double radiuslim_min = 0.5;
   double radiuslim_max = 30.0;
   double wd_min = 0.03;
   double wd_max = 30.0;
@@ -93,7 +91,7 @@ class Data
   double psf_beta;
   std::vector<double> psf_sigma;
   double sigma_cutoff;
-  double sigma_pad;
+  double sigma_pad = 0.0;
 
   // LSF
   double lsf_fwhm;
@@ -179,7 +177,7 @@ class Data
   double get_qlim_min() const { return qlim_min; }
   double get_sigma_min() const { return sigma_min; }
   double get_sigma_max() const { return sigma_max; }
-  double get_gama_inc() const { return gama_inc; }
+  double get_inc() const { return inc; }
   double get_radiuslim_max() const { return radiuslim_max; }
   double get_wd_min() const { return wd_min; }
   double get_wd_max() const { return wd_max; }
