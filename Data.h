@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+#include "Constants.h"
+
 
 class Data
 {
@@ -36,7 +38,7 @@ class Data
   double sigma_min = 1e-12;
   double sigma_max = 1e12;
   double inc;
-  double radiuslim_min = 0.5;
+  double radiuslim_min;
   double radiuslim_max = 30.0;
   double wd_min = 0.03;
   double wd_max = 30.0;
@@ -56,7 +58,8 @@ class Data
   double Md_max = 1E3;
   double wxd_min = 0.3;
   double wxd_max = 30.0;
-  double gamma_pos = 2.0;
+  double gamma_pos;
+  double em_line = constants::HA;
 
   // sampling
   double sample;
@@ -130,6 +133,7 @@ class Data
   std::vector< std::vector< std::vector<double> > > arr_3d();
   std::vector< std::vector< std::vector<double> > >
     read_cube(std::string filepath);
+  void summarise_model();
   void compute_ray_grid();
 
  public:
@@ -178,6 +182,7 @@ class Data
   double get_sigma_min() const { return sigma_min; }
   double get_sigma_max() const { return sigma_max; }
   double get_inc() const { return inc; }
+  double get_radiuslim_min() const { return radiuslim_min; }
   double get_radiuslim_max() const { return radiuslim_max; }
   double get_wd_min() const { return wd_min; }
   double get_wd_max() const { return wd_max; }
@@ -198,6 +203,7 @@ class Data
   double get_wxd_min() { return wxd_min; }
   double get_wxd_max() { return wxd_max; }
   double get_gamma_pos() { return gamma_pos; }
+  double get_em_line() { return em_line; }
 
   int get_x_pad() const { return x_pad; }
   int get_y_pad() const { return y_pad; }

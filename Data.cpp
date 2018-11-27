@@ -14,28 +14,13 @@ Data Data::instance;
 Data::Data() {}
 
 void Data::load(const char* moptions_file) {
-  /*
-    Model parameters:
-    model:
-     0 -> ONLY blobs
-     1 -> ONLY disk
-     2 -> disk+blobs
+  // Loading data comment
+  std::cout<<"\nLoading data:\n";
 
-    nmax:
-     Maximum number of blobs
-    nfixed:
-     Whether to fix number of blobs to nmax
-    z: galaxy redshift
-
-  */
-
-
+  // Load model options
   std::fstream fin(moptions_file, std::ios::in);
   if (!fin)
     std::cerr<<"# ERROR: couldn't open file "<<moptions_file<<"."<<std::endl;
-
-  while (fin.peek() == '#')
-    fin.ignore(1000000, '\n');
 
   std::string line;
   std::string name;
@@ -46,6 +31,8 @@ void Data::load(const char* moptions_file) {
   bool psf_fwhm_flag = false;
   bool psf_beta_flag = false;
   bool inc_flag = false;
+  bool gamma_pos_flag = false;
+  bool radiuslim_min_flag = false;
   while (std::getline(fin, line)) {
     std::istringstream lin(line);
     lin >> name;
@@ -81,12 +68,17 @@ void Data::load(const char* moptions_file) {
       lin >> nmax;
     } else if (name == "NFIXED") {
       lin >> tmp_str;
-      if (tmp_str == "FALSE")
+      std::transform(
+        tmp_str.begin(), tmp_str.end(),
+        tmp_str.begin(), ::toupper);
+      if ((tmp_str == "FALSE") || (tmp_str == "0")) {
         nfixed = false;
-      else if (tmp_str == "TRUE")
+      } else if ((tmp_str == "TRUE") || (tmp_str == "1")) {
         nfixed = true;
-      else
+      } else {
         std::cerr<<"# ERROR: couldn't determined N_FIXED."<<std::endl;
+        exit(0);
+      }
     } else if (name == "VSYS_MAX") {
       lin >> vsys_max;
     } else if (name == "VSYS_GAMMA") {
@@ -118,6 +110,7 @@ void Data::load(const char* moptions_file) {
       lin >> sigma_max;
     } else if (name == "RADIUSLIM_MIN") {
       lin >> radiuslim_min; // Not passed to ConditionalPrior yet
+      radiuslim_min_flag = true;
     } else if (name == "RADIUSLIM_MAX") {
       lin >> radiuslim_max;
     } else if (name == "WD_MIN") {
@@ -158,6 +151,9 @@ void Data::load(const char* moptions_file) {
       lin >> wxd_max;
     } else if (name == "CENTRE_GAMMA") {
       lin >> gamma_pos;
+      gamma_pos_flag = true;
+    } else if (name == "LINE") {
+      lin >> em_line;
     } else {
       std::cerr
         <<"Couldn't determine input parameter assignment for keyword: "
@@ -170,36 +166,35 @@ void Data::load(const char* moptions_file) {
 
   // Check required parameters are provided
   if (!lsf_fwhm_flag) {
-    std::cerr<<"Required keyword (LSFFWHM) not provided."<<std::endl;
+    std::cerr
+      <<"# ERROR: Required keyword (LSFFWHM) not provided."<<std::endl;
     exit(0);
   }
 
   if (convolve == 0) {
     if (!psf_amp_flag) {
-      std::cerr<<"Required keyword (PSFWEIGHT) not provided."<<std::endl;
+      std::cerr
+        <<"# ERROR: Required keyword (PSFWEIGHT) not provided."<<std::endl;
       exit(0);
     }
 
     if (!psf_fwhm_flag) {
-      std::cerr<<"Required keyword (PSFFWHM) not provided."<<std::endl;
+      std::cerr
+        <<"# ERROR: Required keyword (PSFFWHM) not provided."<<std::endl;
       exit(0);
     }
   } else if (convolve == 1) {
     if (!psf_beta_flag) {
-      std::cerr<<"Required keyword (PSFBETA) not provided."<<std::endl;
+      std::cerr
+        <<"# ERROR: Required keyword (PSFBETA) not provided."<<std::endl;
       exit(0);
     }
   }
 
   if (!inc_flag) {
-    std::cerr<<"INC not provided."<<std::endl;
+    std::cerr<<"# ERROR: Required keyword (INC) not provided."<<std::endl;
     exit(0);
   }
-
-  // Print out parameters
-  std::cout<<"Input Metadata file: "<<metadata_file<<std::endl;
-  std::cout<<"Input Cube file: "<<data_file<<std::endl;
-  std::cout<<"Input Variance Cube file: "<<var_file<<std::endl;
 
   // sigma cutoff parameter for blobs
   sigma_cutoff = 5.0;
@@ -208,70 +203,17 @@ void Data::load(const char* moptions_file) {
   for(size_t i=0; i<psf_fwhm.size(); i++)
     psf_sigma.push_back(psf_fwhm[i]/sqrt(8.0*log(2.0)));
 
-  // Print out convolution parameters
-  if (convolve == 0) {
-    std::cout<<"Model will assume Gaussian convolution kernel.\n";
-    std::cout<<"PSF AMP:";
-    for (size_t i=0; i<psf_amp.size(); i++)
-      std::cout<<" "<<psf_amp[i];
-    std::cout<<std::endl;
-
-    std::cout<<"PSF FWHM (ASEC):";
-    for (size_t i=0; i<psf_fwhm.size(); i++)
-      std::cout<<" "<<psf_fwhm[i];
-    std::cout<<std::endl;
-  } else if (convolve == 1) {
-    std::cout<<"Model will assume Moffat convolution kernel.\n";
-    std::cout<<"PSF FWHM (ASEC): "<<psf_fwhm[0]<<std::endl;
-    std::cout<<"PSF BETA: "<<psf_beta<<std::endl<<std::endl;
-  }
-
-  // LSF convolution message
   // LSF in wavelength (needs to be redshift corrected)
   lsf_sigma = lsf_fwhm/sqrt(8.0*log(2.0));
-  std::cout<<"Model assumes a gaussian instrumental broadening.\n";
-  std::cout<<"LSF FWHM (ANG): "<<lsf_fwhm<<std::endl;
-
-  // Print out remaining parameters
-  std::cout
-    <<"Nmax blobs: "
-    <<nmax<<std::endl;
-  std::cout
-    <<"N fixed to Nmax: "
-    <<nfixed<<std::endl;
-  std::cout
-    <<"VSYSgamma, VSYSmax: "
-    <<vsys_gamma<<", "<<vsys_max<<std::endl;
-  std::cout
-    <<"VMAXmin, VMAXmax: "
-    <<vmax_min<<", "<<vmax_max<<std::endl;
-  std::cout
-    <<"FLUXMUmin, FLUXMUmax: "
-    <<fluxmu_min<<", "<<fluxmu_max<<std::endl;
-  std::cout
-    <<"LNFLUXSDmin, LNFLUXSDmax: "
-    <<lnfluxsd_min<<", "<<lnfluxsd_max<<std::endl;
-  std::cout
-    <<"VDISPMUmin, VDISPMUmax: "
-    <<vdispmu_min<<", "<<vdispmu_max<<std::endl;
-  std::cout
-    <<"LNVDISPSDmin, LNVDISPSDmax: "
-    <<lnvdispsd_min<<", "<<lnvdispsd_max<<std::endl;
-  std::cout<<"QLIMmin: "<<qlim_min<<std::endl;
-  std::cout
-    <<"SIGMAmin, SIGMAmax: "
-    <<sigma_min<<", "<<sigma_max<<std::endl;
-  std::cout<<"INC: "<<inc<<std::endl;
 
   // Model choice (only for testing)
   model = 0;
 
   // Override blob parameters for disk model
-  if (model == 1)
+  if (model == 1) {
     nmax = 0;
-
-  if (model == 1)
     nfixed = true;
+  }
 
   // Spatial sampling of cube
   sample = 1;
@@ -285,13 +227,11 @@ void Data::load(const char* moptions_file) {
   fin >> x_min >> x_max >> y_min >> y_max;
   fin >> r_min >> r_max;
   fin.close();
+  std::cout<<"Metadata Loaded..."<<std::endl;
 
   // Make sure maximum > minimum
   if (x_max <= x_min || y_max <= y_min)
     std::cerr<<"# ERROR: strange input in "<<metadata_file<<"."<<std::endl;
-
-  // Loading data comment
-  std::cout<<"\nLoading data:\n";
 
   data = read_cube(data_file);
   std::cout<<"Image Loaded...\n";
@@ -340,6 +280,14 @@ void Data::load(const char* moptions_file) {
       psf_sigma_overdy.push_back(psf_sigma[i]/dy);
   }
 
+  // Calculate geometric widths
+  pixel_width = sqrt(dx*dy);
+  image_width = sqrt((x_max - x_min)*(y_max - y_min));
+
+  // Image centres
+  x_imcentre = (x_min + x_max)/2.0;
+  y_imcentre = (y_min + y_max)/2.0;
+
   // Array padding to help edge problems
   x_pad = (int)ceil(sigma_pad*psf_sigma[0]/dx);
   y_pad = (int)ceil(sigma_pad*psf_sigma[0]/dy);
@@ -353,10 +301,6 @@ void Data::load(const char* moptions_file) {
   y_min -= y_pad_dy;
   y_max += y_pad_dy;
 
-  // Image centres
-  x_imcentre = (x_min + x_max)/2.0;
-  y_imcentre = (y_min + y_max)/2.0;
-
   // Compute spatially oversampled parameters
   dxos = dx/sample;
   dyos = dy/sample;
@@ -367,22 +311,24 @@ void Data::load(const char* moptions_file) {
   x_pad_dxos = x_pados*dxos;
   y_pad_dyos = y_pados*dyos;
 
-  // Calculate geometric widths
-  pixel_width = sqrt(dx*dy);
-  double x_width = x_max - x_min - 2.0*x_pad_dx;
-  double y_width = y_max - y_min - 2.0*y_pad_dy;
-  image_width = sqrt(x_width*y_width);
 
-  // TODO: Make this a constant readable from file
-  gamma_pos = 0.1*image_width;
+  // Construct defaults that are dependent on data
+  if (!radiuslim_min) {
+    radiuslim_min = pixel_width;
+  }
+  if (!gamma_pos_flag) {
+    gamma_pos = 0.1*image_width;
+  }
 
-  // Compute (oversampled) x, y, r arrays
+  // Compute x, y, r arrays
   compute_ray_grid();
+
+  summarise_model();
 }
 
 std::vector< std::vector< std::vector<double> > > Data::arr_3d() {
   std::vector< std::vector< std::vector<double> > > arr;
-  // Create desired size array
+  // Create 3D array with shape (ni, nj, nr)
   arr.resize(ni);
   for (int i=0; i<ni; i++) {
     arr[i].resize(nj);
@@ -429,3 +375,93 @@ void Data::compute_ray_grid() {
     r_rays[r] = r_min + (r + 0.5)*dr;
 }
 
+void Data::summarise_model() {
+  // Print summarised model to terminal
+  std::string dashline =
+    "-----------------------------------------------------------";
+
+  std::cout<<dashline<<std::endl;
+  std::cout<<"Joint Prior Distribution"<<std::endl;
+
+  std::cout<<dashline<<std::endl;
+  std::cout<<"Constants"<<std::endl;
+  std::cout<<dashline<<std::endl;
+  if (nfixed)
+    std::cout<<"N: "<<nmax<<std::endl;
+  std::cout<<"PSF Profile: ";
+  if (convolve == 0) {
+    std::cout<<"Sum of concentric Gaussians."<<std::endl;
+    std::cout<<"PSF_WEIGHTS: ";
+    for (size_t i=0; i<psf_amp.size(); i++)
+      std::cout<<psf_amp[i]<<" ";
+    std::cout<<std::endl;
+  } else if (convolve == 1) {
+    std::cout<<"Moffat (WARNING: Not safe for multi-threading)."<<std::endl;
+    std::cout<<"PSF_BETA: "<<psf_beta<<std::endl;
+  }
+  std::cout<<"PSF_FWHM: ";
+  for (size_t i=0; i<psf_fwhm.size(); i++)
+    std::cout<<psf_fwhm[i]<<" ";
+  std::cout<<std::endl;
+  std::cout<<"LSF_FWHM (Gauss Instr. Broadening): "<<lsf_fwhm<<std::endl;
+  std::cout<<"i: "<<inc<<std::endl;
+
+  std::cout<<dashline<<std::endl;
+  std::cout<<"Global Parameters"<<std::endl;
+  std::cout<<dashline<<std::endl;
+  std::cout
+    <<"x_c ~ Cauchy("<<x_imcentre<<", "<<gamma_pos<<")"
+    <<"T("<<x_min + x_pad_dx<<", "<<x_max - x_pad_dx<<")"
+    <<std::endl;
+  std::cout
+    <<"y_c ~ Cauchy("<<x_imcentre<<", "<<gamma_pos<<")"
+    <<"T("<<y_min + y_pad_dy<<", "<<y_max - y_pad_dy<<")"
+    <<std::endl;
+
+  std::cout<<"Theta ~ Uniform(0, 2pi)"<<std::endl;
+
+  if (!nfixed)
+    std::cout<<"N ~ Loguniform(0, "<<nmax<<")"<<std::endl;
+
+  std::cout<<dashline<<std::endl;
+  std::cout<<"Blob hyperparameters"<<std::endl;
+  std::cout<<dashline<<std::endl;
+  std::cout<<"mu_r ~ Loguniform("<<wd_min<<", "<<wd_max<<")"<<std::endl;
+  std::cout<<"mu_F ~ Loguniform("<<fluxmu_min<<", "<<fluxmu_max<<")"<<std::endl;
+  std::cout<<"sigma_F ~ Loguniform("<<lnfluxsd_min<<", "<<lnfluxsd_max<<")"<<std::endl;
+  std::cout<<"W_max ~ Loguniform("<<radiuslim_min<<", "<<radiuslim_max<<")"<<std::endl;
+  std::cout<<"q_min ~ Uniform("<<qlim_min<<", "<<"1)"<<std::endl;
+
+  std::cout<<dashline<<std::endl;
+  std::cout<<"Blob parameters"<<std::endl;
+  std::cout<<dashline<<std::endl;
+  std::cout<<"F_j ~ Lognormal(mu_F, sigma_F^2)"<<std::endl;
+  std::cout<<"r_j ~ Exponential(mu_r)"<<std::endl;
+  std::cout<<"Theta_j ~ Uniform(0, 2pi)"<<std::endl;
+  std::cout<<"w_j ~ Loguniform("<<radiuslim_min<<", W_max)"<<std::endl;
+  std::cout<<"q_j ~ Triangular(q_min, 1)"<<std::endl;
+  std::cout<<"phi_j ~ Uniform(0, pi)"<<std::endl;
+
+  std::cout<<dashline<<std::endl;
+  std::cout<<"Velocity profile parameters"<<std::endl;
+  std::cout<<dashline<<std::endl;
+  std::cout<<"v_sys ~ Cauchy(0, "<<vsys_max<<")"<<std::endl;
+  std::cout<<"w_j ~ Loguniform("<<vmax_min<<", "<<vmax_max<<")"<<std::endl;
+  std::cout<<"r_t ~ Loguniform("<<vslope_min<<", "<<vslope_max<<")"<<std::endl;
+  std::cout<<"gamma_v ~ Loguniform("<<vgamma_min<<", "<<vgamma_max<<")"<<std::endl;
+  std::cout<<"beta_v ~ Uniform("<<vbeta_min<<", "<<vbeta_max<<")"<<std::endl;
+
+  std::cout<<dashline<<std::endl;
+  std::cout<<"Velocity dispersion profile parameters"<<std::endl;
+  std::cout<<dashline<<std::endl;
+  std::cout<<"sigma_v0 ~ Loguniform("<<vdisp0_min<<", "<<vdisp0_max<<")"<<std::endl;
+  std::cout<<"sigma_vn ~ Normal(0, "<<vdispn_sigma<<")"<<std::endl;
+
+  std::cout<<dashline<<std::endl;
+  std::cout<<"Systematic noise parameters"<<std::endl;
+  std::cout<<dashline<<std::endl;
+  std::cout<<"sigma_0 ~ Loguniform("<<sigma_min<<", "<<sigma_max<<")"<<std::endl;
+
+  std::cout<<dashline<<std::endl;
+  std::cout<<std::endl;
+}
