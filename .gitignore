@@ -25,4 +25,4 @@ Tests/
 
 # VS Code Files #
 #################
-settings.json
+*.json
