@@ -24,7 +24,7 @@ DiscModel::DiscModel()
         log(Data::get_instance().get_fluxmu_max()),
         Data::get_instance().get_lnfluxsd_min(),
         Data::get_instance().get_lnfluxsd_max(),
-        Data::get_instance().get_pixel_width(),
+        Data::get_instance().get_radiuslim_min(),
         Data::get_instance().get_radiuslim_max(),
         Data::get_instance().get_wd_min(),
         Data::get_instance().get_wd_max(),
@@ -355,8 +355,8 @@ void DiscModel::print(std::ostream& out) const {
   const int x_pad = Data::get_instance().get_x_pad();
   const int y_pad = Data::get_instance().get_y_pad();
 
-  const bool save_maps = false;
-  const bool save_preconvolved = true;
+  const bool save_maps = true;
+  const bool save_preconvolved = false;
   const bool save_convolved = true;
 
   out<<std::setprecision(6);
@@ -488,6 +488,7 @@ void DiscModel::construct_cube() {
   const double sigma_lsfsq = pow(Data::get_instance().get_lsf_sigma(), 2);
   const std::vector<double>& wave = Data::get_instance().get_r_rays();
   const double dr = Data::get_instance().get_dr();
+  const double em_line = Data::get_instance().get_em_line();
 
   double lambda;
   double sigma_lambda;
@@ -498,10 +499,10 @@ void DiscModel::construct_cube() {
     for (size_t j=0; j<preconvolved[i].size(); j++)  {
       if (flux[i][j] > 0.0)  {
         // Calculate mean lambda for lines
-        lambda = constants::HA*rel_lambda[i][j];
+        lambda = em_line*rel_lambda[i][j];
 
         // Calculate line width
-        sigma_lambda = vdisp[i][j]*constants::HA/constants::C;
+        sigma_lambda = vdisp[i][j]*em_line/constants::C;
         wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
         invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
 
