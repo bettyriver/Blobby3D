@@ -13,12 +13,14 @@
   Public
 */
 BlobConditionalPrior::BlobConditionalPrior(
+  size_t nlines,
   double fluxlim_min, double fluxlim_max,
   double flux_std_min, double flux_std_max,
   double radiuslim_min, double radiuslim_max,
   double wd_min, double wd_max,
   double qlim_min
-  ) :fluxlim_min(fluxlim_min)
+  ) :nlines(nlines)
+    ,fluxlim_min(fluxlim_min)
     ,fluxlim_max(fluxlim_max)
     ,flux_std_min(flux_std_min)
     ,flux_std_max(flux_std_max)
@@ -38,15 +40,18 @@ BlobConditionalPrior::BlobConditionalPrior(
 void BlobConditionalPrior::from_prior(DNest4::RNG& rng) {
   // Hyperparameters
   wd = hyperprior_wd.generate(rng);
-  flux_mu = hyperprior_fluxmu.generate(rng);
-  flux_std = hyperprior_fluxstd.generate(rng);
+  for (size_t i=0; i<nlines; i++) {
+    flux_mu.push_back(hyperprior_fluxmu.generate(rng));
+    flux_std.push_back(hyperprior_fluxstd.generate(rng));
+  }
   radiusmax = hyperprior_radiusmax.generate(rng);
   q_min = hyperprior_qmin.generate(rng);
 
   // Prior Distributions
   prior_rc = DNest4::Exponential(wd);
   prior_theta = DNest4::Uniform(0.0, 2.0*M_PI);
-  prior_logflux = DNest4::Gaussian(flux_mu, flux_std);
+  for (size_t i=0; i<nlines; i++)
+    prior_logflux.push_back(DNest4::Gaussian(flux_mu[i], flux_std[i]));
   prior_width = DNest4::Uniform(radiuslim_min, radiusmax);
   prior_phi = DNest4::Uniform(0.0, M_PI);
 }
@@ -60,12 +65,14 @@ double BlobConditionalPrior::perturb_hyperparameters(DNest4::RNG& rng) {
       prior_rc = DNest4::Exponential(wd);
       break;
     case 1:
-      logH += hyperprior_fluxmu.perturb(flux_mu, rng);
-      prior_logflux = DNest4::Gaussian(flux_mu, flux_std);
+      which = rng.rand_int(nlines);
+      logH += hyperprior_fluxmu.perturb(flux_mu[which], rng);
+      prior_logflux[which] = DNest4::Gaussian(flux_mu[which], flux_std[which]);
       break;
     case 2:
-      logH += hyperprior_fluxstd.perturb(flux_std, rng);
-      prior_logflux = DNest4::Gaussian(flux_mu, flux_std);
+      which = rng.rand_int(nlines);
+      logH += hyperprior_fluxstd.perturb(flux_std[which], rng);
+      prior_logflux[which] = DNest4::Gaussian(flux_mu[which], flux_std[which]);
       break;
     case 3:
       logH += hyperprior_radiusmax.perturb(radiusmax, rng);
@@ -80,13 +87,11 @@ double BlobConditionalPrior::perturb_hyperparameters(DNest4::RNG& rng) {
 }
 
 double BlobConditionalPrior::log_pdf(const std::vector<double>& vec) const {
-  if (
-    vec[0] < 0.0 ||
-    vec[1] < 0.0 || vec[1] > 2.0*M_PI ||
-    vec[3] < radiuslim_min || vec[3] > radiusmax ||
-    vec[4] < q_min || vec[4] > 1.0 ||
-    vec[5] < 0.0 || vec[5] > M_PI
-    )
+  if (vec[0] < 0.0 ||
+      vec[1] < 0.0 || vec[1] > 2.0*M_PI ||
+      vec[2] < radiuslim_min || vec[2] > radiusmax ||
+      vec[3] < q_min || vec[3] > 1.0 ||
+      vec[4] < 0.0 || vec[4] > M_PI)
     return -1E300;
 
   double logp = 0.0;
@@ -94,14 +99,15 @@ double BlobConditionalPrior::log_pdf(const std::vector<double>& vec) const {
   // Exponential for radius
   logp += prior_rc.log_pdf(vec[0]);
 
-  // Lognormal for flux
-  logp += prior_logflux.log_pdf(log(vec[2]));
-
   // Uniform for width with changing boundaries
-  logp += prior_width.log_pdf(vec[3]);
+  logp += prior_width.log_pdf(vec[2]);
 
   // Triangular distribution for q
-  logp += 2.0*(vec[4] - q_min)/pow(1.0 - q_min, 2);
+  logp += 2.0*(vec[3] - q_min)/pow(1.0 - q_min, 2);
+
+  // Lognormal for flux
+  for (size_t i=0; i<nlines; i++)
+    logp += prior_logflux[i].log_pdf(log(vec[5+i]));
 
   return logp;
 }
@@ -109,25 +115,28 @@ double BlobConditionalPrior::log_pdf(const std::vector<double>& vec) const {
 void BlobConditionalPrior::from_uniform(std::vector<double>& vec) const {
   vec[0] = prior_rc.cdf_inverse(vec[0]);
   vec[1] = prior_theta.cdf_inverse(vec[1]);
-  vec[2] = exp(prior_logflux.cdf_inverse(vec[2]));
-  vec[3] = prior_width.cdf_inverse(vec[3]);
-  vec[4] = (1.0 - q_min)*sqrt(vec[4]) + q_min;
-  vec[5] = prior_phi.cdf_inverse(vec[5]);
+  vec[2] = prior_width.cdf_inverse(vec[2]);
+  vec[3] = (1.0 - q_min)*sqrt(vec[3]) + q_min;
+  vec[4] = prior_phi.cdf_inverse(vec[4]);
+  for (size_t i=0; i<nlines; i++)
+    vec[5+i] = exp(prior_logflux[i].cdf_inverse(vec[5+i]));
 }
 
 void BlobConditionalPrior::to_uniform(std::vector<double>& vec) const {
   vec[0] = prior_rc.cdf(vec[0]);
   vec[1] = prior_theta.cdf(vec[1]);
-  vec[2] = prior_logflux.cdf(log(vec[2]));
-  vec[3] = prior_width.cdf(vec[3]);
-  vec[4] = pow(vec[4] - q_min, 2)/pow(1.0 - q_min, 2);
-  vec[5] = prior_phi.cdf(vec[5]);
+  vec[2] = prior_width.cdf(vec[2]);
+  vec[3] = pow(vec[3] - q_min, 2)/pow(1.0 - q_min, 2);
+  vec[4] = prior_phi.cdf(vec[4]);
+  for (size_t i=0; i<nlines; i++)
+    vec[5+i] = prior_logflux[i].cdf(log(vec[5+i]));
 }
 
 void BlobConditionalPrior::print(std::ostream& out) const {
   // Print hyperparameters
   out<<wd<<' '
-     <<exp(flux_mu)<<' '<<flux_std<<' '
      <<radiuslim_min<<' '<<radiusmax<<' '
      <<q_min<<' ';
+  for (size_t i=0; i<nlines; i++)
+    out<<' '<<exp(flux_mu[i])<<' '<<flux_std[i]<<' ';
 }

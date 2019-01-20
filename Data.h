@@ -18,6 +18,7 @@ class Data
   std::string var_file = "levels.txt";
 
   // model parameters
+  std::vector< std::vector<double> > em_line;
   int model = 0;
   int nmax = 300;
   bool nfixed = false;
@@ -59,7 +60,6 @@ class Data
   double wxd_min = 0.3;
   double wxd_max = 30.0;
   double gamma_pos;
-  double em_line = constants::HA;
 
   // sampling
   double sample;
@@ -118,9 +118,9 @@ class Data
   double x_imcentre, y_imcentre;
 
   // Coordinates of pixel centers
-  std::vector< std::vector<double> > x_rays;
-  std::vector< std::vector<double> > y_rays;
-  std::vector<double> r_rays;
+  std::vector< std::vector<double> > x;
+  std::vector< std::vector<double> > y;
+  std::vector<double> r;
 
   // Data
   std::vector< std::vector< std::vector<double> > > data;
@@ -159,6 +159,7 @@ class Data
   double get_dy() const { return dy; }
   double get_dr() const { return dr; }
   double get_db() const { return db; }
+  std::vector< std::vector<double> > get_em_line() { return em_line; }
   std::vector<double> get_psf_amp() const { return psf_amp; }
   std::vector<double> get_psf_fwhm() const { return psf_fwhm; }
   double get_psf_beta() const { return psf_beta; }
@@ -203,7 +204,6 @@ class Data
   double get_wxd_min() { return wxd_min; }
   double get_wxd_max() { return wxd_max; }
   double get_gamma_pos() { return gamma_pos; }
-  double get_em_line() { return em_line; }
 
   int get_x_pad() const { return x_pad; }
   int get_y_pad() const { return y_pad; }
@@ -228,12 +228,12 @@ class Data
   double get_x_pad_dxos() const { return x_pad_dxos; }
   double get_y_pad_dyos() const { return y_pad_dyos; }
 
-  const std::vector< std::vector<double> >& get_x_rays() const
-  { return x_rays; }
-  const std::vector< std::vector<double> >& get_y_rays() const
-  { return y_rays; }
-  const std::vector<double>& get_r_rays() const
-  { return r_rays; }
+  const std::vector< std::vector<double> >& get_x() const
+  { return x; }
+  const std::vector< std::vector<double> >& get_y() const
+  { return y; }
+  const std::vector<double>& get_r() const
+  { return r; }
   const std::vector< std::vector< std::vector<double> > >& get_data() const
   { return data; }
   const std::vector< std::vector< std::vector<double> > >& get_var() const

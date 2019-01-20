@@ -10,6 +10,7 @@ class BlobConditionalPrior:public DNest4::ConditionalPrior {
     Hyperparameter priors
   */
   // Limits
+  size_t nlines;
   double fluxlim_min, fluxlim_max;
   double flux_std_min, flux_std_max;
   double radiuslim_min, radiuslim_max;
@@ -26,7 +27,7 @@ class BlobConditionalPrior:public DNest4::ConditionalPrior {
   // Prior distributions
   DNest4::Exponential prior_rc;
   DNest4::Uniform prior_theta;
-  DNest4::Gaussian prior_logflux;
+  std::vector<DNest4::Gaussian> prior_logflux;
   DNest4::Uniform prior_width;
   // Require DNest4:Triangle for prior_q
   DNest4::Uniform prior_phi;
@@ -35,8 +36,8 @@ class BlobConditionalPrior:public DNest4::ConditionalPrior {
     Hyperparameters
   */
   // Lognormal for flux
-  double flux_mu;
-  double flux_std;
+  std::vector<double> flux_mu;
+  std::vector<double> flux_std;
 
   // Loguniform with changing limits for W
   double radiusmax;
@@ -51,6 +52,7 @@ class BlobConditionalPrior:public DNest4::ConditionalPrior {
 
  public:
    BlobConditionalPrior(
+    size_t nlines,
     double fluxlim_min, double fluxlim_max,
     double flux_std_min, double flux_std_max,
     double radiuslim_min, double radiuslim_max,

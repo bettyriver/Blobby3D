@@ -41,7 +41,7 @@ class DiscModel {
     std::vector< std::vector<double> > rad;
     std::vector< std::vector<double> > cos_angle;
 
-    std::vector< std::vector<double> > flux;
+    std::vector< std::vector< std::vector<double> > > flux;
     std::vector< std::vector<double> > rel_lambda;
     std::vector< std::vector<double> > vdisp;
 
@@ -57,6 +57,9 @@ class DiscModel {
     void calculate_vdisp();
     void calculate_rel_lambda();
     void construct_cube();
+    void construct_line_cube(
+      double line, double factor,
+      std::vector< std::vector<double> >& flux_map);
     void clear_cube();
     void clear_flux_map();
 

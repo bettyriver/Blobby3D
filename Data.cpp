@@ -22,10 +22,13 @@ void Data::load(const char* moptions_file) {
   if (!fin)
     std::cerr<<"# ERROR: couldn't open file "<<moptions_file<<"."<<std::endl;
 
+  size_t n;
   std::string line;
   std::string name;
   std::string tmp_str;
   double tmp_double;
+  std::vector<double> tmp_vector;
+  bool line_flag = false;
   bool lsf_fwhm_flag = false;
   bool psf_amp_flag = false;
   bool psf_fwhm_flag = false;
@@ -76,7 +79,7 @@ void Data::load(const char* moptions_file) {
       } else if ((tmp_str == "TRUE") || (tmp_str == "1")) {
         nfixed = true;
       } else {
-        std::cerr<<"# ERROR: couldn't determined N_FIXED."<<std::endl;
+        std::cerr<<"# ERROR: couldn't determine N_FIXED."<<std::endl;
         exit(0);
       }
     } else if (name == "VSYS_MAX") {
@@ -153,7 +156,17 @@ void Data::load(const char* moptions_file) {
       lin >> gamma_pos;
       gamma_pos_flag = true;
     } else if (name == "LINE") {
-      lin >> em_line;
+      std::cout<<"n "<<n<<" line "<<tmp_double<<std::endl;
+      tmp_vector.clear();
+      while (lin >> tmp_double) {
+        tmp_vector.push_back(tmp_double);
+      }
+      n = em_line.size();
+      em_line.resize(n+1);
+      em_line[n].resize(tmp_vector.size());
+      for (size_t i=0; i<tmp_vector.size(); i++)
+        em_line[n][i] = tmp_vector[i];
+      line_flag = true;
     } else {
       std::cerr
         <<"Couldn't determine input parameter assignment for keyword: "
@@ -165,6 +178,12 @@ void Data::load(const char* moptions_file) {
   fin.close();
 
   // Check required parameters are provided
+  if (!line_flag) {
+    std::cerr
+      <<"# ERROR: Required keyword (LINE) not provided."<<std::endl;
+    exit(0);
+  }
+
   if (!lsf_fwhm_flag) {
     std::cerr
       <<"# ERROR: Required keyword (LSFFWHM) not provided."<<std::endl;
@@ -360,19 +379,19 @@ std::vector< std::vector< std::vector<double> > >
 
 void Data::compute_ray_grid() {
   // Make vectors of the correct size
-  x_rays.assign(ni, std::vector<double>(nj));
-  y_rays.assign(ni, std::vector<double>(nj));
+  x.assign(ni, std::vector<double>(nj));
+  y.assign(ni, std::vector<double>(nj));
 
-  for (size_t i=0; i<x_rays.size(); i++) {
-    for (size_t j=0; j<x_rays[i].size(); j++) {
-      x_rays[i][j] = x_min + (j + 0.5)*dx;
-      y_rays[i][j] = y_min + (i + 0.5)*dy; // Assuming origin=lower
+  for (size_t i=0; i<x.size(); i++) {
+    for (size_t j=0; j<x[i].size(); j++) {
+      x[i][j] = x_min + (j + 0.5)*dx;
+      y[i][j] = y_min + (i + 0.5)*dy; // Assuming origin=lower
     }
   }
 
-  r_rays.assign(nr, 0.0);
-  for(size_t r=0; r<r_rays.size(); r++)
-    r_rays[r] = r_min + (r + 0.5)*dr;
+  r.assign(nr, 0.0);
+  for(size_t k=0; k<r.size(); k++)
+    r[k] = r_min + (k + 0.5)*dr;
 }
 
 void Data::summarise_model() {
@@ -386,6 +405,17 @@ void Data::summarise_model() {
   std::cout<<dashline<<std::endl;
   std::cout<<"Constants"<<std::endl;
   std::cout<<dashline<<std::endl;
+
+  std::cout<<"Emission Line(s):"<<std::endl;
+  for (size_t l=0; l<em_line.size(); l++) {
+    std::cout<<"  Line: "<<em_line[l][0]<<std::endl;
+    for (size_t i=0; i<(em_line[l].size() - 1)/2; i++) {
+      std::cout<<"   Constrained Line: "<<em_line[l][2*i+1];
+      std::cout<<", Factor: "<<em_line[l][2*i+2];
+      std::cout<<std::endl;
+    }
+  }
+
   if (nfixed)
     std::cout<<"N: "<<nmax<<std::endl;
   std::cout<<"PSF Profile: ";

@@ -17,9 +17,11 @@
 */
 DiscModel::DiscModel()
     :blobs(
-      6, Data::get_instance().get_nmax(),
+      5 + static_cast<int>(Data::get_instance().get_em_line().size()),
+      Data::get_instance().get_nmax(),
       Data::get_instance().get_nfixed(),
       BlobConditionalPrior(
+        Data::get_instance().get_em_line().size(),
         log(Data::get_instance().get_fluxmu_min()),
         log(Data::get_instance().get_fluxmu_max()),
         Data::get_instance().get_lnfluxsd_min(),
@@ -33,6 +35,7 @@ DiscModel::DiscModel()
       DNest4::PriorType::log_uniform
       ),
       model(Data::get_instance().get_model()) {
+  const size_t nlines = Data::get_instance().get_em_line().size();
   const size_t ni = Data::get_instance().get_ni();
   const size_t nj = Data::get_instance().get_nj();
   const size_t nr = Data::get_instance().get_nr();
@@ -59,9 +62,9 @@ DiscModel::DiscModel()
 
   // Convolved cube
   convolved.resize(ni - 2*y_pad);
-  for (size_t i=0; i<convolved.size(); ++i) {
+  for (size_t i=0; i<convolved.size(); i++) {
     convolved[i].resize(nj - 2*x_pad);
-    for (size_t j=0; j<convolved[i].size(); ++j) {
+    for (size_t j=0; j<convolved[i].size(); j++) {
         convolved[i][j].resize(nr);
     }
   }
@@ -75,7 +78,14 @@ DiscModel::DiscModel()
   cos_angle.assign(ni, std::vector<double>(nj));
 
   // Moment maps
-  flux.assign(ni, std::vector<double>(nj));
+  flux.resize(nlines);
+  for (size_t i=0; i<flux.size(); i++) {
+    flux[i].resize(ni);
+    for (size_t j=0; j<flux[i].size(); j++) {
+      flux[i][j].resize(nj);
+    }
+  }
+
   rel_lambda.assign(ni, std::vector<double>(nj));
   vdisp.assign(ni, std::vector<double>(nj));
 
@@ -170,7 +180,6 @@ void DiscModel::from_prior(DNest4::RNG& rng) {
   } else if (model == 2) {
     blobs.from_prior(rng);
   }
-
   /*
     Initialise: Disc
   */
@@ -361,12 +370,11 @@ void DiscModel::print(std::ostream& out) const {
 
   out<<std::setprecision(6);
 
-  // Save maps
-
   if (save_maps) {
-    for (size_t i=0; i<flux.size(); i++)
-      for (size_t j=0; j<flux[i].size(); j++)
-        out << flux[i][j] << ' ';
+    for (size_t l=0; l<flux.size(); l++)
+      for (size_t i=0; i<flux[l].size(); i++)
+        for (size_t j=0; j<flux[l][i].size(); j++)
+          out << flux[l][i][j] << ' ';
 
     for (size_t i=0; i<rel_lambda.size(); i++)
       for (size_t j=0; j<rel_lambda[i].size(); j++)
@@ -377,7 +385,6 @@ void DiscModel::print(std::ostream& out) const {
         out << vdisp[i][j] << ' ';
   }
 
-  // Save preconvolved cube
   if (save_preconvolved) {
     for(size_t i=y_pad; i<preconvolved.size()-y_pad; i++)
         for(size_t j=x_pad; j<preconvolved[i].size()-x_pad; j++)
@@ -385,7 +392,6 @@ void DiscModel::print(std::ostream& out) const {
               out << preconvolved[i][j][r] << ' ';
   }
 
-  // Save convolved cube
   if (save_convolved) {
     for(size_t i=0; i<convolved.size(); i++)
       for(size_t j=0; j<convolved[i].size(); j++)
@@ -485,45 +491,112 @@ void DiscModel::construct_cube() {
   /*
     Create cube from maps.
   */
+  // const double sigma_lsfsq = pow(Data::get_instance().get_lsf_sigma(), 2);
+  // const std::vector<double>& wave = Data::get_instance().get_r();
+  // const double dr = Data::get_instance().get_dr();
+  const std::vector< std::vector<double> >
+    em_line = Data::get_instance().get_em_line();
+
+  // double lambda;
+  // double sigma_lambda;
+  // double invtwo_wlsq;
+  // double ha_cdf_min, ha_cdf_max;
+
+  // clear cube where flux is 0
+  for (size_t i=0; i<preconvolved.size(); i++)
+    for (size_t j=0; j<preconvolved[i].size(); j++)
+        std::fill(preconvolved[i][j].begin(), preconvolved[i][j].end(), 0.0);
+
+  for (size_t l=0; l<em_line.size(); l++) {
+    // Apply flux for main line
+    construct_line_cube(em_line[l][0], 1.0, flux[l]);
+    for (size_t ll=0; ll<(em_line[l].size()-1)/2; ll++)
+      construct_line_cube(em_line[l][1+2*ll], em_line[l][2+2*ll], flux[l]);
+  }
+
+  // for (size_t l=0; l<em_line.size(); l++) {
+  //  for (size_t ll=0; ll<(em_line[l].size()-1)/2) {
+  //    // Apply flux for constrained lines
+  //    construct_line_cube(em_line[l][2+2*ll], em_line[l][1+2*ll], flux[l]);
+  //  }
+  //}
+
+
+  // for (size_t i=0; i<preconvolved.size(); i++) {
+  //  for (size_t j=0; j<preconvolved[i].size(); j++)  {
+  //    if (flux[i][j][0] > 0.0)  {
+  //      for (size_t l=0; l<em_line.size(); l++) {
+  //        // Calculate mean lambda for lines
+  //        lambda = em_line[l][0]*rel_lambda[i][j];
+  //
+  //        // Calculate line width
+  //        sigma_lambda = em_line[l][0]*vdisp[i][j];
+  //        invtwo_wlsq = 1.0/sqrt(2.0*(pow(sigma_lambda, 2) + sigma_lsfsq));
+  //
+  //        // Calculate flux for 1st wavelength bin
+  //        ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
+  //        ha_cdf_max = LookupErf::evaluate((wave[0] + 0.5*dr - lambda)*invtwo_wlsq);
+  //        preconvolved[i][j][0] = 0.5*flux[i][j][l]*(ha_cdf_max - ha_cdf_min);
+  //
+  //        // Loop through remaining bins
+  //        for (size_t r=1; r<wave.size(); r++) {
+  //          ha_cdf_min = ha_cdf_max;
+  //          ha_cdf_max = LookupErf::evaluate((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
+  //          preconvolved[i][j][r] = 0.5*flux[i][j][l]*(ha_cdf_max - ha_cdf_min);
+  //        }
+  //    } else {
+  //      for (size_t r=0; r<wave.size(); r++)
+  //        preconvolved[i][j][r] = 0.0;
+  //    }
+  //  }
+  //}
+}
+
+void DiscModel::construct_line_cube(
+  double line, double factor, std::vector< std::vector<double> >& flux_map) {
+  // TODO: Long term this function should be taken out of the class and
+  // generalised to take any flux, v, vdisp maps to construct a cube for a
+  // given line.
   const double sigma_lsfsq = pow(Data::get_instance().get_lsf_sigma(), 2);
-  const std::vector<double>& wave = Data::get_instance().get_r_rays();
+  const std::vector<double>& wave = Data::get_instance().get_r();
   const double dr = Data::get_instance().get_dr();
-  const double em_line = Data::get_instance().get_em_line();
+  const std::vector< std::vector<double> >
+    em_line = Data::get_instance().get_em_line();
 
   double lambda;
   double sigma_lambda;
-  double wlsq, invtwo_wlsq;
+  double invtwo_wlsq;
   double ha_cdf_min, ha_cdf_max;
 
+  double flux_sum = 0.0;
+  double flux_sum_map = 0.0;
   for (size_t i=0; i<preconvolved.size(); i++) {
-    for (size_t j=0; j<preconvolved[i].size(); j++)  {
-      if (flux[i][j] > 0.0)  {
-        // Calculate mean lambda for lines
-        lambda = em_line*rel_lambda[i][j];
+    for (size_t j=0; j<preconvolved[i].size(); j++) {
+      // Calculate mean lambda for lines
+      lambda = line*rel_lambda[i][j];
+      // std::cout<<"line "<<line<<" "<<line*rel_lambda[i][j]<<std::endl;
 
-        // Calculate line width
-        sigma_lambda = vdisp[i][j]*em_line/constants::C;
-        wlsq = sigma_lambda*sigma_lambda + sigma_lsfsq;
-        invtwo_wlsq = 1.0/sqrt(2.0*wlsq);
+      // Calculate line width
+      sigma_lambda = line*vdisp[i][j];
+      invtwo_wlsq = 1.0/sqrt(2.0*(pow(sigma_lambda, 2) + sigma_lsfsq));
+      // std::cout<<"line "<<line<<" "<<sigma_lambda<<std::endl;
 
-        // Calculate flux for 1st wavelength bin
-        ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
-        ha_cdf_max = LookupErf::evaluate((wave[0] + 0.5*dr - lambda)*invtwo_wlsq);
-        preconvolved[i][j][0] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
+      // Calculate flux for 1st wavelength bin
+      ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
+      ha_cdf_max = LookupErf::evaluate((wave[0] + 0.5*dr - lambda)*invtwo_wlsq);
+      preconvolved[i][j][0] = 0.5*factor*flux_map[i][j]*(ha_cdf_max - ha_cdf_min);
 
-        // Loop through remaining bins
-        for (size_t r=1; r<wave.size(); r++) {
-          ha_cdf_min = ha_cdf_max;
-          ha_cdf_max = LookupErf::evaluate((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
-          preconvolved[i][j][r] = 0.5*flux[i][j]*(ha_cdf_max - ha_cdf_min);
-        }
-      } else {
-        for (size_t r=0; r<wave.size(); r++)
-          preconvolved[i][j][r] = 0.0;
+      // Loop through remaining bins
+      flux_sum_map += factor*flux_map[i][j];
+      for (size_t r=1; r<wave.size(); r++) {
+        ha_cdf_min = ha_cdf_max;
+        ha_cdf_max = LookupErf::evaluate((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
+        preconvolved[i][j][r] += 0.5*factor*flux_map[i][j]*(ha_cdf_max - ha_cdf_min);
+        flux_sum += 0.5*factor*flux_map[i][j]*(ha_cdf_max - ha_cdf_min);
       }
-
     }
   }
+  // std::cout<<"sums "<<flux_sum<<" "<<flux_sum_map<<" "<<line<<" "<<factor<<" "<<vmax<<" "<<xcd<<" "<<ycd<<std::endl;
 }
 
 void DiscModel::calculate_shifted_arrays() {
@@ -531,9 +604,9 @@ void DiscModel::calculate_shifted_arrays() {
     Calculate arrays shifted by disk parameters.
   */
   const std::vector< std::vector<double> >&
-    x = Data::get_instance().get_x_rays();
+    x = Data::get_instance().get_x();
   const std::vector< std::vector<double> >&
-    y = Data::get_instance().get_y_rays();
+    y = Data::get_instance().get_y();
 
   double sin_pa = sin(pa);
   double cos_pa = cos(pa);
@@ -568,7 +641,9 @@ void DiscModel::calculate_shifted_arrays() {
 
 void DiscModel::add_disc_flux() {
   /*
-    Add disc flux component to flux map.
+    Add disc flux component to flux map. Assumes flux profile is same for all
+    emission lines.
+    TODO: Generalise Md, wxd to account for multiple emission lines.
   */
   const double dx = Data::get_instance().get_dx();
   const double dy = Data::get_instance().get_dy();
@@ -576,9 +651,10 @@ void DiscModel::add_disc_flux() {
   double invwxd = invwxd = 1.0/wxd;
   double amp = dx*dy*Md*invwxd;
 
-  for (size_t i=0; i<flux.size(); i++)
-    for(size_t j=0; j<flux[i].size(); j++)
-      flux[i][j] += amp*LookupExp::evaluate(rad[i][j]*invwxd);
+  for (size_t l=0; l<flux.size(); l++)
+    for (size_t i=0; i<flux[l].size(); i++)
+      for(size_t j=0; j<flux[l][i].size(); j++)
+        flux[l][i][j] += amp*LookupExp::evaluate(rad[i][j]*invwxd);
 }
 
 void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
@@ -590,6 +666,7 @@ void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
   const double sigma_cutoffsq = pow(
     Data::get_instance().get_sigma_cutoff(), 2);
   const double pixel_width = Data::get_instance().get_pixel_width();
+  const size_t nlines = Data::get_instance().get_em_line().size();
 
   double sin_pa = sin(pa);
   double cos_pa = cos(pa);
@@ -597,13 +674,14 @@ void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
   double invcos_inc = 1.0/cos_inc;
 
   // Blob parameters
-  double rc, thetac, M, wx, q, phi;
+  double rc, thetac, wx, q, phi;
+  std::vector<double> f(nlines);
   double xc, yc;
   double wxsq;
   double qsq, invq, sqrtq;
   double invwxsq;
   double sin_phi, cos_phi;
-  double amp;
+  std::vector<double> amp(nlines);
 
   // Rotated disk coordinates
   double xd_shft, yd_shft;
@@ -615,17 +693,18 @@ void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
   // oversampled parameters
   int si;
   double dxfs, dyfs;
-  double amps;
+  std::vector<double> amps(nlines);
 
   // Blob contribution
   for (size_t k=0; k<components.size(); ++k) {
     // Components
     rc = components[k][0];
     thetac = components[k][1];
-    M = components[k][2];
-    wx = components[k][3];
-    q = components[k][4];
-    phi = components[k][5];
+    wx = components[k][2];
+    q = components[k][3];
+    phi = components[k][4];
+    for (size_t l=0; l<nlines; l++)
+      f[l] = components[k][5+l];
 
     // xc, yc in disc plane
     xc = rc*cos(thetac);
@@ -652,10 +731,13 @@ void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
     dyfs = dy/(2.0*si + 1.0);
 
     // Flux normalised sum
-    amp = dxfs*dyfs*M/(2.0*M_PI*wxsq*cos_inc);
+    for (size_t l=0; l<nlines; l++)
+      amp[l] = dxfs*dyfs*f[l]/(2.0*M_PI*wxsq*cos_inc);
+
     for (size_t i=0; i<flux.size(); i++) {
       for (size_t j=0; j<flux[i].size(); j++) {
-        amps = 0.0;
+        for (size_t l=0; l<nlines; l++)
+          amps[l] = 0.0;
         for (int is=-si; is<=si; is++) {
           for (int js=-si; js<=si; js++) {
             /*
@@ -688,11 +770,13 @@ void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
             rsq *= invwxsq;
 
             if (rsq < sigma_cutoffsq)
-              amps += amp*LookupExp::evaluate(0.5*rsq);
+              for (size_t l=0; l<nlines; l++)
+                amps[l] += amp[l]*LookupExp::evaluate(0.5*rsq);
 
           }
         }
-        flux[i][j] += amps;
+        for (size_t l=0; l<nlines; l++)
+          flux[l][i][j] += amps[l];
       }
     }
   }
@@ -731,13 +815,14 @@ void DiscModel::calculate_vdisp() {
       vdisp[i][j] = vdisp_param[0];
       for (int v=0; v<vdisp_order; v++)
         vdisp[i][j] += vdisp_param[v+1]*pow(rad[i][j], v+1);
-      vdisp[i][j] = exp(vdisp[i][j]);
+      vdisp[i][j] = exp(vdisp[i][j])/constants::C;
     }
   }
 }
 
 void DiscModel::clear_flux_map() {
-  for (size_t i=0; i<flux.size(); i++)
-    for (size_t j=0; j<flux[i].size(); j++)
-      flux[i][j] = 0.0;
+  for (size_t l=0; l<flux.size(); l++)
+    for (size_t i=0; i<flux[l].size(); i++)
+      for (size_t j=0; j<flux[l][i].size(); j++)
+        flux[l][i][j] = 0.0;
 }
