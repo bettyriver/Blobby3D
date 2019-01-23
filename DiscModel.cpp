@@ -365,7 +365,7 @@ void DiscModel::print(std::ostream& out) const {
   const int y_pad = Data::get_instance().get_y_pad();
 
   const bool save_maps = true;
-  const bool save_preconvolved = false;
+  const bool save_preconvolved = true;
   const bool save_convolved = true;
 
   out<<std::setprecision(6);
@@ -378,7 +378,7 @@ void DiscModel::print(std::ostream& out) const {
 
     for (size_t i=0; i<rel_lambda.size(); i++)
       for (size_t j=0; j<rel_lambda[i].size(); j++)
-        out << rel_lambda[i][j] << ' ';
+        out << (rel_lambda[i][j] - 1.0)*constants::C << ' ';
 
     for (size_t i=0; i<vdisp.size(); i++)
       for (size_t j=0; j<vdisp[i].size(); j++)
@@ -386,16 +386,16 @@ void DiscModel::print(std::ostream& out) const {
   }
 
   if (save_preconvolved) {
-    for(size_t i=y_pad; i<preconvolved.size()-y_pad; i++)
-        for(size_t j=x_pad; j<preconvolved[i].size()-x_pad; j++)
-          for(size_t r=0; r<preconvolved[i][j].size(); r++)
+    for (size_t i=y_pad; i<preconvolved.size()-y_pad; i++)
+        for (size_t j=x_pad; j<preconvolved[i].size()-x_pad; j++)
+          for (size_t r=0; r<preconvolved[i][j].size(); r++)
               out << preconvolved[i][j][r] << ' ';
   }
 
   if (save_convolved) {
-    for(size_t i=0; i<convolved.size(); i++)
-      for(size_t j=0; j<convolved[i].size(); j++)
-        for(size_t r=0; r<convolved[i][j].size(); r++)
+    for (size_t i=0; i<convolved.size(); i++)
+      for (size_t j=0; j<convolved[i].size(); j++)
+        for (size_t r=0; r<convolved[i][j].size(); r++)
           out << convolved[i][j][r] << ' ';
   }
 
@@ -483,7 +483,6 @@ void DiscModel::calculate_cube() {
   }
 
   construct_cube();
-
   convolved = conv.apply(preconvolved);
 }
 
@@ -560,8 +559,6 @@ void DiscModel::construct_line_cube(
   const double sigma_lsfsq = pow(Data::get_instance().get_lsf_sigma(), 2);
   const std::vector<double>& wave = Data::get_instance().get_r();
   const double dr = Data::get_instance().get_dr();
-  const std::vector< std::vector<double> >
-    em_line = Data::get_instance().get_em_line();
 
   double lambda;
   double sigma_lambda;
@@ -574,12 +571,10 @@ void DiscModel::construct_line_cube(
     for (size_t j=0; j<preconvolved[i].size(); j++) {
       // Calculate mean lambda for lines
       lambda = line*rel_lambda[i][j];
-      // std::cout<<"line "<<line<<" "<<line*rel_lambda[i][j]<<std::endl;
 
       // Calculate line width
       sigma_lambda = line*vdisp[i][j];
       invtwo_wlsq = 1.0/sqrt(2.0*(pow(sigma_lambda, 2) + sigma_lsfsq));
-      // std::cout<<"line "<<line<<" "<<sigma_lambda<<std::endl;
 
       // Calculate flux for 1st wavelength bin
       ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
@@ -596,7 +591,6 @@ void DiscModel::construct_line_cube(
       }
     }
   }
-  // std::cout<<"sums "<<flux_sum<<" "<<flux_sum_map<<" "<<line<<" "<<factor<<" "<<vmax<<" "<<xcd<<" "<<ycd<<std::endl;
 }
 
 void DiscModel::calculate_shifted_arrays() {
@@ -734,9 +728,9 @@ void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
     for (size_t l=0; l<nlines; l++)
       amp[l] = dxfs*dyfs*f[l]/(2.0*M_PI*wxsq*cos_inc);
 
-    for (size_t i=0; i<flux.size(); i++) {
-      for (size_t j=0; j<flux[i].size(); j++) {
-        for (size_t l=0; l<nlines; l++)
+    for (size_t i=0; i<flux[0].size(); i++) {
+      for (size_t j=0; j<flux[0][i].size(); j++) {
+        for (size_t l=0; l<flux.size(); l++)
           amps[l] = 0.0;
         for (int is=-si; is<=si; is++) {
           for (int js=-si; js<=si; js++) {
@@ -769,13 +763,13 @@ void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
             rsq = q*pow(xxb_rot, 2) + invq*pow(yyb_rot, 2);
             rsq *= invwxsq;
 
-            if (rsq < sigma_cutoffsq)
-              for (size_t l=0; l<nlines; l++)
+            if (rsq < sigma_cutoffsq) {
+              for (size_t l=0; l<flux.size(); l++)
                 amps[l] += amp[l]*LookupExp::evaluate(0.5*rsq);
-
+            }
           }
         }
-        for (size_t l=0; l<nlines; l++)
+        for (size_t l=0; l<flux.size(); l++)
           flux[l][i][j] += amps[l];
       }
     }
