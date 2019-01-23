@@ -156,7 +156,6 @@ void Data::load(const char* moptions_file) {
       lin >> gamma_pos;
       gamma_pos_flag = true;
     } else if (name == "LINE") {
-      std::cout<<"n "<<n<<" line "<<tmp_double<<std::endl;
       tmp_vector.clear();
       while (lin >> tmp_double) {
         tmp_vector.push_back(tmp_double);
