@@ -15,7 +15,7 @@ class Data
   // files
   std::string metadata_file = "metadata.txt";
   std::string data_file = "data.txt";
-  std::string var_file = "levels.txt";
+  std::string var_file = "var.txt";
 
   // model parameters
   std::vector< std::vector<double> > em_line;
