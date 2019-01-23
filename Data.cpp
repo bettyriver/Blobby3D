@@ -272,12 +272,13 @@ void Data::load(const char* moptions_file) {
       tmp_sig = 0.0;
       for (size_t r=0; r<data[i][j].size(); r++) {
         if (data[i][j][r] != 0.0) { tmp_im = 1.0; }
-	        tmp_sig += var[i][j][r];
+        tmp_sig += var[i][j][r];
 	    }
 
       // Add valid pixels to array
       if ((tmp_im == 1.0) && (tmp_sig > 0.0)) {
-        tmp_vec[0] = i; tmp_vec[1] = j;
+        tmp_vec[0] = i;
+        tmp_vec[1] = j;
 
         if (nv != 0)
           valid.push_back(tmp_vec);
