@@ -5,7 +5,7 @@
 #include "DNest4/code/DNest4.h"
 #include "Data.h"
 
-// TODO: DNest4 requires Triangle distribution
+// TODO: DNest4 requires Triangular distribution
 // TODO: DNest4 requires LogGaussian distribution
 // TODO: Once above are performed just use a for-loop in from/to uniform
 
@@ -17,6 +17,7 @@ BlobConditionalPrior::BlobConditionalPrior(
   double fluxlim_min, double fluxlim_max,
   double flux_std_min, double flux_std_max,
   double radiuslim_min, double radiuslim_max,
+  double rc_max,
   double wd_min, double wd_max,
   double qlim_min
   ) :nlines(nlines)
@@ -26,6 +27,7 @@ BlobConditionalPrior::BlobConditionalPrior(
     ,flux_std_max(flux_std_max)
     ,radiuslim_min(radiuslim_min)
     ,radiuslim_max(radiuslim_max)
+    ,rc_max(rc_max)
     ,wd_min(wd_min)
     ,wd_max(wd_max)
     ,qlim_min(qlim_min) {
@@ -48,11 +50,12 @@ void BlobConditionalPrior::from_prior(DNest4::RNG& rng) {
   q_min = hyperprior_qmin.generate(rng);
 
   // Prior Distributions
-  prior_rc = DNest4::Exponential(wd);
+  prior_rc = DNest4::TruncatedExponential(wd, 0.0, rc_max);
   prior_theta = DNest4::Uniform(0.0, 2.0*M_PI);
   for (size_t i=0; i<nlines; i++)
     prior_logflux.push_back(DNest4::Gaussian(flux_mu[i], flux_std[i]));
   prior_width = DNest4::Uniform(radiuslim_min, radiusmax);
+  prior_q = DNest4::Triangular(q_min, 1.0, 1.0);
   prior_phi = DNest4::Uniform(0.0, M_PI);
 }
 
@@ -62,7 +65,7 @@ double BlobConditionalPrior::perturb_hyperparameters(DNest4::RNG& rng) {
   switch (which) {
     case 0:
       logH += hyperprior_wd.perturb(wd, rng);
-      prior_rc = DNest4::Exponential(wd);
+      prior_rc = DNest4::TruncatedExponential(wd, 0.0, rc_max);
       break;
     case 1:
       which = rng.rand_int(nlines);
@@ -80,6 +83,7 @@ double BlobConditionalPrior::perturb_hyperparameters(DNest4::RNG& rng) {
       break;
     case 4:
       logH += hyperprior_qmin.perturb(q_min, rng);
+      prior_q = DNest4::Triangular(q_min, 1.0, 1.0);
       break;
     }
 
@@ -103,7 +107,8 @@ double BlobConditionalPrior::log_pdf(const std::vector<double>& vec) const {
   logp += prior_width.log_pdf(vec[2]);
 
   // Triangular distribution for q
-  logp += 2.0*(vec[3] - q_min)/pow(1.0 - q_min, 2);
+  logp += prior_q.log_pdf(vec[3]);
+  // logp += 2.0*(vec[3] - q_min)/pow(1.0 - q_min, 2);
 
   // Lognormal for flux
   for (size_t i=0; i<nlines; i++)
@@ -116,7 +121,8 @@ void BlobConditionalPrior::from_uniform(std::vector<double>& vec) const {
   vec[0] = prior_rc.cdf_inverse(vec[0]);
   vec[1] = prior_theta.cdf_inverse(vec[1]);
   vec[2] = prior_width.cdf_inverse(vec[2]);
-  vec[3] = (1.0 - q_min)*sqrt(vec[3]) + q_min;
+  vec[3] = prior_q.cdf_inverse(vec[3]);
+  // vec[3] = (1.0 - q_min)*sqrt(vec[3]) + q_min;
   vec[4] = prior_phi.cdf_inverse(vec[4]);
   for (size_t i=0; i<nlines; i++)
     vec[5+i] = exp(prior_logflux[i].cdf_inverse(vec[5+i]));
@@ -126,7 +132,8 @@ void BlobConditionalPrior::to_uniform(std::vector<double>& vec) const {
   vec[0] = prior_rc.cdf(vec[0]);
   vec[1] = prior_theta.cdf(vec[1]);
   vec[2] = prior_width.cdf(vec[2]);
-  vec[3] = pow(vec[3] - q_min, 2)/pow(1.0 - q_min, 2);
+  vec[3] = prior_q.cdf(vec[3]);
+  // vec[3] = pow(vec[3] - q_min, 2)/pow(1.0 - q_min, 2);
   vec[4] = prior_phi.cdf(vec[4]);
   for (size_t i=0; i<nlines; i++)
     vec[5+i] = prior_logflux[i].cdf(log(vec[5+i]));

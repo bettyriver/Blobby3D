@@ -303,6 +303,9 @@ void Data::load(const char* moptions_file) {
   pixel_width = sqrt(dx*dy);
   image_width = sqrt((x_max - x_min)*(y_max - y_min));
 
+  // rc_max for TruncatedExponential distribution
+  rc_max = sqrt(pow(x_max - x_min, 2) + pow(y_max - y_min, 2))/cos(inc);
+
   // Image centres
   x_imcentre = (x_min + x_max)/2.0;
   y_imcentre = (y_min + y_max)/2.0;

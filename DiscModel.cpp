@@ -28,6 +28,7 @@ DiscModel::DiscModel()
         Data::get_instance().get_lnfluxsd_max(),
         Data::get_instance().get_radiuslim_min(),
         Data::get_instance().get_radiuslim_max(),
+        Data::get_instance().get_rc_max(),
         Data::get_instance().get_wd_min(),
         Data::get_instance().get_wd_max(),
         Data::get_instance().get_qlim_min()
