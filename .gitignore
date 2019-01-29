@@ -4,19 +4,19 @@
 Blobby3D
 __pycache__/
 
-# Tests #
-####################
+# Ad Hoc Tests #
+################
 Tests/
-Examples/
 
-# Results #
-####################
-*sample.txt
-*sample_info.txt
-*sampler_state.txt
-*levels.txt
+# Data/Results #
+################
+*.fits
+*.par
 *.pdf
-python/
+*.npy
+*.pbs
+*.txt
+*.ini
 
 # Temporary Files #
 ###################
@@ -25,4 +25,4 @@ python/
 
 # VS Code Files #
 #################
-settings.json
+*.json

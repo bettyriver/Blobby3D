@@ -1,36 +1,66 @@
 #ifndef BLOBBY3D_DATA_H_
 #define BLOBBY3D_DATA_H_
 
+#include <cmath>
 #include <vector>
 #include <string>
+
+#include "Constants.h"
+
 
 class Data
 {
  private:
 
-  // constants
-  double C, HA, N2UPP, N2LOW, INFTY;
-
   // files
-  std::string metadata_file;
-  std::string cube_file;
-  std::string var_file;
+  std::string metadata_file = "metadata.txt";
+  std::string data_file = "data.txt";
+  std::string var_file = "var.txt";
 
   // model parameters
-  int model;
-  int nmax;
-  bool nfixed;
-  double prior_inc;
-  int convolve;
-  double vsys_gamma, vsys_max;
-  double vmax_min, vmax_max;
-  double fluxmu_min, fluxmu_max;
-  double lnfluxsd_min, lnfluxsd_max;
-  double vdispmu_min, vdispmu_max;
-  double lnvdispsd_min, lnvdispsd_max;
-  double qlim_min;
-  double sigma_min, sigma_max;
-  double gama_inc;
+  std::vector< std::vector<double> > em_line;
+  int model = 0;
+  int nmax = 300;
+  bool nfixed = false;
+  int convolve = 0;
+  double vsys_gamma = 30.0;
+  double vsys_max = 150.0;
+  double vmax_min = 40.0;
+  double vmax_max = 400.0;
+  double fluxmu_min = 1e-3;
+  double fluxmu_max = 1e3;
+  double lnfluxsd_min = 0.03;
+  double lnfluxsd_max = 3.0;
+  double vdispmu_min = 1.0;
+  double vdispmu_max = 200.0;
+  double lnvdispsd_min = 0.01;
+  double lnvdispsd_max = 1.0;
+  double qlim_min = 0.2;
+  double sigma_min = 1e-12;
+  double sigma_max = 1e12;
+  double inc;
+  double radiuslim_min;
+  double radiuslim_max = 30.0;
+  double wd_min = 0.03;
+  double wd_max = 30.0;
+  double vslope_min = 0.03;
+  double vslope_max = 30.0;
+  double vgamma_min = 1.0;
+  double vgamma_max = 100.0;
+  double vbeta_min = -0.75;
+  double vbeta_max = 0.75;
+  int vdisp_order = 1;
+  double vdisp0_min = log(1.0);
+  double vdisp0_max = log(200.0);
+  double vdispn_sigma = 0.2;
+  double sigma1_min = 1E-12;
+  double sigma1_max = 1E0;
+  double Md_min = 1E-3;
+  double Md_max = 1E3;
+  double wxd_min = 0.3;
+  double wxd_max = 30.0;
+  double gamma_pos;
+  double rc_max;
 
   // sampling
   double sample;
@@ -65,7 +95,7 @@ class Data
   double psf_beta;
   std::vector<double> psf_sigma;
   double sigma_cutoff;
-  double sigma_pad;
+  double sigma_pad = 0.0;
 
   // LSF
   double lsf_fwhm;
@@ -77,40 +107,34 @@ class Data
   std::vector<double> psf_sigma_overdx;
   std::vector<double> psf_sigma_overdy;
 
-  // Analytical paramaters
-  double sum_flux;
-
   // Spatial oversampling
   double dxos, dyos;
   double x_pados, y_pados;
   double nios, njos;
   double x_pad_dxos, y_pad_dyos;
 
-  // step size
-  double hp_step;
-  double disc_step;
-  double sigma_step;
-
   // Geometric widths
   double pixel_width;
   double image_width;
+  double x_imcentre, y_imcentre;
 
   // Coordinates of pixel centers
-  std::vector< std::vector<double> > x_rays;
-  std::vector< std::vector<double> > y_rays;
-  std::vector<double> r_rays;
+  std::vector< std::vector<double> > x;
+  std::vector< std::vector<double> > y;
+  std::vector<double> r;
 
-  // The pixels
-  std::vector< std::vector< std::vector<double> > > image;
-
-  // Sigma map
-  std::vector< std::vector< std::vector<double> > > var_cube;
+  // Data
+  std::vector< std::vector< std::vector<double> > > data;
+  std::vector< std::vector< std::vector<double> > > var;
 
   // Valid spaxels
   std::vector< std::vector<int> > valid;
 
   // Private functions
   std::vector< std::vector< std::vector<double> > > arr_3d();
+  std::vector< std::vector< std::vector<double> > >
+    read_cube(std::string filepath);
+  void summarise_model();
   void compute_ray_grid();
 
  public:
@@ -118,10 +142,6 @@ class Data
   void load(const char* moptions_file);
 
   // Getters
-  double get_C() const { return C; }
-  double get_HA() const { return HA; }
-  double get_N2UPP() const { return N2UPP; }
-  double get_N2LOW() const { return N2LOW; }
   int get_model() const { return model; }
   int get_nmax() const { return nmax; }
   bool get_nfixed() const { return nfixed; }
@@ -140,6 +160,7 @@ class Data
   double get_dy() const { return dy; }
   double get_dr() const { return dr; }
   double get_db() const { return db; }
+  std::vector< std::vector<double> > get_em_line() { return em_line; }
   std::vector<double> get_psf_amp() const { return psf_amp; }
   std::vector<double> get_psf_fwhm() const { return psf_fwhm; }
   double get_psf_beta() const { return psf_beta; }
@@ -162,19 +183,39 @@ class Data
   double get_qlim_min() const { return qlim_min; }
   double get_sigma_min() const { return sigma_min; }
   double get_sigma_max() const { return sigma_max; }
-  double get_gama_inc() const { return gama_inc; }
+  double get_inc() const { return inc; }
+  double get_radiuslim_min() const { return radiuslim_min; }
+  double get_radiuslim_max() const { return radiuslim_max; }
+  double get_wd_min() const { return wd_min; }
+  double get_wd_max() const { return wd_max; }
+  double get_vslope_min() { return vslope_min; };
+  double get_vslope_max() { return vslope_max; }
+  double get_vgamma_min() { return vgamma_min; }
+  double get_vgamma_max() { return vgamma_max; }
+  double get_vbeta_min() { return vbeta_min; }
+  double get_vbeta_max() { return vbeta_max; }
+  int get_vdisp_order() { return vdisp_order; }
+  double get_vdisp0_min() { return vdisp0_min; }
+  double get_vdisp0_max() { return vdisp0_max; }
+  double get_vdispn_sigma() { return vdispn_sigma; }
+  double get_sigma1_min() { return sigma1_min; }
+  double get_sigma1_max() { return sigma1_max; }
+  double get_Md_min() { return Md_min; }
+  double get_Md_max() { return Md_max; }
+  double get_wxd_min() { return wxd_min; }
+  double get_wxd_max() { return wxd_max; }
+  double get_gamma_pos() { return gamma_pos; }
+  double get_rc_max() { return rc_max; }
+
   int get_x_pad() const { return x_pad; }
   int get_y_pad() const { return y_pad; }
   double get_x_pad_dx() const { return x_pad_dx; }
   double get_y_pad_dy() const { return y_pad_dy; }
-  double get_sum_flux() const {return sum_flux; }
-
-  double get_hp_step() const { return hp_step; }
-  double get_disc_step() const { return disc_step; }
-  double get_sigma_step() const { return sigma_step; }
 
   double get_pixel_width() const { return pixel_width; }
   double get_image_width() const { return image_width; }
+  double get_x_imcentre() const { return x_imcentre; }
+  double get_y_imcentre() const { return y_imcentre; }
 
   std::vector<double> get_psf_sigma_overdx() const { return psf_sigma_overdx; }
   std::vector<double> get_psf_sigma_overdy() const { return psf_sigma_overdy; }
@@ -189,17 +230,16 @@ class Data
   double get_x_pad_dxos() const { return x_pad_dxos; }
   double get_y_pad_dyos() const { return y_pad_dyos; }
 
-
-  const std::vector< std::vector<double> >& get_x_rays() const
-  { return x_rays; }
-  const std::vector< std::vector<double> >& get_y_rays() const
-  { return y_rays; }
-  const std::vector<double>& get_r_rays() const
-  { return r_rays; }
-  const std::vector< std::vector< std::vector<double> > >& get_image() const
-  { return image; }
-  const std::vector< std::vector< std::vector<double> > >& get_var_cube() const
-  { return var_cube; }
+  const std::vector< std::vector<double> >& get_x() const
+  { return x; }
+  const std::vector< std::vector<double> >& get_y() const
+  { return y; }
+  const std::vector<double>& get_r() const
+  { return r; }
+  const std::vector< std::vector< std::vector<double> > >& get_data() const
+  { return data; }
+  const std::vector< std::vector< std::vector<double> > >& get_var() const
+  { return var; }
   const std::vector< std::vector<int> >& get_valid() const
   { return valid; }
 

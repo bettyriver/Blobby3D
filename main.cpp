@@ -1,22 +1,28 @@
 #include <iostream>
+#include <ctime>
 
 #include "DNest4/code/DNest4.h"
+
 #include "Data.h"
-#include "MyModel.h"
+#include "DiscModel.h"
 
-using namespace std;
-using namespace DNest4;
+int main(int argc, char** argv) {
+  // clock_t begin = clock();
 
-int main(int argc, char** argv) { 
+  // Use wider tails randh
+  DNest4::RNG::randh_is_randh2 = true;
+
   // Get command line options
-  CommandLineOptions options(argc, argv);
-  
+  DNest4::CommandLineOptions options(argc, argv);
+
   // Get model specific options file
   const char* moptions_file;
   if (options.get_config_file() == "") {
-    cerr<<"# ERROR: No model options file provided. "
-	<<"Specify model options file as a command line option "
-	<<"using -f <MODEL_OPTIONS_FILE>."<<std::endl;
+    std::cerr
+      <<"# ERROR: No model options file provided. "
+	    <<"Specify model options file as a command line option "
+	    <<"using -f <MODEL_OPTIONS_FILE>."
+      <<std::endl;
     exit(0);
   } else {
     moptions_file = options.get_config_file().c_str();
@@ -26,9 +32,12 @@ int main(int argc, char** argv) {
   Data::get_instance().load(moptions_file);
 
   // Setup and run sampler
-  Sampler<MyModel> sampler = setup<MyModel>(options);
+  DNest4::Sampler<DiscModel> sampler = DNest4::setup<DiscModel>(options);
   sampler.run();
+
+  // clock_t end = clock();
+  // double elapsed_secs = double(end - begin)/CLOCKS_PER_SEC;
+  // std::cout<<"TIME: "<<elapsed_secs<<std::endl;
 
   return 0;
 }
-

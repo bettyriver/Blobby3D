@@ -1,20 +1,6 @@
-metadata.txt # metadata file
-data.txt # data cube file
-var.txt # variance cube file
-0	# PSF convolution kernel: 0=Gaussian, 1=Moffat
-0.5713474999665127 0.4286525000334873# Multigauss amp
-1.9579614078817835 4.052713025478139# PSF FWHM, same coord as in metadata (same units as spatial dim)
-3.000000	# PSF beta parameter for moffat profile
-1.610000	# LSF FWHM (same units as 3rd dim)
-300	# Nmax number of blobs
-0	# N blobs fixed to Nmax (0=false, 1=true)
-30	150	# VSYS_GAMMA, VSYS_MAX
-40	400	# VMAXmin, VMAXmax
-1.00e-03	1.00e+03	# FLUXMUmin, FLUXMUmax
-0.03	3.00	# LNHAFLUXSDmin, LNHAFLUXSDmax
-1	200	# MUVDISPmin, MUVDISPmax
-0.01	1.00	# LNSIGMAVDISPmin, LNSIGMAVDISPmax
-0.20	# QLIMmin
-1.00e-12	1.00e+01	# SIGMAmin, SIGMAmax
-0.00	# Spatial padding
-0.785398	# INC
+# Specify model options
+LSFFWHM	1.59
+PSFWEIGHT	1.0
+PSFFWHM	2.0
+INC	0.785398
+LINE	6562.81
