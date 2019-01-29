@@ -7,7 +7,10 @@
 #include "DiscModel.h"
 
 int main(int argc, char** argv) {
-  clock_t begin = clock();
+  // clock_t begin = clock();
+
+  // Use wider tails randh
+  DNest4::RNG::randh_is_randh2 = true;
 
   // Get command line options
   DNest4::CommandLineOptions options(argc, argv);
@@ -32,10 +35,9 @@ int main(int argc, char** argv) {
   DNest4::Sampler<DiscModel> sampler = DNest4::setup<DiscModel>(options);
   sampler.run();
 
-  clock_t end = clock();
-  double elapsed_secs = double(end - begin)/CLOCKS_PER_SEC;
-  std::cout<<"TIME: "<<elapsed_secs<<std::endl;
+  // clock_t end = clock();
+  // double elapsed_secs = double(end - begin)/CLOCKS_PER_SEC;
+  // std::cout<<"TIME: "<<elapsed_secs<<std::endl;
 
   return 0;
 }
-
