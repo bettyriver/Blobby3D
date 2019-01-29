@@ -35,7 +35,7 @@ Navigate to one of the folders in the Examples where the MODEL_OPTIONS file resi
 
 ../../Blobby3D -t 1 -f MODEL_OPTIONS
 
-You may want to setup a terminal alias such that you can run the executable from anywhere on your machine. The -t 1 parameter sets the number of threads -- I recommend using multiple threads. The -f MODEL_OPTIONS tells the model to use the input hyperparameters/parameters required to defined the priors. Note the the DNest4 parameters are defined in the OPTIONS file.
+You may want to setup a terminal alias such that you can run the executable from anywhere on your machine. The -t 1 parameter sets the number of threads -- I recommend using multiple threads. The -f MODEL_OPTIONS tells the model to use the input hyperparameters/parameters that define the priors. Note the the DNest4 parameters are defined in the OPTIONS file. Option files are provided in the examples.
 
 There will be 3 output files created as Blobby3D runs:
 
