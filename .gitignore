@@ -15,8 +15,7 @@ Tests/
 *.npy
 *.pbs
 *.txt
-!var.txt
-!data.txt
+*.ini
 
 # Temporary Files #
 ###################
