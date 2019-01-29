@@ -10,10 +10,10 @@ These instructions will get you a copy of the project up and running on your mac
 
 Blobby3D is dependent on the following:
 
-C++11
-[DNest4](https://github.com/eggplantbren/DNest4)
-[FFTW3](http://www.fftw.org)
-[Python 3](https://www.python.org) (for postprocessing)
+C++11  
+[DNest4](https://github.com/eggplantbren/DNest4)  
+[FFTW3](http://www.fftw.org)  
+[Python 3](https://www.python.org) (for postprocessing)  
 
 [FFTW3](http://www.fftw.org) will typically be available on scientific machines/clusters, so you will often either have them or can get them relatively easily by contacting your system administrator.
 
@@ -39,10 +39,11 @@ You may want to setup a terminal alias such that you can run the executable from
 
 There will be 3 output files created as Blobby3D runs:
 
-sample_info.txt
-sample.txt
-sampler_state.txt
+sample_info.txt  
+sample.txt  
+sampler_state.txt  
 
+At any time during or after the run, you can perform postprocessing of the current Blobby3D output.
 [Run posterior scripts...]
 
 ### Running Blobby3D on Your Own Data
