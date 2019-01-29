@@ -5,7 +5,7 @@
 #include "DNest4/code/DNest4.h"
 #include "Data.h"
 
-// TODO: DNest4 requires Triangular distribution
+// TODO: DNest4 requires Triangular distribution. Pull request submitted.
 // TODO: DNest4 requires LogGaussian distribution
 // TODO: Once above are performed just use a for-loop in from/to uniform
 
