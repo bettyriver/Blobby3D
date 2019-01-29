@@ -11,12 +11,12 @@ Tests/
 ################
 *.fits
 *.par
-*sample.txt
-*sample_info.txt
-*sampler_state.txt
-*levels.txt
 *.pdf
 *.npy
+*.pbs
+*.txt
+!var.txt
+!data.txt
 
 # Temporary Files #
 ###################
