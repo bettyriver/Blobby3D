@@ -68,9 +68,3 @@ b3d.blob_param.loc[sample, ['FLUX0', 'FLUX1']].hist(bins=30)
 # Marginalised samples for the mean and standard deviation of the flux for the
 # first emission line
 b3d.global_param[['FLUX0MU', 'FLUX0SD']].hist()
-
-# Plot a single spaxel
-import numpy as np
-i = np.unravel_index(np.argmax(b3d.precon_cubes[sample, :, :, :]), b3d.precon_cubes[sample, :, :, :].shape)
-plt.figure()
-plt.plot(b3d.precon_cubes[sample, i[0], i[1], :])
