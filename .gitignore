@@ -17,6 +17,9 @@ Tests/
 *.pbs
 *.txt
 *.ini
+!var.txt
+!data.txt
+!metadata.txt
 
 # Temporary Files #
 ###################
