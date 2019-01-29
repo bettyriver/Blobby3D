@@ -20,7 +20,7 @@ from matplotlib.backends import backend_pdf
 
 
 class Blobby3D:
-rr
+
     def __init__(
             self, samples_path, data_path, var_path, metadata_path,
             save_maps=True, save_precon=True, save_con=True,
