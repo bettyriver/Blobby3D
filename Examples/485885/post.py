@@ -30,7 +30,7 @@ b3d = Blobby3D(
         nlines=2)
 
 # choose a sample
-sample = 2
+sample = 0
 
 # Plot maps for sample
 fig, ax = plt.subplots(1, 4)
