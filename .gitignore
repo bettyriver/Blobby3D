@@ -6,7 +6,7 @@ __pycache__/
 
 # Ad Hoc Tests #
 ################
-Tests/
+tests/
 
 # Data/Results #
 ################
