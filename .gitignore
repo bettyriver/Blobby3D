@@ -29,3 +29,7 @@ tests/
 # VS Code Files #
 #################
 *.json
+
+# Miscellaneous #
+#################
+*.pbs
