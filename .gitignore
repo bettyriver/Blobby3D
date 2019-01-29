@@ -2,10 +2,12 @@
 ####################
 *.o
 Blobby3D
+__pycache__/
 
 # Tests #
 ####################
 Tests/
+Examples/
 
 # Results #
 ####################
@@ -14,6 +16,7 @@ Tests/
 *sampler_state.txt
 *levels.txt
 *.pdf
+python/
 
 # Temporary Files #
 ###################
