@@ -3,7 +3,7 @@
 Blobby3D is designed to perform Bayesian inference for gas kinematics on emission lines observations of IFS galaxy observations. The code was designed with two main goals in mind:
 
  - To robustly infer gas kinematics for regularly rotating galaxies even if the gas profiles have significant substructure.
- - Infer gas kinematic properties free from the effects of beam smearing. Where beam smearing is the effect of the observation seeing blurring the gas profiles spatially. This has significant effects on the observed gas kinematic properties - particularly the observed velocity dispersion.
+ - Infer gas kinematic properties free from the effects of beam smearing. Where beam smearing is the effect of the observational seeing spatially blurring the gas profiles. This has significant effects on the observed gas kinematic properties - particularly the observed velocity dispersion.
 
 A paper on the technique implemented in this code is forthcoming.
 
