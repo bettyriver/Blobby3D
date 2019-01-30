@@ -49,11 +49,3 @@ sample.txt
 sampler_state.txt  
 
 At any time during or after the run, you can perform postprocessing of the current Blobby3D output. Example postprocessing scripts are available in the Examples folders labeled post.py.
-
-<!--
-### Running Blobby3D on Your Own Data
-
-To run Blobby3D on your own data you need to setup several files.
-[TO COME...]
--->
-
