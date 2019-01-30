@@ -9,7 +9,7 @@ A paper on the technique implemented in this code is forthcoming.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your machine for testing purposes. If you have any trouble, feel free to contact Mathew Varidel at mathew.varidel@sydney.edu.au.
+These instructions will get you a copy of the project up and running on your machine for testing purposes. More specific instructions will be provided at a later date. If you have any trouble, feel free to contact Mathew Varidel at mathew.varidel@sydney.edu.au.
 
 ### Prerequisites
 
