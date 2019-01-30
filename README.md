@@ -26,7 +26,7 @@ C++11
 
 ### Installing
 
-To install Blobby3D you need to clone this repository. Then go to the cloned repository directory and make using:
+To install Blobby3D you need to clone this repository. Then go to the repository directory and make using command 'make'. Note that this assumes that you have setup a DNEST4_PATH environment variable as suggested in the [DNEST4 paper](https://arxiv.org/abs/1606.03757). If you have not setup a DNEST4_PATH environment variable, then simply make using the following:
 
 make DNEST4_PATH=/path/to/DNest4
 
