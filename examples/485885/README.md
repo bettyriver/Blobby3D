@@ -11,7 +11,7 @@ OPTIONS:
 DNEST4 options file.
 
 data.txt:  
-Continuum subtracted data cube around the H\alpha and surround [NII] lines. Data is in row-major order.
+Continuum subtracted data cube around the Halpha and surrounding [NII] lines at 6583.1 A and 6548.1 A. Data is in row-major order.
 
 var.txt:  
 Variance cube in row-major order.
