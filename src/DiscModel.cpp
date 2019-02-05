@@ -491,16 +491,8 @@ void DiscModel::construct_cube() {
   /*
     Create cube from maps.
   */
-  // const double sigma_lsfsq = pow(Data::get_instance().get_lsf_sigma(), 2);
-  // const std::vector<double>& wave = Data::get_instance().get_r();
-  // const double dr = Data::get_instance().get_dr();
   const std::vector< std::vector<double> >
     em_line = Data::get_instance().get_em_line();
-
-  // double lambda;
-  // double sigma_lambda;
-  // double invtwo_wlsq;
-  // double ha_cdf_min, ha_cdf_max;
 
   // clear cube where flux is 0
   for (size_t i=0; i<preconvolved.size(); i++)
@@ -513,43 +505,6 @@ void DiscModel::construct_cube() {
     for (size_t ll=0; ll<(em_line[l].size()-1)/2; ll++)
       construct_line_cube(em_line[l][1+2*ll], em_line[l][2+2*ll], flux[l]);
   }
-
-  // for (size_t l=0; l<em_line.size(); l++) {
-  //  for (size_t ll=0; ll<(em_line[l].size()-1)/2) {
-  //    // Apply flux for constrained lines
-  //    construct_line_cube(em_line[l][2+2*ll], em_line[l][1+2*ll], flux[l]);
-  //  }
-  //}
-
-
-  // for (size_t i=0; i<preconvolved.size(); i++) {
-  //  for (size_t j=0; j<preconvolved[i].size(); j++)  {
-  //    if (flux[i][j][0] > 0.0)  {
-  //      for (size_t l=0; l<em_line.size(); l++) {
-  //        // Calculate mean lambda for lines
-  //        lambda = em_line[l][0]*rel_lambda[i][j];
-  //
-  //        // Calculate line width
-  //        sigma_lambda = em_line[l][0]*vdisp[i][j];
-  //        invtwo_wlsq = 1.0/sqrt(2.0*(pow(sigma_lambda, 2) + sigma_lsfsq));
-  //
-  //        // Calculate flux for 1st wavelength bin
-  //        ha_cdf_min = LookupErf::evaluate((wave[0] - 0.5*dr - lambda)*invtwo_wlsq);
-  //        ha_cdf_max = LookupErf::evaluate((wave[0] + 0.5*dr - lambda)*invtwo_wlsq);
-  //        preconvolved[i][j][0] = 0.5*flux[i][j][l]*(ha_cdf_max - ha_cdf_min);
-  //
-  //        // Loop through remaining bins
-  //        for (size_t r=1; r<wave.size(); r++) {
-  //          ha_cdf_min = ha_cdf_max;
-  //          ha_cdf_max = LookupErf::evaluate((wave[r] + 0.5*dr - lambda)*invtwo_wlsq);
-  //          preconvolved[i][j][r] = 0.5*flux[i][j][l]*(ha_cdf_max - ha_cdf_min);
-  //        }
-  //    } else {
-  //      for (size_t r=0; r<wave.size(); r++)
-  //        preconvolved[i][j][r] = 0.0;
-  //    }
-  //  }
-  //}
 }
 
 void DiscModel::construct_line_cube(
