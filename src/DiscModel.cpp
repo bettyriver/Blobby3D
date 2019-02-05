@@ -383,7 +383,7 @@ void DiscModel::print(std::ostream& out) const {
 
     for (size_t i=0; i<vdisp.size(); i++)
       for (size_t j=0; j<vdisp[i].size(); j++)
-        out << vdisp[i][j] << ' ';
+        out << vdisp[i][j]*constants::C << ' ';
   }
 
   if (save_preconvolved) {
