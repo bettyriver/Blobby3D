@@ -14,4 +14,4 @@ nolib:
 	rm *.o
 clean:
 	rm Blobby3D
-	rm *.p
+	rm src/*.o
