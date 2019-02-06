@@ -653,8 +653,12 @@ void DiscModel::add_blob_flux(std::vector< std::vector<double> >& components) {
     wx = components[k][2];
     q = components[k][3];
     phi = components[k][4];
-    for (size_t l=0; l<nlines; l++)
-      f[l] = components[k][5+l];
+    // for (size_t l=0; l<nlines; l++)
+    //  f[l] = components[k][5+l];
+
+    f[0] = components[k][5];
+    for (size_t l=1; l<nlines; l++)
+      f[l] = components[k][5]*components[k][5+1];  // Testing: Flux constrained secondary line constrained relative to 1st
 
     // xc, yc in disc plane
     xc = rc*cos(thetac);

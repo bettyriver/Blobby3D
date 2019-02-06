@@ -31,8 +31,13 @@ BlobConditionalPrior::BlobConditionalPrior(
     ,wd_max(wd_max)
     ,qlim_min(qlim_min) {
   // Hyperprior distributions
-  hyperprior_fluxmu = DNest4::Uniform(fluxlim_min, fluxlim_max);
-  hyperprior_fluxstd = DNest4::LogUniform(flux_std_min, flux_std_max);
+  hyperprior_fluxmu.push_back(DNest4::Uniform(fluxlim_min, fluxlim_max));
+  hyperprior_fluxstd.push_back(DNest4::LogUniform(flux_std_min, flux_std_max));
+  for (size_t i=1; i<nlines; i++) {
+    hyperprior_fluxmu.push_back(DNest4::Uniform(log(1e-2), log(1e2)));
+    hyperprior_fluxstd.push_back(DNest4::LogUniform(0.01, 1.0));
+  }
+
   hyperprior_radiusmax = DNest4::LogUniform(radiuslim_min, radiuslim_max);
   hyperprior_wd = DNest4::LogUniform(wd_min, wd_max);
   hyperprior_qmin = DNest4::Uniform(qlim_min, 1.0);
@@ -41,10 +46,12 @@ BlobConditionalPrior::BlobConditionalPrior(
 void BlobConditionalPrior::from_prior(DNest4::RNG& rng) {
   // Hyperparameters
   wd = hyperprior_wd.generate(rng);
+
   for (size_t i=0; i<nlines; i++) {
-    flux_mu.push_back(hyperprior_fluxmu.generate(rng));
-    flux_std.push_back(hyperprior_fluxstd.generate(rng));
+    flux_mu.push_back(hyperprior_fluxmu[i].generate(rng));
+    flux_std.push_back(hyperprior_fluxstd[i].generate(rng));
   }
+
   radiusmax = hyperprior_radiusmax.generate(rng);
   q_min = hyperprior_qmin.generate(rng);
 
@@ -68,12 +75,12 @@ double BlobConditionalPrior::perturb_hyperparameters(DNest4::RNG& rng) {
       break;
     case 1:
       which = rng.rand_int(nlines);
-      logH += hyperprior_fluxmu.perturb(flux_mu[which], rng);
+      logH += hyperprior_fluxmu[which].perturb(flux_mu[which], rng);
       prior_logflux[which] = DNest4::Gaussian(flux_mu[which], flux_std[which]);
       break;
     case 2:
       which = rng.rand_int(nlines);
-      logH += hyperprior_fluxstd.perturb(flux_std[which], rng);
+      logH += hyperprior_fluxstd[which].perturb(flux_std[which], rng);
       prior_logflux[which] = DNest4::Gaussian(flux_mu[which], flux_std[which]);
       break;
     case 3:

@@ -19,8 +19,8 @@ class BlobConditionalPrior:public DNest4::ConditionalPrior {
   double qlim_min;
 
   // Hyperprior distributions
-  DNest4::Uniform hyperprior_fluxmu;
-  DNest4::LogUniform hyperprior_fluxstd;
+  std::vector<DNest4::Uniform> hyperprior_fluxmu;
+  std::vector<DNest4::LogUniform> hyperprior_fluxstd;
   DNest4::LogUniform hyperprior_radiusmax;
   DNest4::LogUniform hyperprior_wd;
   DNest4::Uniform hyperprior_qmin;
