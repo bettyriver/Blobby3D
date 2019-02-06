@@ -34,13 +34,13 @@ Where /path/to/DNest4 is the root directory for DNest4 on your machine.
 
 ### Running Blobby3D on Examples
 
-To get a feel for Blobby3D you will want to start with an example. You can find a few examples in the Blobby3D/Examples folder. There are 3 example toy models provided. The toy models are constructed in accordance with the paper. The parent folder describes the PSF FWHM (psfa), PSF Moffat beta parameter (psfb) and the signal-noise (sn). The subfolder describes the velocity dispersion (vdisp) and the v(R_opt) (vropt) value.
+To get a feel for Blobby3D you will want to start with an example. You can find a few examples in the Blobby3D/examples folder. There are 3 example toy models provided. The toy models are constructed in accordance with the paper. The parent folder describes the PSF FWHM (psfa), PSF Moffat beta parameter (psfb) and the signal-noise (sn). The subfolder describes the velocity dispersion (vdisp) and the v(R_opt) (vropt) value.
 
-Navigate to one of the folders in the Examples where the MODEL_OPTIONS file resides. The code can be run as an executable from within the subdirectory as follows:
+Navigate to one of the folders in the examples where the MODEL_OPTIONS file resides. The code can be run as an executable from within the subdirectory as follows:
 
 ../../Blobby3D -t 1 -f MODEL_OPTIONS
 
-You may want to setup a terminal alias such that you can run the executable from anywhere on your machine. The -t 1 parameter sets the number of threads -- I recommend using multiple threads. The -f MODEL_OPTIONS tells the model to use the input hyperparameters/parameters that define the priors. Note the the DNest4 parameters are defined in the OPTIONS file. Option files are provided in the examples.
+You may want to setup a terminal alias such that you can run the executable from anywhere on your machine. The -t 1 parameter sets the number of threads. Blobby3D is computationally expensive, so you should run it using multiple threads. The -f MODEL_OPTIONS tells the model to use the input hyperparameters that define the priors. Note the DNest4 parameters are defined in the OPTIONS file (see [DNest4](https://github.com/eggplantbren/DNest4) documentation for that). Option files are provided in the examples.
 
 There will be 3 output files created as Blobby3D runs:
 
@@ -48,4 +48,4 @@ sample_info.txt
 sample.txt  
 sampler_state.txt  
 
-At any time during or after the run, you can perform postprocessing of the current Blobby3D output. Example postprocessing scripts are available in the Examples folders labeled post.py.
+At any time during or after the run, you can perform postprocessing of the current Blobby3D output. Example postprocessing scripts are available in the examples folders labeled post.py.
