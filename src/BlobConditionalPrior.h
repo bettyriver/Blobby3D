@@ -13,6 +13,8 @@ class BlobConditionalPrior:public DNest4::ConditionalPrior {
   size_t nlines;
   double fluxlim_min, fluxlim_max;
   double flux_std_min, flux_std_max;
+  double ratiofluxlim_min, ratiofluxlim_max;
+  double ratioflux_std_min, ratioflux_std_max;
   double radiuslim_min, radiuslim_max;
   double rc_max;
   double wd_min, wd_max;
@@ -56,6 +58,8 @@ class BlobConditionalPrior:public DNest4::ConditionalPrior {
     size_t nlines,
     double fluxlim_min, double fluxlim_max,
     double flux_std_min, double flux_std_max,
+    double ratiofluxlim_min, double ratiofluxlim_max,
+    double ratioflux_std_min, double ratioflux_std_max,
     double radiuslim_min, double radiuslim_max,
     double rc_max,
     double wd_min, double wd_max,

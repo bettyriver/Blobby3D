@@ -98,6 +98,14 @@ void Data::load(const char* moptions_file) {
       lin >> lnfluxsd_min;
     } else if (name == "LOGSIGMAFLUX_MAX") {
       lin >> lnfluxsd_max;
+    } else if (name == "MEANRATIOFLUX_MIN") {
+      lin >> ratiofluxmu_min;
+    } else if (name == "MEANRATIOFLUX_MAX") {
+      lin >> ratiofluxmu_max;
+    } else if (name == "LOGSIGMARATIOFLUX_MIN") {
+      lin >> lnratiofluxsd_min;
+    } else if (name == "LOGSIGMARATIOFLUX_MAX") {
+      lin >> lnratiofluxsd_max;
     } else if (name == "SIGMAV0_MIN") {
       lin >> vdisp0_min;
     } else if (name == "SIGMAV0_MAX") {

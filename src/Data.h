@@ -31,6 +31,10 @@ class Data
   double fluxmu_max = 1e3;
   double lnfluxsd_min = 0.03;
   double lnfluxsd_max = 3.0;
+  double ratiofluxmu_min = 1e-2;
+  double ratiofluxmu_max = 1e2;
+  double lnratiofluxsd_min = 0.01;
+  double lnratiofluxsd_max = 3.0;
   double vdispmu_min = 1.0;
   double vdispmu_max = 200.0;
   double lnvdispsd_min = 0.01;
@@ -176,6 +180,10 @@ class Data
   double get_fluxmu_max() const { return fluxmu_max; }
   double get_lnfluxsd_min() const { return lnfluxsd_min; }
   double get_lnfluxsd_max() const { return lnfluxsd_max; }
+  double get_ratiofluxmu_min() const { return ratiofluxmu_min; }
+  double get_ratiofluxmu_max() const { return ratiofluxmu_max; }
+  double get_lnratiofluxsd_min() const { return lnratiofluxsd_min; }
+  double get_lnratiofluxsd_max() const { return lnratiofluxsd_max; }
   double get_vdispmu_min() const { return vdispmu_min; }
   double get_vdispmu_max() const { return vdispmu_max; }
   double get_lnvdispsd_min() const { return lnvdispsd_min; }

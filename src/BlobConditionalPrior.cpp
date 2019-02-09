@@ -15,6 +15,8 @@ BlobConditionalPrior::BlobConditionalPrior(
   size_t nlines,
   double fluxlim_min, double fluxlim_max,
   double flux_std_min, double flux_std_max,
+  double ratiofluxlim_min, double ratiofluxlim_max,
+  double ratioflux_std_min, double ratioflux_std_max,
   double radiuslim_min, double radiuslim_max,
   double rc_max,
   double wd_min, double wd_max,
@@ -24,6 +26,10 @@ BlobConditionalPrior::BlobConditionalPrior(
     ,fluxlim_max(fluxlim_max)
     ,flux_std_min(flux_std_min)
     ,flux_std_max(flux_std_max)
+    ,ratiofluxlim_min(ratiofluxlim_min)
+    ,ratiofluxlim_max(ratiofluxlim_max)
+    ,ratioflux_std_min(ratioflux_std_min)
+    ,ratioflux_std_max(ratioflux_std_max)
     ,radiuslim_min(radiuslim_min)
     ,radiuslim_max(radiuslim_max)
     ,rc_max(rc_max)
@@ -34,8 +40,10 @@ BlobConditionalPrior::BlobConditionalPrior(
   hyperprior_fluxmu.push_back(DNest4::Uniform(fluxlim_min, fluxlim_max));
   hyperprior_fluxstd.push_back(DNest4::LogUniform(flux_std_min, flux_std_max));
   for (size_t i=1; i<nlines; i++) {
-    hyperprior_fluxmu.push_back(DNest4::Uniform(log(1e-2), log(1e2)));
-    hyperprior_fluxstd.push_back(DNest4::LogUniform(0.01, 1.0));
+    hyperprior_fluxmu.push_back(
+      DNest4::Uniform(ratiofluxlim_min, ratiofluxlim_max));
+    hyperprior_fluxstd.push_back(
+      DNest4::LogUniform(ratioflux_std_min, ratioflux_std_max));
   }
 
   hyperprior_radiusmax = DNest4::LogUniform(radiuslim_min, radiuslim_max);
