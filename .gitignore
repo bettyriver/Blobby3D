@@ -13,6 +13,8 @@ tests/
 *.fits
 *.par
 *.pdf
+*.png
+*.jpg
 *.npy
 *.pbs
 *.pbs.*
