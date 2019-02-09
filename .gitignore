@@ -15,6 +15,7 @@ tests/
 *.pdf
 *.npy
 *.pbs
+*.pbs.*
 *.txt
 *.ini
 !var.txt
