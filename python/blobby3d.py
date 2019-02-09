@@ -16,7 +16,11 @@ import numpy as np
 import pandas as pd
 
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 from matplotlib.backends import backend_pdf
+
+import b3dplot
+from const import PhysicalConstants
 
 
 class Blobby3D:
@@ -149,6 +153,7 @@ class Blobby3D:
         if isinstance(save_file, str):
             pdf_file.close()
 
-
-
+    def plot_map(self, ax, map_2d, **kwargs):
+        """Plot individual map to a given axes object."""
+        b3dplot.plot_map(ax, map_2d, **kwargs)
 
