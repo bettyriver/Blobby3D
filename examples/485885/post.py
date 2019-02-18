@@ -94,13 +94,16 @@ fit_data, fit_data_err = sm.fit_cube(
 
 fig, ax = b3d.setup_comparison_maps()
 b3d.add_comparison_maps(b3d.maps[sample, :, :], ax, col=0, log_flux=True)
-b3d.add_comparison_maps(fit, ax, col=1, log_flux=True)
+b3d.add_comparison_maps(fit_conv, ax, col=1, log_flux=True)
 b3d.add_comparison_maps(fit_data, ax, col=2, log_flux=True)
 
 residuals = fit_conv - fit_data
-residuals[0, :, :] = np.log10(fit[0, :, :]) - np.log10(fit_data[0, :, :])
-residuals[1, :, :] = np.log10(fit[0, :, :]) - np.log10(fit_data[0, :, :])
+residuals[0, :, :] = np.log10(fit_conv[0, :, :]) - np.log10(fit_data[0, :, :])
+residuals[1, :, :] = np.log10(fit_conv[0, :, :]) - np.log10(fit_data[0, :, :])
 b3d.add_comparison_residuals(residuals, ax, col=4)
+
+mask = np.ma.masked_invalid(fit_data[0, :, :]).mask
+b3d.update_comparison_mask(mask, (ax[0][0], ax[1][0], ax[2][0], ax[3][0]))
 
 b3d.update_comparison_clim(ax[0][:3], ax[0][3], pct=100.0, absolute=False)
 b3d.update_comparison_clim(ax[1][:3], ax[1][3], pct=100.0, absolute=False)

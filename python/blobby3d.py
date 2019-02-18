@@ -172,7 +172,9 @@ class Blobby3D:
         """Add a column worth of maps to the comparison maps."""
         for line in range(self.nlines):
             if log_flux:
-                flux_map = np.log10(maps[line, :, :])
+                with np.errstate(invalid='ignore', divide='ignore'):
+                    flux_map = np.log10(maps[line, :, :])
+                    flux_map[~np.isfinite(flux_map)] = np.nan
             else:
                 flux_map = maps[line, :, :]
             self.plot_map(ax[line][col], flux_map, cmap=b3dplot.cmap.flux)
@@ -227,3 +229,19 @@ class Blobby3D:
             assert clim == clims[0]
 
         b3dcomp.colorbar(ax[-1], clims[0], **cb_kwargs)
+
+    def update_comparison_mask(self, mask, ax):
+        """
+        Update mask for maps.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes._subplots.AxesSubplot
+        """
+        if isinstance(ax, (list, tuple)):
+            for a in ax:
+                data = a.images[0]._A
+                a.images[0]._A = np.ma.masked_where(mask, a.images[0]._A)
+        else:
+            data = ax.images[0]._A
+            ax.images[0]._A = np.ma.masked_where(mask, ax.images[0]._A)
