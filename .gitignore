@@ -8,6 +8,10 @@ __pycache__/
 ################
 tests/
 
+# Ignore particular examples #
+##############################
+examples/279943
+
 # Data/Results #
 ################
 *.fits
