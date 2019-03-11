@@ -21,14 +21,10 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-sys.path.append(os.path.join('..', '..', 'python'))
-from blobby3d import Blobby3D
-import b3dplot
-import b3dcomp
-from moments import SpectralModel
+sys.path.append(os.path.join('..', '..'))
+import blobby3d_toolkit as b3dtk
 
-
-b3d = Blobby3D(
+b3d = b3dtk.Blobby3D(
         samples_path='posterior_sample.txt',
         data_path='data.txt',
         var_path='var.txt',
@@ -76,7 +72,7 @@ b3d.blob_param.loc[sample, ['FLUX0', 'FLUX1']].hist(bins=30)
 b3d.global_param[['FLUX0MU', 'FLUX0SD']].hist()
 
 # Construct a comparison between Blobb3d and a single component fit
-sm = SpectralModel(
+sm = b3dtk.SpectralModel(
         lines=[[6562.81], [6583.1, 6548.1, 0.3333]],
         lsf_fwhm=1.59
         )

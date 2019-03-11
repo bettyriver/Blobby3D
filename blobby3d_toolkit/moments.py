@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.special import erf
 
-from const import PhysicalConstants
+from .const import PhysicalConstants
 
 # constants
 C = PhysicalConstants.C
@@ -78,7 +78,10 @@ class SpectralModel:
             pcov = np.zeros(self.nparam)*np.nan
             return popt, pcov
 
-        guess = self._guess(wavelength, data)
+        try:
+            guess = self._guess(w_tmp, data_tmp)
+        except ZeroDivisionError:
+            print(w_tmp, data_tmp)
 
         try:
             popt, pcov = curve_fit(
@@ -104,17 +107,25 @@ class SpectralModel:
             fit_err = np.zeros((self.nparam, *data.shape[:2]))*np.nan
             for i in range(data.shape[0]):
                 for j in range(data.shape[1]):
-                    fit[:, i, j], fit_err[:, i, j] = self.fit_spaxel(
-                            wavelength, data[i, j, :], var,
+                    if var is not None:
+                        fit[:, i, j], fit_err[:, i, j] = self.fit_spaxel(
+                            wavelength, data[i, j, :], var[i, j, :],
                             **fit_kwargs)
+                    else:
+                        fit[:, i, j], fit_err[:, i, j] = self.fit_spaxel(
+                            wavelength, data[i, j, :], **fit_kwargs)
         elif wave_axis == 0:
             fit = np.zeros((self.nparam, *data.shape[1:]))*np.nan
             fit_err = np.zeros((self.nparam, *data.shape[1:]))*np.nan
             for i in range(data.shape[1]):
                 for j in range(data.shape[2]):
-                    fit[:, i, j], fit_err[:, i, j] = self.fit_spaxel(
-                            wavelength, data[:, i, j], var,
-                            **fit_kwargs)
+                    if var is not None:
+                        fit[:, i, j], fit_err[:, i, j] = self.fit_spaxel(
+                                wavelength, data[:, i, j], var[:, i, j],
+                                **fit_kwargs)
+                    else:
+                        fit[:, i, j], fit_err[:, i, j] = self.fit_spaxel(
+                                wavelength, data[:, i, j], **fit_kwargs)
         else:
             raise ValueError('Wave axis needs to be 0 or 2.')
 
@@ -146,6 +157,9 @@ class SpectralModel:
             guess[i] = max(1e-9, win_data.sum())
 
             weights = win_data - np.min(win_data)
+            if np.all(weights == 0.0):
+                weights = np.ones(weights.shape)
+
             mean_wave = np.average(win_wave, weights=weights)
             tmp_v[i] = (mean_wave/line[0] - 1.0)*C
 

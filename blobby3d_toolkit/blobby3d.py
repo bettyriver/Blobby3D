@@ -19,8 +19,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.backends import backend_pdf
 
-import b3dplot
-import b3dcomp
+from . import b3dplot
+from . import b3dcomp
 
 
 class Blobby3D:
@@ -28,7 +28,7 @@ class Blobby3D:
     def __init__(
             self, samples_path, data_path, var_path, metadata_path,
             save_maps=True, save_precon=True, save_con=True,
-            nlines=1, nsigmad=2):
+            nlines=1, nsigmad=2, read_samples=None):
         self.posterior_path = samples_path
         self.data_path = data_path
         self.var_path = var_path
