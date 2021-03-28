@@ -40,3 +40,8 @@ examples/279943
 ###############
 *.pbs
 examples/*/*.pbs.*
+
+# Miscellaneous #
+#################
+.DS_Store
+
