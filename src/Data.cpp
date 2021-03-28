@@ -303,8 +303,8 @@ void Data::load(const char* moptions_file) {
   dy = (y_max - y_min)/ni;
   dr = (r_max - r_min)/nr;
   for (size_t i=0; i<psf_sigma.size(); i++) {
-      psf_sigma_overdx.push_back(psf_sigma[i]/dx);
-      psf_sigma_overdy.push_back(psf_sigma[i]/dy);
+    psf_sigma_overdx.push_back(psf_sigma[i]/dx);
+    psf_sigma_overdy.push_back(psf_sigma[i]/dy);
   }
 
   // Calculate geometric widths
@@ -312,7 +312,7 @@ void Data::load(const char* moptions_file) {
   image_width = sqrt((x_max - x_min)*(y_max - y_min));
 
   // rc_max for TruncatedExponential distribution
-  rc_max = sqrt(pow(x_max - x_min, 2) + pow(y_max - y_min, 2))/cos(inc);
+  rc_max = sqrt(pow(abs(x_max - x_min), 2) + pow(abs(y_max - y_min), 2))/cos(inc);
 
   // Image centres
   x_imcentre = (x_min + x_max)/2.0;
@@ -332,8 +332,8 @@ void Data::load(const char* moptions_file) {
   y_max += y_pad_dy;
 
   // Compute spatially oversampled parameters
-  dxos = dx/sample;
-  dyos = dy/sample;
+  dxos = abs(dx)/sample;
+  dyos = abs(dy)/sample;
   x_pados = (int)ceil(sigma_pad*psf_sigma[0]/dxos);
   y_pados = (int)ceil(sigma_pad*psf_sigma[0]/dyos);
   nios = sample*ni;
@@ -382,7 +382,7 @@ std::vector< std::vector< std::vector<double> > >
   for (size_t i=0; i<cube.size(); i++)
     for (size_t j=0; j<cube[i].size(); j++)
       for (size_t r=0; r<cube[i][j].size(); r++)
-	      fin >> cube[i][j][r];
+        fin >> cube[i][j][r];
   fin.close();
 
   return cube;
