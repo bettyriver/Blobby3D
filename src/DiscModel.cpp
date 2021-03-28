@@ -602,7 +602,7 @@ void DiscModel::add_disc_flux() {
   const double dx = Data::get_instance().get_dx();
   const double dy = Data::get_instance().get_dy();
 
-  double invwxd = invwxd = 1.0/wxd;
+  double invwxd  = 1.0/wxd;
   double amp = dx*dy*Md*invwxd;
 
   for (size_t l=0; l<flux.size(); l++)
