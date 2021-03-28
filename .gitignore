@@ -21,9 +21,8 @@ examples/279943
 *.jpg
 *.npy
 *.pbs
-*.pbs.*
-*.txt
 *.ini
+*.txt
 !var.txt
 !data.txt
 !metadata.txt
@@ -37,6 +36,7 @@ examples/279943
 #################
 *.json
 
-# Miscellaneous #
-#################
+# Batch Files #
+###############
 *.pbs
+examples/*/*.pbs.*
