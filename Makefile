@@ -13,5 +13,6 @@ nolib:
 	$(CXX) -pthread -L $(DNEST4_PATH)/DNest4/code -o Blobby3D *.o $(LIBS)
 	rm *.o
 clean:
-	rm Blobby3D
-	rm *.o
+	rm -f *.o
+	rm -f Blobby3D
+	
