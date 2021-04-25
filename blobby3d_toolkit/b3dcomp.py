@@ -12,14 +12,15 @@ import matplotlib.pyplot as plt
 
 def setup_comparison_maps(
         comp_shape, map_shape, figsize,
-        right_pad=0.1, left_pad=0.08, bottom_pad=0.13,
+        right_pad=0.1, left_pad=0.05, bottom_pad=0.05,
         xlabel=r'$\Delta$RA ($^{\prime\prime}$)',
         ylabel=r'$\Delta$Dec ($^{\prime\prime}$)'):
     """
-    Setup comparison plot. This will setup a number of maps of shape
-    'comp_shape' plus a set of residual maps. This is a little fiddly, you may
-    need to play around with with the pad and figsize attributes to get
-    everything to sit where you want.
+    Setup comparison plot.
+
+    This will setup a number of maps of shape 'comp_shape' plus a set of
+    residual maps. This is a little fiddly, you may need to play around with
+    the pad and figsize attributes to get everything to sit where you want.
 
     Parameters
     ----------
@@ -138,14 +139,14 @@ def setup_comparison_maps(
     # Plot spatial titles
     fig.text(
         left_pad + 0.5*comp_shape[1]*im_width,
-        0.0,
+        0.0*bottom_pad,
         xlabel,
         ha='center', fontsize='large'
         )
 
     fig.text(
         left_pad + (comp_shape[1] + 0.5)*im_width + cb_width + cb1_right,
-        0.0,
+        0.0*bottom_pad,
         xlabel,
         ha='center', fontsize='large'
         )
@@ -160,7 +161,7 @@ def setup_comparison_maps(
     return fig, ax
 
 
-def map_limits(data, pct, absolute=False):
+def map_limits(data, pct=100.0, vlim=None, absolute=False):
     """
     Get limits for maps.
 
@@ -168,10 +169,12 @@ def map_limits(data, pct, absolute=False):
     ----------
     data : 2D numpy.array or list of 2D numpy.array
         Map data or list of map data
+    pct : float, default 95%
+        Percentile to use to calculate limit.
+    vlim : list of float, default None
+        Absolute limits applied to map.
     absolute : bool, default False
         Whether to calculate limits about 0.
-    pct : float
-        Percentile to use to calculate limit.
     """
     if isinstance(data, list):
         data_fin = []
@@ -181,7 +184,9 @@ def map_limits(data, pct, absolute=False):
     else:
         data_fin = data[np.isfinite(data)]
 
-    if not absolute:
+    if vlim is not None:
+        data_lim = vlim
+    elif not absolute:
         data_lim = [
                 np.nanpercentile(data_fin, 100.0 - pct),
                 np.nanpercentile(data_fin, pct)
@@ -201,8 +206,8 @@ def colorbar(
     Plot colorbar on a given axis.
 
     """
+    mappable.set_clim(*clim)
     cb = plt.colorbar(mappable, cax=cax)
-    cb.set_clim(*clim)
 
     if isinstance(label, str):
         cb.set_label(label=label, fontsize=label_fontsize)
@@ -212,9 +217,3 @@ def colorbar(
             labelsize=tick_fontsize,
             direction=tick_direction,
             pad=tick_pad)
-
-
-if __name__ == '__main__':
-    fig, ax = setup_comp_plots(
-        comp_shape=(6, 3), figsize=(10.0, 10.0), map_shape=(30, 30),
-        right_pad=0.1, left_pad=0.05, bottom_pad=0.05)

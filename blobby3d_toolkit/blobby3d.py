@@ -11,13 +11,11 @@ Classes: Blobby3D
 
 """
 
-from collections import OrderedDict
 import numpy as np
 import pandas as pd
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.backends import backend_pdf
 
 from . import b3dplot
 from . import b3dcomp
@@ -202,17 +200,17 @@ class Blobby3D:
 
     def update_comparison_clim(
             self, ax, cax,
-            pct=100.0, absolute=False, **cb_kwargs):
+            pct=100.0, vlim=None, absolute=False, **cb_kwargs):
         """Update each row colour scale for comparison plots."""
         if isinstance(ax, (list, tuple)):
             data = np.array([a.images[0]._A.data for a in ax])
-            clim = b3dcomp.map_limits(data, pct, absolute)
+            clim = b3dcomp.map_limits(data, pct, vlim, absolute)
             for a in ax:
                 a.images[0].set_clim(clim)
             b3dcomp.colorbar(ax[-1].images[0], cax, clim, **cb_kwargs)
         else:
             data = ax.images[0]._A.data
-            clim = b3dcomp.map_limits(data, pct, absolute)
+            clim = b3dcomp.map_limits(data, pct, vlim, absolute)
             ax.images[0].set_clim(clim)
             b3dcomp.colorbar(ax.images[0], cax, clim, **cb_kwargs)
 
@@ -239,9 +237,7 @@ class Blobby3D:
         ax : matplotlib.axes._subplots.AxesSubplot
         """
         if isinstance(ax, (list, tuple)):
-            for a in ax:
-                data = a.images[0]._A
+            for i, a in enumerate(ax):
                 a.images[0]._A = np.ma.masked_where(mask, a.images[0]._A)
         else:
-            data = ax.images[0]._A
             ax.images[0]._A = np.ma.masked_where(mask, ax.images[0]._A)
