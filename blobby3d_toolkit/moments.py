@@ -18,14 +18,16 @@ C = PhysicalConstants.C
 
 class SpectralModel:
 
-    def __init__(self, lines, lsf_fwhm, baseline_order=None):
+    def __init__(self, lines, lsf_fwhm, baseline_order=None, wave_ref=0.0):
         self.lines = lines
-        self.nlines = 1 + len(lines)//2
+        self.nlines = len(lines)
 
         self.lsf_fwhm = lsf_fwhm
         self.lsf_sigma = lsf_fwhm/np.sqrt(8.0*np.log(2.0))
 
         self.baseline_order = baseline_order
+
+        self.wave_ref = wave_ref
 
         self.nparam = self.nlines + 2
         if self.baseline_order is not None:
@@ -37,10 +39,11 @@ class SpectralModel:
         else:
             model = self._gas_model(
                     wavelength,
-                    param[:-self.baseline_order])
+                    param[:self.nlines+2])
             model += self._baseline_model(
                     wavelength,
-                    param[self.baseline_order:])
+                    param[-1-self.baseline_order:],
+                    )
 
         return model
 
@@ -48,12 +51,12 @@ class SpectralModel:
         if bounds is None:
             # line flux bounds
             bounds = [
-                    [1e-9]*self.nlines,
-                    [np.inf]*self.nlines
+                    [np.log(1e-9)]*self.nlines,
+                    [np.inf]*self.nlines,
                     ]
 
             # v, vdisp bounds
-            bounds[0] += [-np.inf, 1e-9]
+            bounds[0] += [-np.inf, np.log(1e-9)]
             bounds[1] += [np.inf, np.inf]
 
             if self.baseline_order is not None:
@@ -61,15 +64,16 @@ class SpectralModel:
                 bounds[1] += [np.inf]*(self.baseline_order + 1)
 
         if (var is None) & np.any(data != 0.0):
-            data_tmp = data[:]
-            w_tmp = wavelength[:]
+            data_valid = np.isfinite(data)
+            data_tmp = data[data_valid]
+            w_tmp = wavelength[data_valid]
             sigma_tmp = None
         elif (var is None) & np.all(data == 0.0):
             popt = np.zeros(self.nparam)*np.nan
             pcov = np.zeros(self.nparam)*np.nan
             return popt, pcov
         elif np.any(var > 0.0):
-            data_valid = var > 0.0
+            data_valid = ((var > 0.0) & np.isfinite(var) & np.isfinite(data))
             data_tmp = data[data_valid]
             w_tmp = wavelength[data_valid]
             sigma_tmp = np.sqrt(var[data_valid])
@@ -78,12 +82,28 @@ class SpectralModel:
             pcov = np.zeros(self.nparam)*np.nan
             return popt, pcov
 
-        try:
-            guess = self._guess(w_tmp, data_tmp)
-        except ZeroDivisionError:
-            print(w_tmp, data_tmp)
+        if len(w_tmp) <= 1:
+            popt = np.zeros(self.nparam)*np.nan
+            pcov = np.zeros(self.nparam)*np.nan
+            return popt, pcov
 
         try:
+            guess = self._guess(w_tmp, data_tmp)
+        except (ZeroDivisionError, IndexError):
+            print(w_tmp, data_tmp)
+
+        # enforce guess within bounds
+        for i in range(len(guess)):
+            if guess[i] < bounds[0][i]:
+                guess[i] = bounds[0][i]
+            elif guess[i] > bounds[1][i]:
+                guess[i] = bounds[1][i]
+            elif ~np.isfinite(guess[i]):
+                guess[i] = 0.5*(bounds[1][i] - bounds[0][i])
+
+        try:
+            # print('GUESS', guess, bounds)
+            # print(w_tmp, data_tmp, sigma_tmp)
             popt, pcov = curve_fit(
                     self.calculate,
                     w_tmp,
@@ -93,7 +113,13 @@ class SpectralModel:
                     p0=guess,
                     )
 
-            pcov = pcov.diagonal()
+            pcov = pcov.diagonal().copy()
+
+            # convert back to linear space
+            popt[:self.nlines] = np.exp(popt[:self.nlines])
+            popt[self.nlines+1] = np.exp(popt[self.nlines+1])
+            pcov[:self.nlines] = np.exp(pcov[:self.nlines])
+            pcov[self.nlines+1] = np.exp(pcov[self.nlines+1])
         except RuntimeError:
             # Occurs when curve_fit fails to converge
             popt = np.zeros(guess.size)*np.nan
@@ -142,18 +168,32 @@ class SpectralModel:
         wave_left = wavelength - 0.5*dwave
         wave_right = wavelength + 0.5*dwave
 
-        guess = np.zeros(self.nlines + 2)
+        if self.baseline_order is None:
+            guess = np.zeros(self.nlines + 2)
+        else:
+            guess = np.zeros(self.nlines + 2 + self.baseline_order + 1)
 
+        tmp_flux = np.ones(self.nlines)*1e-9
         tmp_v = np.zeros(self.nlines)
-        tmp_vdisp = np.zeros(self.nlines)
+        tmp_vdisp = np.ones(self.nlines)*1e-9*C/self.lines[0]
+
+        guess[:self.nlines] = tmp_flux.copy()
+        guess[self.nlines] = np.mean(tmp_v)
+        guess[self.nlines+1] = np.mean(tmp_vdisp)
         for i, line in enumerate(self.lines):
             win = (
                 (wave_right >= line[0] - lambda_win)
                 & (wave_left <= line[0] + lambda_win)
                 )
+            if win.sum() <= 0:
+                # if no valid pixels around emission line, then use initial
+                # guesses
+                continue
+
             win_data = data[win]
             win_wave = wavelength[win]
 
+            tmp_flux[i] = max(1e-9, win_data.sum())
             guess[i] = max(1e-9, win_data.sum())
 
             weights = win_data - np.min(win_data)
@@ -171,18 +211,24 @@ class SpectralModel:
                     np.sqrt(tmp_vdisp[i]**2 - self.lsf_sigma**2)
                     )
             tmp_vdisp[i] *= C/line[0]
+            tmp_vdisp[i] = 20.0  # just for testing
 
-        guess[-2] = np.average(tmp_v, weights=guess[:-2])
-        guess[-1] = np.average(tmp_vdisp, weights=guess[:-2])
+        guess[self.nlines] = np.average(tmp_v, weights=tmp_flux)
+        guess[self.nlines+1] = np.average(tmp_vdisp, weights=tmp_flux)
+
+        # convert flux and vdisp to log
+        guess[:self.nlines] = np.log(guess[:self.nlines])
+        guess[self.nlines+1] = np.log(guess[self.nlines+1])
 
         return guess
 
     def _gas_model(self, wave, gas_param):
         model = np.zeros(len(wave))
 
-        rel_lambda = 1.0 + gas_param[-2]/C
-        rel_lambda_sigma = gas_param[-1]/C
+        rel_lambda = 1.0 + gas_param[self.nlines]/C
+        rel_lambda_sigma = np.exp(gas_param[self.nlines+1])/C
 
+        # add emission line contribution
         for i, line in enumerate(self.lines):
             # model first line
             line_wave = line[0]
@@ -214,15 +260,18 @@ class SpectralModel:
 
         cdf_left = 0.5*erf((wave_left - lam)/np.sqrt(2.0*var))
         cdf_right = 0.5*erf((wave_right - lam)/np.sqrt(2.0*var))
-        return flux*(cdf_right - cdf_left)  # /dx
+        return np.exp(flux)*(cdf_right - cdf_left)  # /dx
 
     def _baseline_model(self, wave, baseline_param):
-        pass
+        wave_shft = wave - self.wave_ref
+        baseline = np.ones(len(wave))*baseline_param[0]
+        for i in range(self.baseline_order):
+            baseline += baseline_param[1+i]*wave_shft**(1+i)
+        return baseline
 
 
 if __name__ == '__main__':
     import os
-
     from blobby3d import Blobby3D
 
     root = r'/Users/mathewvaridel/Google Drive/Code/Uni/Blobby3D/Examples/106717'
@@ -257,276 +306,3 @@ if __name__ == '__main__':
     plt.plot(wave, b3d.data[i, j, :])
 
     fit_cube, fit_cube_err = sm.fit_cube(wave, b3d.data)
-
-
-
-
-
-
-
-
-#class Moments:
-#
-#    def __init__(self, lsf_fwhm):
-#        """
-#        Class to calculate first 3 moments of each spaxel within cube.
-#
-#        Attributes
-#        ----------
-#        lsf_fwhm : float
-#            FWHM of LSF in wavelength units.
-#        lsf_sigma : float
-#            1 sigma of LSF in wavelength units assuming Gaussian conversion
-#            from FWHM to 1 sigma.
-#        """
-#        self.lsf_fwhm = lsf_fwhm
-#        self.lsf_sigma = lsf_fwhm/np.sqrt(8.0*np.log(2.0))
-#
-#    def calc_moments(
-#            self, cube, w,
-#            baseline_order=None, var_cube=None,
-#            wave_axis=0, debug=False
-#            ):
-#        """
-#        Calculate 2D maps for the first 3 moments assuming Gaussian emission
-#        line function.
-#
-#        cube : 3D numpy.array
-#            3D cube.
-#        w : array-like
-#            Representing array wavelengths.
-#        baseline_order : int, default None
-#            Order to represent baseline. Default None assumes the data is
-#            baseline subtracted (ie. baseline is constant at y=0.0).
-#        var_cube : 3D numpy.array
-#            Variance cube.
-#        wave_axis : int, default 0
-#            Spectral axis.
-#        debug : bool, default False
-#            Plot 2D maps for testing purposes.
-#
-#        Returns
-#        -------
-#        flux : 2D numpy.ma.core.MaskedArray
-#        vel : 2D numpy.ma.core.MaskedArray
-#        vdisp : 2D numpy.ma.core.MaskedArray
-#        baseline : 3D numpy.ma.core.MaskedArray
-#        """
-#        bounds = [
-#                [1e-9, -np.inf, 1e-9],
-#                [np.inf, np.inf, np.inf]
-#                ]
-#        if baseline_order is not None:
-#            bounds[0] += [-np.inf]*(baseline_order + 1)
-#            bounds[1] += [np.inf]*(baseline_order + 1)
-#
-#        cube = swap_axes(cube, wave_axis)
-#        if var_cube is not None:
-#            var_cube = swap_axes(var_cube, wave_axis)
-#
-#        flux = np.zeros(cube.shape[1:])*np.nan
-#        vel = np.zeros(cube.shape[1:])*np.nan
-#        vdisp = np.zeros(cube.shape[1:])*np.nan
-#        flux_err = np.zeros(cube.shape[1:])*np.nan
-#        if baseline_order is not None:
-#            baseline = np.zeros(cube.shape)
-#
-#        x0_guess = HA
-#        sigma_guess = 25.0*HA/C
-#        baseline_guess = 0.0
-#        for i in range(cube.shape[1]):
-#            for j in range(cube.shape[2]):
-#
-#                if var_cube is None:
-#                    cube_tmp = cube[:, i, j]
-#                    w_tmp = w
-#                    sigma_tmp = None
-#                elif np.any(var_cube[:, i, j] > 0.0):
-#                    sigma_valid = var_cube[:, i, j] > 0.0
-#                    cube_tmp = cube[sigma_valid, i, j]
-#                    w_tmp = w[sigma_valid]
-#                    sigma_tmp = np.sqrt(var_cube[sigma_valid, i, j])
-#                else:
-#                    continue
-#
-#                # Initial position
-#                amp_guess = max(np.sum(cube_tmp), 1e-9)
-#                p0 = [amp_guess, x0_guess, sigma_guess]
-#                if baseline_order is not None:
-#                    p0 += [baseline_guess]*(baseline_order + 1)
-#
-#                try:
-#                    popt, pcov = curve_fit(
-#                            self.spectral_model,
-#                            w_tmp,
-#                            cube_tmp,
-#                            p0=p0,
-#                            bounds=bounds,
-#                            sigma=sigma_tmp
-#                            )
-#                    flux[i, j] = popt[0]
-#                    vel[i, j] = C*(popt[1]/HA - 1.0)
-#                    vdisp[i, j] = popt[2]*C/HA
-#                    flux_err[i, j] = np.sqrt(pcov[0, 0])
-#
-#                    # baseline
-#                    if baseline_order is not None:
-#                        baseline[:, i, j] = self._baseline(w, popt[3:])
-#
-#                    if debug:
-#                        print('POPT', popt)
-#                        plt.figure()
-#                        plt.plot(w_tmp, cube_tmp)
-#                        plt.plot(w_tmp, self.spectral_model(w_tmp, *popt))
-#                        plt.show()
-#
-#                except RuntimeError:
-#                    # RuntimeError occurs on optimisation failure.
-#                    pass
-#
-#        # mask
-#        flux = np.ma.masked_where(~np.isfinite(flux), flux)
-#        vel = np.ma.masked_where(~np.isfinite(vel), vel)
-#        vdisp = np.ma.masked_where(~np.isfinite(vdisp), vdisp)
-#
-#        if debug:
-#            self.plot_moments(flux, vel, vdisp)
-#
-#        if baseline_order is None:
-#            return flux, vel, vdisp, flux_err
-#        else:
-#            return flux, vel, vdisp, baseline, flux_err
-#
-#    def plot_moments(
-#            self, flux, vel, vdisp,
-#            show=True, save_path=None
-#            ):
-#        """
-#        Plot 2D maps for moments.
-#
-#        Parameters
-#        ----------
-#        flux : numpy.array
-#            2D map for flux.
-#        vel : numpy.array
-#            2D map for vel.
-#        vdisp : numpy.array
-#            2D map for vdisp.
-#        show : bool, default True
-#            Show figure.
-#        save_path : str, default None
-#            Save figure to provided path. Default None does not save figure.
-#        """
-#        plt.subplots(1, 3)
-#
-#        plt.subplot(1, 3, 1)
-#        ax = plt.gca()
-#        self._plot_moment(ax, flux)
-#
-#        plt.subplot(1, 3, 2)
-#        ax = plt.gca()
-#        self._plot_moment(ax, vel)
-#
-#        plt.subplot(1, 3, 3)
-#        ax = plt.gca()
-#        self._plot_moment(ax, vdisp)
-#
-#        plt.tight_layout()
-#
-#        if save_path is not None:
-#            plt.savefig(save_path)
-#
-#        if show:
-#            plt.show()
-#        else:
-#            plt.close()
-#
-#    def spectral_model(self, x, *param):
-#        """
-#        Construct Gaussian function.
-#
-#        Parameters
-#        ----------
-#        x : array-like
-#            1D array.
-#        *param : array-like
-#            Parameters passed to represent Gaussian function.
-#            param[0] : float
-#                Integrated flux across x.
-#            param[1] : float
-#                Position of the peak.
-#            param[2] : float
-#                1 sigma.
-#            param[3]-param[N] : float
-#                Polynomial baseline parameter values. In ascending order.
-#
-#        Returns
-#        -------
-#        y : numpy.array
-#            Gaussian function + Baseline in 1D.
-#        """
-#        flux = param[0]
-#        x0 = param[1]
-#        sigma = param[2]
-#
-#        dx = x[1] - x[0]
-#        var = sigma**2 + self.lsf_sigma**2
-#
-#        # I don't understand the LZIFU /dx term?
-#        cdf_left = 0.5*erf((x - 0.5*dx - x0)/np.sqrt(2.0*var))
-#        cdf_right = 0.5*erf((x + 0.5*dx - x0)/np.sqrt(2.0*var))
-#        gauss = flux*(cdf_right - cdf_left)  # /dx
-#
-#        # Baseline contribution
-#        if len(param) == 3:
-#            return gauss
-#        else:
-#            base_param = param[3:]
-#            baseline = self._baseline(x, base_param)
-#            return gauss + baseline
-#
-#    def _gas_model(self, lines, line_param):
-#        """
-#        Fit gas emission line(s) model.
-#        """
-#        pass
-#
-#    def _baseline(self, x, base_param):
-#        """
-#        Construct baseline.
-#
-#        Parameters
-#        ----------
-#        x : array-like
-#        base_param : array-like
-#            Polynomial baseline parameter values. In ascending order.
-#
-#        Returns
-#        -------
-#        baseline : numpy.array
-#            Polynomial representing baseline.
-#        """
-#        baseline = np.ones(len(x))*base_param[0]
-#
-#        # Higher order polynomial
-#        if len(base_param) > 1:
-#            for i, param in enumerate(base_param[1:]):
-#                baseline += param*x**(i + 1)
-#
-#        return baseline
-#
-#    def _plot_moment(self, ax, moment):
-#        """
-#        Plot 2D map for a particular moment.
-#
-#        Parameters
-#        ----------
-#        ax : matplotlib.axes object
-#            Axes to plot moment.
-#        moment : 2D numpy.array
-#            2D map for a particular moment.
-#        """
-#        im = ax.imshow(moment, origin='lower')
-#        divider = make_axes_locatable(ax)
-#        cax = divider.append_axes('right', size='10%', pad=0.03)
-#        plt.colorbar(im, cax=cax)
