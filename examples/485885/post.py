@@ -24,6 +24,10 @@ import matplotlib.pyplot as plt
 sys.path.append(os.path.join('..', '..'))
 import blobby3d_toolkit as b3dtk
 
+import dnest4 as dn4
+
+dn4.postprocess()
+
 b3d = b3dtk.Blobby3D(
         samples_path='posterior_sample.txt',
         data_path='data.txt',
@@ -39,9 +43,7 @@ fig, ax = plt.subplots(1, 4)
 map_names = ['FLUX0', 'FLUX1', 'V', 'VDISP']
 for i in range(4):
     ax[i].set_title(map_names[i])
-    ax[i].imshow(
-            b3d.maps[sample, i, :, :],
-            interpolation='nearest', origin='lower')
+    ax[i].imshow(b3d.maps[sample, i], interpolation='nearest', origin='lower')
 fig.tight_layout()
 
 # We can also plot the integrated flux across the wavelength axis for sample
@@ -49,13 +51,12 @@ fig.tight_layout()
 fig, ax = plt.subplots(1, 3)
 ax[0].set_title('Preconvolved')
 ax[0].imshow(
-        b3d.precon_cubes[sample, :, :, :].sum(axis=2),
+        b3d.precon_cubes[sample].sum(axis=2),
         interpolation='nearest', origin='lower')
-
 
 ax[1].set_title('Convolved')
 ax[1].imshow(
-        b3d.con_cubes[sample, :, :, :].sum(axis=2),
+        b3d.con_cubes[sample].sum(axis=2),
         interpolation='nearest', origin='lower')
 
 ax[2].set_title('Data')
@@ -71,42 +72,46 @@ b3d.blob_param.loc[sample, ['FLUX0', 'FLUX1']].hist(bins=30)
 # first emission line
 b3d.global_param[['FLUX0MU', 'FLUX0SD']].hist()
 
-# Construct a comparison between Blobb3d and a single component fit
-sm = b3dtk.SpectralModel(
-        lines=[[6562.81], [6583.1, 6548.1, 0.3333]],
-        lsf_fwhm=1.59
-        )
+# # Construct a comparison between Blobby3D and a single component fit
+# sm = b3dtk.SpectralModel(
+#         lines=[[6562.81], [6583.1, 6548.1, 0.3333]],
+#         lsf_fwhm=1.59
+#         )
 
-wave = np.linspace(
-        b3d.r_lim[0] + 0.5*b3d.dr,
-        b3d.r_lim[1] - 0.5*b3d.dr,
-        b3d.naxis[2])
+# wave = np.linspace(
+#         b3d.r_lim[0] + 0.5*b3d.dr,
+#         b3d.r_lim[1] - 0.5*b3d.dr,
+#         b3d.naxis[2])
 
-fit_conv, fit_conv_err = sm.fit_cube(
-        wave, b3d.con_cubes[sample, :, :, :])
+# # Fitting convolved model and data cubes with Gaussians per spaxel
+# fit_conv, fit_conv_err = sm.fit_cube(wave, b3d.con_cubes[sample])
+# fit_data, fit_data_err = sm.fit_cube(wave, b3d.data)
 
-fit_data, fit_data_err = sm.fit_cube(
-        wave, b3d.data)
+# # Make the plot
+# fig, ax = b3d.setup_comparison_maps()
 
-fig, ax = b3d.setup_comparison_maps()
-b3d.add_comparison_maps(b3d.maps[sample, :, :], ax, col=0, log_flux=True)
-b3d.add_comparison_maps(fit_conv, ax, col=1, log_flux=True)
-b3d.add_comparison_maps(fit_data, ax, col=2, log_flux=True)
+# # Add sample model, convolved model and data
+# b3d.add_comparison_maps(b3d.maps[sample], ax, col=0, log_flux=True)
+# b3d.add_comparison_maps(fit_conv, ax, col=1, log_flux=True)
+# b3d.add_comparison_maps(fit_data, ax, col=2, log_flux=True)
 
-residuals = fit_conv - fit_data
-residuals[0, :, :] = np.log10(fit_conv[0, :, :]) - np.log10(fit_data[0, :, :])
-residuals[1, :, :] = np.log10(fit_conv[0, :, :]) - np.log10(fit_data[0, :, :])
-b3d.add_comparison_residuals(residuals, ax, col=4)
+# b3d.update_comparison_clim(
+#     ax=ax[0][:3], cax=ax[0][3],
+#     pct=100.0, absolute=False)
+# b3d.update_comparison_clim(ax[1][:3], ax[1][3], pct=100.0, absolute=False)
+# b3d.update_comparison_clim(ax[2][:3], ax[2][3], pct=100.0, absolute=True)
+# b3d.update_comparison_clim(ax[3][:3], ax[3][3], pct=100.0, absolute=False)
 
-mask = np.ma.masked_invalid(fit_data[0, :, :]).mask
-b3d.update_comparison_mask(mask, (ax[0][0], ax[1][0], ax[2][0], ax[3][0]))
+# # Add residuals
+# residuals = fit_conv - fit_data
+# residuals[0,] = np.log10(fit_conv[0]) - np.log10(fit_data[0])
+# residuals[1] = np.log10(fit_conv[0]) - np.log10(fit_data[0])
+# b3d.add_comparison_residuals(residuals, ax, col=4)
 
-b3d.update_comparison_clim(ax[0][:3], ax[0][3], pct=100.0, absolute=False)
-b3d.update_comparison_clim(ax[1][:3], ax[1][3], pct=100.0, absolute=False)
-b3d.update_comparison_clim(ax[2][:3], ax[2][3], pct=100.0, absolute=True)
-b3d.update_comparison_clim(ax[3][:3], ax[3][3], pct=100.0, absolute=False)
+# mask = np.ma.masked_invalid(fit_data[0]).mask
+# b3d.update_comparison_mask(mask, (ax[0][0], ax[1][0], ax[2][0], ax[3][0]))
 
-b3d.update_comparison_clim(ax[0][4], ax[0][5], pct=100.0, absolute=True)
-b3d.update_comparison_clim(ax[1][4], ax[1][5], pct=100.0, absolute=True)
-b3d.update_comparison_clim(ax[2][4], ax[2][5], pct=100.0, absolute=True)
-b3d.update_comparison_clim(ax[3][4], ax[3][5], pct=100.0, absolute=True)
+# b3d.update_comparison_clim(ax[0][4], ax[0][5], pct=100.0, absolute=True)
+# b3d.update_comparison_clim(ax[1][4], ax[1][5], pct=100.0, absolute=True)
+# b3d.update_comparison_clim(ax[2][4], ax[2][5], pct=100.0, absolute=True)
+# b3d.update_comparison_clim(ax[3][4], ax[3][5], pct=100.0, absolute=True)
