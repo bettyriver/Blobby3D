@@ -44,4 +44,5 @@ examples/*/*.pbs.*
 # Miscellaneous #
 #################
 .DS_Store
+.spyproject
 
