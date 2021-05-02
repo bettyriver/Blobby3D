@@ -45,4 +45,6 @@ examples/*/*.pbs.*
 #################
 .DS_Store
 .spyproject
+*.icloud
+
 
