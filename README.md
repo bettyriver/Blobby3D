@@ -24,13 +24,23 @@ C++11
 
 [DNest4](https://github.com/eggplantbren/DNest4) is a bespoke nested sampling algorithm written by Brendon Brewer, and will need to be cloned from github in the usual manner. It is only available for Unix like machines.
 
-### Installing
+### Compilling
 
-To install Blobby3D you need to clone this repository. Then go to the repository directory and make using command 'make'. Note that this assumes that you have setup a DNEST4_PATH environment variable as suggested in the [DNEST4 paper](https://arxiv.org/abs/1606.03757). If you have not setup a DNEST4_PATH environment variable, then simply make using the following:
+To install Blobby3D you need to clone this repository. You then need to compile the C++ code and install the python module.
+
+To compile the C++ code type 'make' in the root directory. Note that this assumes that you have setup a DNEST4_PATH environment variable as suggested in the [DNEST4 paper](https://arxiv.org/abs/1606.03757). If you have not setup a DNEST4_PATH environment variable, then simply make using the following:
 
 make DNEST4_PATH=/path/to/DNest4
 
 Where /path/to/DNest4 is the root directory for DNest4 on your machine.
+
+To install the python module go to the blobby3d_toolkit directory. Then install by following:
+
+pip install blobby3d_toolkit/
+
+The python module is then available using:
+
+import pyblobby3d
 
 ### Running Blobby3D on Examples
 
