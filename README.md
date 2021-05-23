@@ -44,9 +44,7 @@ import pyblobby3d
 
 ### Running Blobby3D on Examples
 
-To get a feel for Blobby3D you will want to start with an example. You can find a few examples in the Blobby3D/examples folder. There are 3 example toy models provided. The toy models are constructed in accordance with the paper. The parent folder describes the PSF FWHM (psfa), PSF Moffat beta parameter (psfb) and the signal-noise (sn). The subfolder describes the velocity dispersion (vdisp) and the v(R_opt) (vropt) value.
-
-Navigate to one of the folders in the examples where the MODEL_OPTIONS file resides. The code can be run as an executable from within the subdirectory as follows:
+To get a feel for Blobby3D you will want to start with an example. There is an example using GAMA 485885 in the examples folder. The code can be run as an executable from within the subdirectory as follows:
 
 ../../Blobby3D -t 1 -f MODEL_OPTIONS
 
@@ -58,4 +56,4 @@ sample_info.txt
 sample.txt  
 sampler_state.txt  
 
-At any time during or after the run, you can perform postprocessing of the current Blobby3D output. Example postprocessing scripts are available in the examples folders labeled post.py.
+At any time during or after the run, you can perform postprocessing of the current Blobby3D output. An example postprocessing script is available in the examples folders labeled post.py.
