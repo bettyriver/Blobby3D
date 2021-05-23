@@ -87,8 +87,8 @@ class PostBlobby3D:
 
         # import data
         self.metadata = Metadata(self._metadata_path)
-        self.data = np.loadtxt(data_path).reshape(self.naxis)
-        self.var = np.loadtxt(var_path).reshape(self.naxis)
+        self.data = np.loadtxt(data_path).reshape(self.metadata.naxis)
+        self.var = np.loadtxt(var_path).reshape(self.metadata.naxis)
 
         # posterior samples
         samples = np.atleast_2d(np.loadtxt(samples_path))
@@ -97,47 +97,48 @@ class PostBlobby3D:
         if save_maps:
             self.maps = np.zeros((
                     self.nsamples,
-                    self.nlines+2,
-                    *self.naxis[:2]))
-            map_shp = self.naxis[:2].prod()
+                    self._nlines+2,
+                    *self.metadata.naxis[:2]))
+            map_shp = self.metadata.naxis[:2].prod()
             for s in range(self.nsamples):
                 # Flux
                 for ln in range(self._nlines):
                     self.maps[s, ln, :, :] = samples[
                             s, ln*map_shp:(1+ln)*map_shp
-                            ].reshape(self.naxis[:2])
+                            ].reshape(self.metadata.naxis[:2])
 
                 # LoS velocity
-                self.maps[s, self.nlines, :, :] = samples[
-                        s, self.nlines*map_shp:(1+self.nlines)*map_shp
-                        ].reshape(self.naxis[:2])
+                self.maps[s, self._nlines, :, :] = samples[
+                        s, self._nlines*map_shp:(1+self._nlines)*map_shp
+                        ].reshape(self.metadata.naxis[:2])
 
                 # LoS vdisp
-                self.maps[s, 1+self.nlines, :, :] = samples[
-                        s, (1+self.nlines)*map_shp:(2+self.nlines)*map_shp
-                        ].reshape(self.naxis[:2])
+                self.maps[s, 1+self._nlines, :, :] = samples[
+                        s, (1+self._nlines)*map_shp:(2+self._nlines)*map_shp
+                        ].reshape(self.metadata.naxis[:2])
 
         if save_con:
-            self.precon_cubes = np.zeros((self.nsamples, *self.naxis))
-            st = save_maps*(2+self.nlines)*map_shp
+            self.precon_cubes = np.zeros((self.nsamples, *self.metadata.naxis))
+            st = save_maps*(2+self._nlines)*map_shp
             for s in range(self.nsamples):
                 self.precon_cubes[s, :, :, :] = samples[
-                        s, st:st+self.sz].reshape(self.naxis)
+                        s, st:st+self.metadata.sz].reshape(self.metadata.naxis)
 
         if save_precon:
-            self.con_cubes = np.zeros((self.nsamples, *self.naxis))
-            st = save_maps*(2+self.nlines)*map_shp + save_precon*self.sz
+            self.con_cubes = np.zeros((self.nsamples, *self.metadata.naxis))
+            st = save_maps*(2+self._nlines)*map_shp
+            st += save_precon*self.metadata.sz
             for s in range(self.nsamples):
                 self.con_cubes[s, :, :, :] = samples[
-                        s, st:st+self.sz].reshape(self.naxis)
+                        s, st:st+self.metadata.sz].reshape(self.metadata.naxis)
 
         # blob parameters
-        st = save_maps*(2+self.nlines)*map_shp
-        st += self.sz*(save_precon + save_precon)
+        st = save_maps*(2+self._nlines)*map_shp
+        st += self.metadata.sz*(save_precon + save_precon)
         self.max_blobs = int(samples[0, st+1])
 
         global_names = ['WD', 'RADMIN', 'RADMAX', 'QMIN']
-        for i in range(self.nlines):
+        for i in range(self._nlines):
             global_names += ['FLUX%iMU' % (i), 'FLUX%iSD' % (i)]
         global_names += [
                 'NUMBLOBS',
@@ -145,21 +146,21 @@ class PostBlobby3D:
                 'DISKFLUX', 'DISKMU',
                 'VSYS', 'VMAX', 'VSLOPE', 'VGAMMA', 'VBETA'
                 ]
-        global_names += ['VDISP%i' % (i) for i in range(self.nsigmad)]
+        global_names += ['VDISP%i' % (i) for i in range(self._nsigmad)]
         global_names += ['INC', 'PA', 'SIGMA0', 'SIGMA1']
         global_param = np.concatenate((
-                samples[:, st+2:st+7+2*self.nlines],
-                samples[:, -13-self.nsigmad:]), axis=1)
+                samples[:, st+2:st+7+2*self._nlines],
+                samples[:, -13-self._nsigmad:]), axis=1)
         self.global_param = pd.DataFrame(global_param, columns=global_names)
 
         if self.max_blobs > 0:
             blob_names = ['RC', 'THETAC', 'W', 'Q', 'PHI']
-            blob_names += ['FLUX%i' % (i) for i in range(self.nlines)]
+            blob_names += ['FLUX%i' % (i) for i in range(self._nlines)]
             n_bparam = len(blob_names)
             self.blob_param = np.zeros(
                     (self.nsamples*self.max_blobs, n_bparam))
-            st_bparam = st+7+2*self.nlines
-            end_bparam = -13-self.nsigmad
+            st_bparam = st+7+2*self._nlines
+            end_bparam = -13-self._nsigmad
             for s in range(self.nsamples):
                 row_st = self.max_blobs*s
                 row_end = self.max_blobs*(s + 1)
@@ -201,8 +202,8 @@ class PostBlobby3D:
     #         self, figsize=(10.0, 10.0), log_flux=True, **kwargs):
     #     """Setup comparsion maps for a given sample."""
     #     fig, ax = b3dcomp.setup_comparison_maps(
-    #             comp_shape=(2 + self.nlines, 3),
-    #             map_shape=self.naxis[:2],
+    #             comp_shape=(2 + self._nlines, 3),
+    #             map_shape=self.metadata.naxis[:2],
     #             figsize=figsize,
     #             **kwargs)
 
@@ -210,7 +211,7 @@ class PostBlobby3D:
 
     # def add_comparison_maps(self, maps, ax, col, log_flux=False):
     #     """Add a column worth of maps to the comparison maps."""
-    #     for line in range(self.nlines):
+    #     for line in range(self._nlines):
     #         if log_flux:
     #             with np.errstate(invalid='ignore', divide='ignore'):
     #                 flux_map = np.log10(maps[line, :, :])
@@ -219,25 +220,25 @@ class PostBlobby3D:
     #             flux_map = maps[line, :, :]
     #         self.plot_map(ax[line][col], flux_map, cmap=b3dplot.cmap.flux)
     #     self.plot_map(
-    #             ax[self.nlines][col], maps[self.nlines, :, :],
+    #             ax[self._nlines][col], maps[self._nlines, :, :],
     #             cmap=b3dplot.cmap.v)
     #     self.plot_map(
-    #             ax[self.nlines+1][col], maps[self.nlines+1, :, :],
+    #             ax[self._nlines+1][col], maps[self._nlines+1, :, :],
     #             cmap=b3dplot.cmap.vdisp)
 
     # def add_comparison_residuals(self, maps, ax, col, log_flux=False):
     #     """Add a column worth of maps to the comparison maps."""
-    #     for line in range(self.nlines):
+    #     for line in range(self._nlines):
     #         if log_flux:
     #             flux_map = np.log10(maps[line, :, :])
     #         else:
     #             flux_map = maps[line, :, :]
     #         self.plot_map(ax[line][col], flux_map, cmap=b3dplot.cmap.residuals)
     #     self.plot_map(
-    #             ax[self.nlines][col], maps[self.nlines, :, :],
+    #             ax[self._nlines][col], maps[self._nlines, :, :],
     #             cmap=b3dplot.cmap.residuals)
     #     self.plot_map(
-    #             ax[self.nlines+1][col], maps[self.nlines+1, :, :],
+    #             ax[self._nlines+1][col], maps[self._nlines+1, :, :],
     #             cmap=b3dplot.cmap.residuals)
 
     # def update_comparison_clim(
