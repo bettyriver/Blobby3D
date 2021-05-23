@@ -55,7 +55,7 @@ class PostBlobby3D:
             Therefore modelling H-alpha and [NII] at 6548.1 A and 6583.1 A
             with a fixed ratio is counted as two lines in total. The default is
             1.
-        nsigmad : TYPE, optional
+        nsigmad : int, optional
             The degree to which white and shot noise are modelled. The default
             is 2.
 
@@ -69,13 +69,17 @@ class PostBlobby3D:
             See Metadata class docstring for details.
         data : np.ndarray
         var : np.ndarray
-
         maps : np.ndarray
+            2D maps of flux per line, velocity, and velocity dispersion for
+            each sample..
         precon_cubes : np.ndarray
+            Preconvolved model cubes for each sample.
         con_cubes : np.ndarray
-
-        global_param :
+            Convolved model cubes for each sample.
+        global_param : pd.DataFrame
+            Global parameters.
         blob_param :
+            Parameters for each blob.
 
         """
         self._posterior_path = Path(samples_path)
@@ -152,6 +156,7 @@ class PostBlobby3D:
                 samples[:, st+2:st+7+2*self._nlines],
                 samples[:, -13-self._nsigmad:]), axis=1)
         self.global_param = pd.DataFrame(global_param, columns=global_names)
+        self.global_param.index.name = 'SAMPLE'
 
         if self.max_blobs > 0:
             blob_names = ['RC', 'THETAC', 'W', 'Q', 'PHI']
