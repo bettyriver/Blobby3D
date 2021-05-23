@@ -15,11 +15,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import dnest4 as dn4
-from pyblobby3d import Blobby3D
+from pyblobby3d import PostBlobby3D
 
 dn4.postprocess()
 
-b3d = Blobby3D(
+b3d = PostBlobby3D(
         samples_path='posterior_sample.txt',
         data_path='data.txt',
         var_path='var.txt',

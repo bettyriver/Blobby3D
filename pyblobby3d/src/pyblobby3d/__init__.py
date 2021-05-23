@@ -5,8 +5,4 @@
 @author: mathewvaridel
 """
 
-from .blobby3d import *
-from .b3dplot import *
-from .b3dcomp import *
-from .const import *
-from .moments import *
+from .post_blobby3d import PostBlobby3D
