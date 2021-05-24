@@ -34,9 +34,9 @@ make DNEST4_PATH=/path/to/DNest4
 
 Where /path/to/DNest4 is the root directory for DNest4 on your machine.
 
-To install the python module go to the blobby3d_toolkit directory. Then install by following:
+To install the python module you can just do the following:
 
-pip install pyblobby3d/
+pip install pyblobby3d
 
 The python module is then available using:
 

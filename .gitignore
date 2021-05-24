@@ -2,6 +2,9 @@
 ####################
 *.o
 Blobby3D
+pyblobby3d/dist/
+pyblobby3d/build/
+pyblobby3d/src/*.egg-info/
 __pycache__/
 
 # Ad Hoc Tests #
