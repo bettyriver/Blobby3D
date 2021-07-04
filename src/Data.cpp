@@ -137,7 +137,7 @@ void Data::load(const char* moptions_file) {
     } else if (name == "VGAMMA_MAX") {
       lin >> vgamma_max;
     } else if (name == "VBETA_MIN") {
-      lin >> vbeta_max;
+      lin >> vbeta_min;
     } else if (name == "VBETA_MAX") {
       lin >> vbeta_max;
     } else if (name == "VDISP_ORDER") {
@@ -486,8 +486,8 @@ void Data::summarise_model() {
   std::cout<<dashline<<std::endl;
   std::cout<<"Velocity profile parameters"<<std::endl;
   std::cout<<dashline<<std::endl;
-  std::cout<<"v_sys ~ Cauchy(0, "<<vsys_max<<")"<<std::endl;
-  std::cout<<"w_j ~ Loguniform("<<vmax_min<<", "<<vmax_max<<")"<<std::endl;
+  std::cout<<"v_sys ~ Cauchy(0, 30)T(-"<<vsys_max<<", "<<vsys_max<<")"<<std::endl;
+  std::cout<<"v_c ~ Loguniform("<<vmax_min<<", "<<vmax_max<<")"<<std::endl;
   std::cout<<"r_t ~ Loguniform("<<vslope_min<<", "<<vslope_max<<")"<<std::endl;
   std::cout<<"gamma_v ~ Loguniform("<<vgamma_min<<", "<<vgamma_max<<")"<<std::endl;
   std::cout<<"beta_v ~ Uniform("<<vbeta_min<<", "<<vbeta_max<<")"<<std::endl;
