@@ -35,10 +35,6 @@ examples/279943
 *#
 *~
 
-# VS Code Files #
-#################
-*.json
-
 # Batch Files #
 ###############
 *.pbs
@@ -50,3 +46,4 @@ examples/*/*.pbs.*
 *.icloud
 .spyproject
 .idea/
+*.json
