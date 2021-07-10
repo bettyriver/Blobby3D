@@ -1,6 +1,6 @@
 # Blobby3D
 
-Blobby3D is designed to perform Bayesian inference for gas kinematics on emission lines observations of IFS galaxy observations. The code was designed with two main goals in mind:
+Blobby3D is designed to perform Bayesian inference for gas kinematics on emission line observations of galaxies using Integral Field Spectroscopy. The code was designed with two main goals in mind:
 
  - To robustly infer gas kinematics for regularly rotating galaxies even if the gas profiles have significant substructure.
  - Infer gas kinematic properties free from the effects of beam smearing. Where beam smearing is the effect of the observational seeing spatially blurring the gas profiles. This has significant effects on the observed gas kinematic properties - particularly the observed velocity dispersion.
@@ -9,20 +9,20 @@ You can find the motivation and first implementation of Blobby3D in this [paper]
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your machine for testing purposes. More specific instructions will be provided at a later date. If you have any trouble, feel free to contact Mathew Varidel at mathew.varidel@sydney.edu.au.
+These instructions will get you a copy of the project up and running on your machine for testing purposes. If you have any trouble, feel free to contact Mathew Varidel at mathew.varidel@sydney.edu.au.
 
 ### Prerequisites
 
 Blobby3D is dependent on the following:
 
-C++11
-[DNest4](https://github.com/eggplantbren/DNest4)
-[FFTW3](http://www.fftw.org)
-[Python 3](https://www.python.org) (for postprocessing)
+C++11\
+[DNest4](https://github.com/eggplantbren/DNest4)  \
+[FFTW3](http://www.fftw.org)  \
+[Python 3](https://www.python.org)
 
-[FFTW3](http://www.fftw.org) will typically be available on scientific machines/clusters, so you will often either have them or can get them relatively easily by contacting your system administrator.
+[FFTW3](http://www.fftw.org) will typically be available on scientific machines/clusters, so you will often have it or can get it relatively easily by contacting your system administrator.
 
-[DNest4](https://github.com/eggplantbren/DNest4) is a bespoke nested sampling algorithm written by Brendon Brewer, and will need to be cloned from github in the usual manner. It is only available for Unix like machines.
+[DNest4](https://github.com/eggplantbren/DNest4) is a bespoke nested sampling algorithm written by Brendon Brewer. The code will need to be cloned from github in the usual manner. It is only available for Unix like machines.
 
 ### Compilling
 
@@ -52,30 +52,30 @@ You may want to setup a terminal alias such that you can run the executable from
 
 There will be 3 output files created as Blobby3D runs:
 
-sample_info.txt
-sample.txt
+sample_info.txt\
+sample.txt\
 sampler_state.txt
 
 At any time during or after the run, you can perform postprocessing of the current Blobby3D output. An example postprocessing script is available in the examples folders labeled post.py.
 
 ### Running Your Own Data
 
-Blobby3D requires several files to run. Blobby3D accepts three data files typically named data.txt, var.txt, and metadata.txt. data.txt and var.txt correspond to the data and variance cubes. The file format is in whitespace separated with the cube of (x, y, wavelength) values represented in row-major format. The metadata format describes the data width given by whitespace separated values of number of (x, y, wavelength) bins, followed by minimum, maximum values of (x, y, wavelength). The minimum and maximum values are the left-most and right-most edge of each array. The data is assumed to be de-redshifted and centred about a (0, 0) spatial coordinates.
+Blobby3D requires several files to run. Blobby3D accepts three data files typically named data.txt, var.txt, and metadata.txt. data.txt and var.txt correspond to the data and variance cubes. The file format is in whitespace separated values of (x, y, wavelength) represented in row-major format. The metadata format describes the data width given by whitespace separated (x, y, wavelength) bins, followed by minimum, maximum values of (x, y, wavelength). The minimum and maximum values are the left-most and right-most edge of each array. The data is assumed to be de-redshifted and centred about (0, 0) spatial coordinates.
 
 There is also a MODEL_OPTIONS file that describes model parameterisation options. Note that the default parameterisation can be found in the [paper](https://ui.adsabs.harvard.edu/abs/2019MNRAS.485.4024V/abstract). It has the following required parameters:
 
 LSFFWHM : float\
-&nbsp;&nbsp;Line Spread Function Full-Width Half-Maximum measured in Angstroms.  
+&nbsp;&nbsp;Line Spread Function Full-Width Half-Maximum measured in Angstroms.\
 PSFWEIGHT : floats\
-&nbsp;&nbsp;Point Spread Function weights summing to 1.  
+&nbsp;&nbsp;Point Spread Function weights summing to 1.\
 PSFFWHM : floats\
-&nbsp;&nbsp;Point Spread Function Full-Width Half-Maximum. The PSF is modelled a sum of concentric Gaussians described with pairs of (PSFWEIGHT, PSFFWHM).  
+&nbsp;&nbsp;Point Spread Function Full-Width Half-Maximum. The PSF is modelled a sum of concentric Gaussians described with pairs of (PSFWEIGHT, PSFFWHM).\
 INC : float\
-&nbsp;&nbsp;Inclination in radians. INC = 0 for a face-on galaxy.
+&nbsp;&nbsp;Inclination in radians. INC = 0 for a face-on galaxy.\
 LINE : float, or list of floats\
-&nbsp;&nbsp;Vacuum wavelength in Angstroms for a line to be modelled. This can also describe coupled lines, for example for the [NII] lines around H-alpha it can be described as:
-        LINE	6583.1	6548.1	0.3333
-    This couples the [NII] line at 6583.1 A to the line at 6548.1 A assuming that the second line has a known ratio to the first of 0.3333. Triplets (or more) can also be described by adding an extra pair similar to the second [NII] line above.
+&nbsp;&nbsp;Vacuum wavelength in Angstroms for a line to be modelled. This can also describe coupled lines, for example for the [NII] lines around H-alpha it can be described as:\
+&nbsp;&nbsp;&nbsp;&nbsp;LINE	6583.1	6548.1	0.3333\
+&nbsp;&nbsp;This couples the [NII] line at 6583.1 A to the line at 6548.1 A assuming that the second line has a known ratio to the first of 0.3333. Triplets (or more) can also be described by adding an extra pair similar to the second [NII] line above.
 
 The following allows you to change the hyperparameters with defaults as set in the paper:
 
