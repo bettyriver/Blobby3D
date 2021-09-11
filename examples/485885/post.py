@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Postprocess for the example galaxy.
 
 The PostBlobby3D class is very simple. However, it is useful for organisational
