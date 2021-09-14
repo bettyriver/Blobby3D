@@ -6,3 +6,4 @@
 """
 
 from .post_blobby3d import PostBlobby3D
+from .moments import SpectralModel
