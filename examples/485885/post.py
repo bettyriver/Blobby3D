@@ -16,7 +16,7 @@ import dnest4 as dn4
 from pyblobby3d import PostBlobby3D
 from pyblobby3d import SpectralModel
 
-# dn4.postprocess()
+dn4.postprocess()
 
 post_b3d = PostBlobby3D(
         samples_path='posterior_sample.txt',
