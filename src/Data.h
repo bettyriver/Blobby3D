@@ -63,8 +63,11 @@ class Data
   double Md_max = 1E3;
   double wxd_min = 0.3;
   double wxd_max = 30.0;
+  double pa_min = 0;
+  double pa_max = 2.0*M_PI;
   double gamma_pos;
   double rc_max;
+  
 
   // sampling
   double sample;
@@ -214,6 +217,8 @@ class Data
   double get_wxd_max() { return wxd_max; }
   double get_gamma_pos() { return gamma_pos; }
   double get_rc_max() { return rc_max; }
+  double get_pa_min() { return pa_min;}
+  double get_pa_max() {return pa_max;}
 
   int get_x_pad() const { return x_pad; }
   int get_y_pad() const { return y_pad; }

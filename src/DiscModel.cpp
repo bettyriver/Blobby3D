@@ -99,7 +99,9 @@ DiscModel::DiscModel()
   */
   // Inclination
   inc = Data::get_instance().get_inc();
-  prior_pa = DNest4::Uniform(0.0, 2.0*M_PI);
+  prior_pa = DNest4::Uniform(
+    Data::get_instance().get_pa_min(), 
+    Data::get_instance().get_pa_min());
   prior_xc = DNest4::TruncatedCauchy(
     Data::get_instance().get_x_imcentre(),
     Data::get_instance().get_gamma_pos(),

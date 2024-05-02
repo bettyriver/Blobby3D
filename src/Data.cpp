@@ -160,6 +160,10 @@ void Data::load(const char* moptions_file) {
       lin >> wxd_min;
     } else if (name == "WXD_MAX") {
       lin >> wxd_max;
+    } else if (name == "PA_MAX") {
+      lin >> pa_max;
+    } else if (name == "PA_MIN") {
+      lin >> pa_min;
     } else if (name == "CENTRE_GAMMA") {
       lin >> gamma_pos;
       gamma_pos_flag = true;
