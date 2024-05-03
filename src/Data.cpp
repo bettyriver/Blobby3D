@@ -463,7 +463,7 @@ void Data::summarise_model() {
     <<"T("<<y_min + y_pad_dy<<", "<<y_max - y_pad_dy<<")"
     <<std::endl;
 
-  std::cout<<"Theta ~ Uniform(0, 2pi)"<<std::endl;
+  std::cout<<"Theta ~ Uniform("<<pa_min<<", "<<pa_max<<")"<<std::endl;
 
   if (!nfixed)
     std::cout<<"N ~ Loguniform(0, "<<nmax<<")"<<std::endl;

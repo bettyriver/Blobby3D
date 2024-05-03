@@ -101,7 +101,7 @@ DiscModel::DiscModel()
   inc = Data::get_instance().get_inc();
   prior_pa = DNest4::Uniform(
     Data::get_instance().get_pa_min(), 
-    Data::get_instance().get_pa_min());
+    Data::get_instance().get_pa_max());
   prior_xc = DNest4::TruncatedCauchy(
     Data::get_instance().get_x_imcentre(),
     Data::get_instance().get_gamma_pos(),
