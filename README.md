@@ -90,7 +90,9 @@ WD_MAX: float, default is 30 in (x, y) units. Value is given in the same units a
 MEANFLUX_MIN : float, default is 1E-3\
 &nbsp;&nbsp;Minimum for typical flux of blobs (mu_F in the paper).\
 MEANFLUX_MAX : float, default is 1E3\
-&nbsp;&nbsp;Maximum for typical flux of blobs (mu_F in the paper).
+&nbsp;&nbsp;Maximum for typical flux of blobs (mu_F in the paper).\
+RADIUSLIM_MIN : float, default is pixel width in (x, y) units\
+&nbsp;&nbsp;Minimum value in the prior for the maximum allowed width for blobs.\
 RADIUSLIM_MAX : float, default is 30 in (x, y) units\
 &nbsp;&nbsp;Maximum value in the prior for the maximum allowed width for blobs.\
 VSYS_MAX : float, default is 150\
