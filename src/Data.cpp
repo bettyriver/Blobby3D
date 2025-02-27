@@ -347,7 +347,7 @@ void Data::load(const char* moptions_file) {
 
 
   // Construct defaults that are dependent on data
-  if (!radiuslim_min) {
+  if (!radiuslim_min_flag) {
     radiuslim_min = pixel_width;
   }
   if (!gamma_pos_flag) {
