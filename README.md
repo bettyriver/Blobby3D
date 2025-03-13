@@ -62,6 +62,8 @@ At any time during or after the run, you can perform postprocessing of the curre
 
 Blobby3D requires several files to run. Blobby3D accepts three data files typically named data.txt, var.txt, and metadata.txt. data.txt and var.txt correspond to the data and variance cubes. The file format is in whitespace separated values of (x, y, wavelength) represented in row-major format. The metadata format describes the data width given by whitespace separated (x, y, wavelength) bins, followed by minimum, maximum values of (x, y, wavelength). The minimum and maximum values are the left-most and right-most edge of each array. The data is assumed to be de-redshifted and centred about (0, 0) spatial coordinates.
 
+ny, nx, nw, x_min, x_max, y_min, y_max, w_min, w_max
+
 There is also a MODEL_OPTIONS file that describes model parameterisation options. Note that the default parameterisation can be found in the [paper](https://ui.adsabs.harvard.edu/abs/2019MNRAS.485.4024V/abstract). It has the following required parameters:
 
 LSFFWHM : float\
